@@ -1,35 +1,26 @@
 @import './base.css';
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+/* 1. Colour variables: define once, use everywhere */
+:root {
+  --hh-red: #c8372d;
+  --hh-kopi: #3b2a20;
+  --hh-steel: #eef0f1;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* 2. Whole page */
+body {
+  font-family: 'Archivo', Arial, sans-serif;
+  color: var(--hh-kopi);
+  background-color: var(--hh-steel);
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* 3. Big signboard-style headings */
+.hh-display {
+  font-stretch: 75%;
+  font-weight: 800;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* 4. Red button: use as class="btn btn-hh-red" */
+.btn-hh-red {
+  background-color: var(--hh-red);
+  color: white;
 }
