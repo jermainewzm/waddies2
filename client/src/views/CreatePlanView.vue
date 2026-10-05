@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue"
+import { ref, computed } from "vue"
 import axios from "axios"
 import { API_URL } from "@/utils/constants"
 
@@ -9,8 +9,42 @@ const time = ref("")
 const code = ref("")
 const errorMessage = ref("")
 
+function pad(n) {     //helper function to pad everything atleast 2 char long (ie. 3 -> 03)
+  return String(n).padStart(2, "0")
+}
+
+function getLocalDateString(d = new Date()) {     //function to get local date for the date input in format that <input type="date"> uses (ie. "2026-10-06")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`    //month + 1 as Jan is 0
+}
+
+function getLocalTimeString(d = new Date()) {     //function to get local time for the time input in format that <input type="time"> uses (ie. "09:30")
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}` 
+}
+
+function hasPassed(dateStr, timeStr) {
+  if (!dateStr || !timeStr ) {    //if either field is empty
+    return false
+  } else {
+    return new Date(`${dateStr}T${timeStr}`) <= new Date()   //compares the date & time with the date & time right now
+  }
+}
+
+const minDate = computed(() => getLocalDateString())    //earliest allowed date
+const minTime = computed(() => date.value === getLocalDateString() ? getLocalTimeString : undefined) //earliest allowed time: only restricted when chosen date is today
+
+
 async function createPlan() {
   errorMessage.value = ""
+
+  if (!name.value.trim() || !date.value || !time.value) {   //validation on client side 
+    errorMessage.value = "Please fill in the plan name, date and time."
+    return
+  }
+  if (hasPassed(date.value, time.value)) {
+    errorMessage.value = "Please pick a date and time in the future."
+    return
+  }
+
   try {
     const response = await axios.post(`${API_URL}/plans`, {
       name: name.value,
@@ -72,18 +106,18 @@ function formatTime(time) {
              <!-- date -->
             <div class="mb-3">
             <label for="date" class="form-label">Date</label>
-            <input id="date" v-model="date" type="date" class="form-control" />
+            <input id="date" v-model="date" type="date" class="form-control" :min="minDate" />
             </div>
              <!-- time -->
             <div class="mb-3">
               <label for="time" class="form-label">Time</label>
-              <input id="time" v-model="time" type="time" class="form-control" />
+              <input id="time" v-model="time" type="time" class="form-control" :min="minTime" />
             </div>
 
             <button type="submit" class="btn btn-hh-red w-100 create-button">Create plan →</button>
           </form>
 
-        <p v-if="errorMessage" class="error-message mt-3">{{ errorMessage }}</p>
+        <p v-if="errorMessage" class="error-message text-danger mt-3">{{ errorMessage }}</p>
 
         <div v-if="code" class="alert alert-success mt-4">
           Your makan plan code is: <strong>{{ code }}</strong>
