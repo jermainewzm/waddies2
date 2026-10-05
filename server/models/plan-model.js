@@ -48,4 +48,11 @@ const planSchema = new mongoose.Schema({
 
 const Plan = mongoose.model("Plan", planSchema)
 
-module.exports = Plan
+exports.findByCode = function (code) {
+  return Plan.findOne({ code: code })
+}
+
+exports.addPlan = function (code, name, date, time) {
+  return Plan.create({ code: code, name: name, date: date, time: time })
+}
+
