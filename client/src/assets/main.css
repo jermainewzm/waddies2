@@ -16,7 +16,7 @@ body {
 /* 3. Big signboard-style headings */
 .hh-display {
   font-stretch: 75%;
-  font-weight: 800;
+  font-weight: bold;
 }
 
 /* 4. Red button: use as class="btn btn-hh-red" */
