@@ -20,6 +20,7 @@ server.use(errorHandler)
 async function connectDB() {
   try {
     await mongoose.connect(process.env.DB)
+    console.log("Using database:", mongoose.connection.name)
     console.log("MongoDB connected")
   } catch (error) {
     console.error("MongoDB connection failed:", error.message)

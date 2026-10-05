@@ -46,7 +46,7 @@ const planSchema = new mongoose.Schema({
   { timestamps: true }
 )
 
-const Plan = mongoose.model("Plan", planSchema)
+const Plan = mongoose.model("Plan", planSchema, "plan")
 
 exports.findByCode = function (code) {
   return Plan.findOne({ code: code })
