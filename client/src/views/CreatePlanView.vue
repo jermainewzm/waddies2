@@ -86,8 +86,12 @@ function formatTime(time) {
         <p v-if="errorMessage" class="error-message mt-3">{{ errorMessage }}</p>
 
         <div v-if="code" class="alert alert-success mt-4">
-          Share this code with your friends: <strong>{{ code }}</strong>
+          Your makan plan code is: <strong>{{ code }}</strong>
         </div>
+        <div class="preview-tip">
+            <span>💡</span>
+            <p class="mb-0 fw-bold"> Share the code with your friends so they can join your plan! </p>
+          </div>
       </div>
      </div>
 
@@ -132,20 +136,11 @@ function formatTime(time) {
             </div>
           </div>
         </div>
-
         <div class="join-section text-center">
-          <small class="text-muted fw-bold"> JOIN WITH CODE</small>
-          <div v-if="code" class="join-code">
-              {{ code }}
-          </div>
-          <div v-else class="text-muted fw-bold">
-            Your 6 digit code will appear here
-          </div>
+          <small class="text-muted fw-bold">ENTER CODE TO JOIN</small>
+          <input class="form-control mt-2" placeholder="Enter 6-digit code"/>
+          <button class="btn btn-hh-red fw-bold w-100 mt-3"> Join Plan → </button>
         </div>
-          </div>
-          <div class="preview-tip">
-            <span>💡</span>
-            <p class="mb-0 fw-bold"> Share the code with your friends so they can join your plan! </p>
           </div>
         </div>
      </div>
@@ -280,6 +275,18 @@ function formatTime(time) {
   border-radius: 10px;
   font-size: 13px;
  
+}
+
+.alert-success strong {
+  display: inline-block;
+  font-size: 24px;
+  letter-spacing: 3px;
+  color: var(--hh-kopi);
+  background-color:white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin-left: 6px;
+  border: 1px solid #f0d8c0;
 }
 
 </style>
