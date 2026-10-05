@@ -56,3 +56,12 @@ exports.addPlan = function (code, name, date, time) {
   return Plan.create({ code: code, name: name, date: date, time: time })
 }
 
+exports.addMember = function(code, member) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {members:member}},
+    {new: true}
+
+  )
+}
+
