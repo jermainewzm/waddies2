@@ -1,12 +1,12 @@
 @import './base.css';
-/* 1. Colour variables: define once, use everywhere */
+/* similar logic to constants in utils file, define once, use everywhere */
 :root {
   --hh-red: #c8372d;
   --hh-kopi: #3b2a20;
   --hh-steel: #eef0f1;
 }
 
-/* 2. Whole page */
+
 body {
   font-family: 'Archivo', Arial, sans-serif;
   color: var(--hh-kopi);
