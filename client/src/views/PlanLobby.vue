@@ -2,12 +2,13 @@
 import { ref, computed, onMounted} from "vue"
 import axios from "axios"
 import { API_URL } from "@/utils/constants"
-import { useRoute } from "vue-router"
+import { useRoute, useRouter } from "vue-router"
 
 import L from 'leaflet' //import leaflet javascript code
 import 'leaflet/dist/leaflet.css' //import leaflet css styling
 
 const route = useRoute() //lets PlanLobby.vue access info about the route that brought the user here
+const router = useRouter()
 
 const code = route.params.code
 const plan = ref(null)
@@ -29,8 +30,12 @@ async function loadPlan() {
     }
 }
 
-onMounted(() => {
-    loadPlan()
+onMounted(async () => {
+    await loadPlan()
+    if (!plan.value) {
+        router.push("/plan/new")     // send them home (or to a "plan not found" page)
+    return
+  }
 
     const map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
 
