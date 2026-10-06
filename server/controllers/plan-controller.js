@@ -40,10 +40,10 @@ exports.createPlan = async (req, res) => {
 
 exports.joinPlan = async (req,res) => {
     const code = req.params.code
-    const {name, postal, diet, budget} = req.body || {}
+    const {name, lat, lng, diet, budget} = req.body || {}
 
-    if (!name || !postal || !budget) {
-        return res.status(400).json({error: "Name, postal code and budget are required!"})
+    if (!name || lat == null || lng == null|| !budget) {
+        return res.status(400).json({error: "Name, location and budget are required!"})
     }
     try {
         const plan = await Plan.findByCode(code)
@@ -52,16 +52,10 @@ exports.joinPlan = async (req,res) => {
             return res.status(404).json({error: "No plan with that code"})
         }
 
-        const location = await getLatLng(postal)
-
-        if (!location) {
-            return res.status(400).json({error: "Postal code not found!"})
-        }
-
         const member = {
             name: name,
-            lat: location.lat,
-            lng: location.lng,
+            lat: Number(lat),
+            lng: Number(lng),
             diet: diet,
             budget: Number(budget)
         }
