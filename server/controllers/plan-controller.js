@@ -76,3 +76,25 @@ exports.joinPlan = async (req,res) => {
     }
 
 }
+
+exports.getPlan = async(req,res) => {
+    const code = req.params.code
+
+    if (!code) {
+        return res.status(400).json({error: "Plan code is required!"})
+    }
+    try {
+        const plan = await Plan.findByCode(code)
+
+        if (!plan) {
+            return res.status(400).json({error: "Plan not found!"})
+    }
+        res.json(plan)
+
+    } catch(error) {
+        console.error(error)
+        res.status(500).json({error: "Could not get plan"})
+    }
+
+}
+

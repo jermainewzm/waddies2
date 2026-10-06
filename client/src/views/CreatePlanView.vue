@@ -2,12 +2,16 @@
 import { ref, computed } from "vue"
 import axios from "axios"
 import { API_URL } from "@/utils/constants"
+import { useRouter } from "vue-router"
 
 const name = ref("")
 const date = ref("")
 const time = ref("")
 const code = ref("")
 const errorMessage = ref("")
+
+const router = useRouter()
+
 
 function pad(n) {     //helper function to pad everything atleast 2 char long (ie. 3 -> 03)
   return String(n).padStart(2, "0")
@@ -27,6 +31,10 @@ function hasPassed(dateStr, timeStr) {
   } else {
     return new Date(`${dateStr}T${timeStr}`) <= new Date()   //compares the date & time with the date & time right now
   }
+}
+
+function goToLobby() {
+  router.push(`/plan/${code.value}/lobby`)
 }
 
 const minDate = computed(() => getLocalDateString())    //earliest allowed date
@@ -128,7 +136,9 @@ function formatTime(time) {
 
         <div v-if="code" class="alert alert-success mt-4">
           Your makan plan code is: <strong>{{ code }}</strong>
+          <button v-on:click="goToLobby()" type="button" class="btn btn-lobby w-100 mt-3"> Go to Plan Lobby </button>
         </div>
+      
         <div class="preview-tip">
             <span>💡</span>
             <p class="mb-0 fw-bold"> Share the code with your friends so they can join your plan! </p>
@@ -328,6 +338,21 @@ function formatTime(time) {
   border-radius: 8px;
   margin-left: 6px;
   border: 1px solid #f0d8c0;
+}
+
+.btn-lobby {
+  background-color:  #287C7A;;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.btn-lobby:hover {
+  background-color: #48538F;
+  color: white;
 }
 
 </style>
