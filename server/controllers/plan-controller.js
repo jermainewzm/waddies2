@@ -92,3 +92,22 @@ exports.getPlan = async(req,res) => {
 
 }
 
+exports.getLocation = async (req, res) => {
+  const postal = req.query.postal
+
+  if (!postal) {
+    return res.status(400).json({ error: "Postal code is required!"})
+  }
+
+  try {
+    const location = await getLatLng(postal)
+    if (!location) {
+      return res.status(404).json({ error: "Postal code not found!"})
+    }
+    res.json(location)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Could not look up postal code."})
+  }
+}
+
