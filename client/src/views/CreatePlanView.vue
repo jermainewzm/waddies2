@@ -30,7 +30,7 @@ function hasPassed(dateStr, timeStr) {
 }
 
 const minDate = computed(() => getLocalDateString())    //earliest allowed date
-const minTime = computed(() => date.value === getLocalDateString() ? getLocalTimeString : undefined) //earliest allowed time: only restricted when chosen date is today
+const minTime = computed(() => date.value === getLocalDateString() ? getLocalTimeString() : undefined) //earliest allowed time: only restricted when chosen date is today
 
 
 async function createPlan() {
@@ -87,9 +87,8 @@ function formatTime(time) {
         <h1 class="hh-display mb-2">Start a Makan Plan</h1>
         <p class="mb-0 text-muted fst-italic"> Get everyone together. We'll handle the makan. </p>
      </div>
-
+     
      <div class="row justify-content-center align-items-start g-4">
-
      <div class="col-12 col-lg-6">
         <div class="create-plan-card">
           <div class="section-label"> 01</div>
