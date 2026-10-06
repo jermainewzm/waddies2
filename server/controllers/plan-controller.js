@@ -87,7 +87,7 @@ exports.getPlan = async(req,res) => {
         const plan = await Plan.findByCode(code)
 
         if (!plan) {
-            return res.status(400).json({error: "Plan not found!"})
+            return res.status(404).json({error: "Plan not found!"})
     }
         res.json(plan)
 
