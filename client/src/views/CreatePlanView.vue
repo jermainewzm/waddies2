@@ -87,7 +87,7 @@ function formatTime(time) {
         <h1 class="hh-display mb-2">Start a Makan Plan</h1>
         <p class="mb-0 text-muted fst-italic"> Get everyone together. We'll handle the makan. </p>
      </div>
-     
+
      <div class="row justify-content-center align-items-start g-4">
      <div class="col-12 col-lg-6">
         <div class="create-plan-card">
@@ -171,8 +171,8 @@ function formatTime(time) {
         </div>
         <div class="join-section text-center">
           <small class="text-muted fw-bold">ENTER CODE TO JOIN</small>
-          <input class="form-control mt-2" placeholder="Enter 6-digit code"/>
-          <button class="btn btn-hh-red fw-bold w-100 mt-3"> Join Plan → </button>
+          <input class="form-control mt-2" disabled placeholder="Enter 6-digit code"/>
+          <button class="btn btn-hh-red fw-bold w-100 mt-3" > Join Plan → </button>
         </div>
           </div>
         </div>
