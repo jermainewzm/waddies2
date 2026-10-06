@@ -4,8 +4,24 @@ import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <header>
-  </header>
+  <nav class="navbar navbar-expand-lg app-navbar" data-bs-theme="light">
+    <div class="container">
+      <RouterLink to="/" class="navbar-brand brand">HawkerHop</RouterLink>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+        aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><RouterLink to="/plan/new" class="nav-link">Start a plan</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/plan/join" class="nav-link">Join a plan</RouterLink></li>
+          <li class="nav-item"><RouterLink to="/hawker/dashboard" class="nav-link">For hawkers</RouterLink></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
   <RouterView />
 </template>
 
@@ -28,11 +44,13 @@ nav {
 }
 
 nav a.router-link-exact-active {
-  color: var(--color-text);
+  background-color: #c4521f;
+  color: #fff4e3;
 }
 
 nav a.router-link-exact-active:hover {
-  background-color: transparent;
+  background-color: #9e4018;
+  color: #fff4e3;
 }
 
 nav a {
