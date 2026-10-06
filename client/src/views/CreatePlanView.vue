@@ -32,6 +32,14 @@ function hasPassed(dateStr, timeStr) {
 const minDate = computed(() => getLocalDateString())    //earliest allowed date
 const minTime = computed(() => date.value === getLocalDateString() ? getLocalTimeString() : undefined) //earliest allowed time: only restricted when chosen date is today
 
+// OneMap API restricts the year to within 2 years
+
+const maxDate = computed(() => {
+    const d = new Date()
+    const currentYear = d.getFullYear()
+    d.setFullYear(currentYear + 2)
+    return getLocalDateString(d)
+})
 
 async function createPlan() {
   errorMessage.value = ""
@@ -105,7 +113,7 @@ function formatTime(time) {
              <!-- date -->
             <div class="mb-3">
             <label for="date" class="form-label">Date</label>
-            <input id="date" v-model="date" type="date" class="form-control" :min="minDate" />
+            <input id="date" v-model="date" type="date" class="form-control" :min="minDate" :max="maxDate"/>
             </div>
              <!-- time -->
             <div class="mb-3">
