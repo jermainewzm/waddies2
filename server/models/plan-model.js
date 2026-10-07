@@ -15,7 +15,7 @@ const memberSchema = new mongoose.Schema({
 },
   diet: { 
     type: String, 
-    enum: ["any", "halal", "vegetarian"],  //enum = list of the ONLY values allowed for that field
+    enum: ["any", "halal", "vegetarian", "no_pork", "no_beef"],  //enum = list of the ONLY values allowed for that field
     default: "any" 
 },
   budget: { 

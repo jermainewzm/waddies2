@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted} from "vue"
 import axios from "axios"
-import { API_URL } from "@/utils/constants"
+import { API_URL, DIET_OPTIONS } from "@/utils/constants"
 import { useRoute, useRouter } from "vue-router"
 
 import L from 'leaflet' //import leaflet javascript code
@@ -172,9 +172,9 @@ onUnmounted(() => {
           <div class="mb-3">
             <label for="diet" class="form-label fw-bold">Dietary needs</label>
             <select id="diet" v-model="diet" class="form-select">
-              <option value="any">No preference</option>
-              <option value="halal">Halal</option>
-              <option value="vegetarian">Vegetarian</option>
+              <option v-for="option in DIET_OPTIONS" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
             </select>
           </div>
 
