@@ -2,7 +2,7 @@
 //   1. All hawker centres, imported from NEA (real data)
 //   2. Demo users          <- added later
 //   3. Pilot centre stalls <- added later
-// Run from the server folder:  node scripts/seed.js
+// Run from the server folder:  node seed/seed.js
 
 const path = require('path')
 const mongoose = require('mongoose')
