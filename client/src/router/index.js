@@ -16,9 +16,19 @@ const router = createRouter({
       component: () => import("../views/CreatePlanView.vue")
     },
     {
+      path: "/plan/join", 
+      name: "join-plan", 
+      component: () => import("../views/JoinPlanView.vue")
+    },
+    {
       path: "/plan/:code/lobby", 
       name: "plan-lobby", 
       component: () => import("../views/PlanLobby.vue")
+      },
+    {
+      path: "/plan/:code/swipe", 
+      name: "plan-swipe", 
+      component: () => import("../views/SwipeLobby.vue")
       },
   ],
 })
