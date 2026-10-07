@@ -54,21 +54,20 @@ async function loadPlan() {
 }
 
 async function submitPreferences() {
-    try {
-        const response = await axios.post(`${API_URL}/plans/${code}/members`, {
-            name: name.value,
-            lat: selectedLat.value,
-            lng: selectedLng.value,
-            diet: diet.value,
-            budget: budget.value
+  try {
+      const response = await axios.post(`${API_URL}/plans/${code}/members`, {
+          name: name.value,
+          lat: selectedLat.value,
+          lng: selectedLng.value,
+          diet: diet.value,
+          budget: budget.value
+      })
+      plan.value = response.data
+      const members = response.data.members
+      const me = members[members.length -1]
 
-        })
-        plan.value = response.data
-        const members = response.data.members
-        const me = members[members.length -1]
-
-        localStorage.setItem(`memberId-${code}`, me._id)
-        myId.value = me._id
+      localStorage.setItem(`memberId-${code}`, me._id)
+      myId.value = me._id
     } catch(error) {
         errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
     }
