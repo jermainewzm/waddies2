@@ -76,7 +76,7 @@ async function getPostal() {
 onMounted(async () => {
     await loadPlan()
     if (!plan.value) {
-        router.push("/plan/join")   // plan not found: will redirect back to join page
+        router.push("/plan/new")   // plan not found: just a placeholder for now. will redirect back to join page
     return
   }
     map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
