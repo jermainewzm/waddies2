@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted} from "vue"
+import { ref, computed, onMounted, onUnmounted} from "vue"
 import axios from "axios"
 import { API_URL } from "@/utils/constants"
 import { useRoute, useRouter } from "vue-router"
@@ -19,11 +19,19 @@ const diet = ref("any")
 const budget = ref("")
 const postal = ref("")
 
+// After joining, my member _id is saved in the browser (localStorage),
+// under a key that includes the plan code, e.g. "memberId-468353".
+const myId = ref(localStorage.getItem(`memberId-${code}`))
+
+
 const selectedLat = ref(null)
 const selectedLng = ref(null)
 
 let map = null
 let pinnedOnce = null
+
+// Holds the timer that refreshes the plan, so we can stop it when leaving the page
+let refreshTimer = null
 
 async function loadPlan() {
     try {
@@ -45,6 +53,13 @@ async function submitPreferences() {
 
         })
         plan.value = response.data
+
+        const members = response.data.members
+        const me = members[members.length -1]
+
+        localStorage.setItem(`memberId-${code}`, me._id)
+        myId.value = me._id
+
     } catch(error) {
         errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
     }
@@ -74,11 +89,18 @@ async function getPostal() {
 }
 
 onMounted(async () => {
+    refreshTimer = setInterval(() => {
+      loadPlan()
+    }, 5000)
+    console.log(refreshTimer)
     await loadPlan()
     if (!plan.value) {
         router.push("/plan/join")   // plan not found: will redirect back to join page
     return
   }
+    if (myId.value) {
+      return
+    }
     map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
     //leaflet gets the map tiles from this URL from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -91,6 +113,12 @@ onMounted(async () => {
     }
       )
 })
+
+onUnmounted(() => {
+    clearInterval(refreshTimer)
+})
+
+
 </script>
 
 <template>
@@ -106,14 +134,20 @@ onMounted(async () => {
 
           <h2 class="h4 mt-4">Members</h2>
           <ul>
-            <li v-for="member in plan.members" :key="member._id">
+            <li v-for="(member, index) in plan.members" :key="member._id">
               {{ member.name }}
+                <!-- first person to join is the host -->
+               <span v-if="index === 0" class="badge rounded-pill bg-warning text-dark ms-1">Host</span>
+                 <!-- member._id matches the one saved in the browser = me -->
+               <span v-if="member._id === myId" class="badge rounded-pill bg-success ms-1">You</span>
+
             </li>
+           
           </ul>
         </div>
       </div>
         <div class="col-12 col-lg-7">
-        <form v-on:submit.prevent="submitPreferences()">
+        <form v-if="!myId" v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
           <div class="mb-3">
@@ -151,6 +185,10 @@ onMounted(async () => {
 
           <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null || name === ''">I'm in</button>
         </form>
+        <div v-else class="text-center p4">
+            <h2 class="h4 fw-bold">You're in!</h2>
+            <p class="text-muted mb-0">Waiting for everyone to join...</p>
+        </div>
       </div>
 
     </div>
