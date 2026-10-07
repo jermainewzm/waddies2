@@ -1,11 +1,6 @@
 const HawkerRequest = require("../models/HawkerRequest")
-
-const currentUser = {
-    id: "user_hawker_005",
-    role: "diner"
-}
-
-const Stall= require("../models/Stall")
+const currentUser = require("../utils/mockUser")
+const Stall = require("../models/Stall")
 
 async function createHawkerRequest(req, res) {
     try {
@@ -162,9 +157,10 @@ async function rejectHawkerRequest(req, res) {
     }
 }
 
+
 module.exports = {
     createHawkerRequest,
     getPendingRequests,
     approveHawkerRequest,
-    rejectHawkerRequest
+    rejectHawkerRequest,
 }

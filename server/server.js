@@ -14,9 +14,15 @@ const planRoutes = require("./routes/plans-routes")
 const errorHandler = require("./middleware/errors-middleware")
 
 const hawkerRoutes = require("./routes/hawkerRoutes")
+const stallRoutes = require("./routes/stallRoutes")
+const dishRoutes = require("./routes/dishRoutes")
+const shoutoutRoutes = require("./routes/shoutoutRoutes")
 
 server.use("/api/plans", planRoutes )
 server.use('/api/hawker', hawkerRoutes)
+server.use('/api/hawker', stallRoutes)
+server.use('/api/hawker', dishRoutes)
+server.use('/api/hawker', shoutoutRoutes)
 
 server.post('/api/hawker/apply-test', (req, res) => {
   res.json({ message: 'route works' })
