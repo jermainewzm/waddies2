@@ -25,6 +25,11 @@ const router = createRouter({
       name: "plan-lobby", 
       component: () => import("../views/PlanLobby.vue")
       },
+    {
+      path: "/plan/:code/swipe", 
+      name: "plan-swipe", 
+      component: () => import("../views/SwipeLobby.vue")
+      },
   ],
 })
 
