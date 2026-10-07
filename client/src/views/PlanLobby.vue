@@ -149,7 +149,7 @@ onMounted(async () => {
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
 
-          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null">I'm in</button>
+          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null || name === ''">I'm in</button>
         </form>
       </div>
 
