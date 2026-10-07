@@ -40,10 +40,10 @@ exports.createPlan = async (req, res) => {
 
 exports.joinPlan = async (req,res) => {
     const code = req.params.code
-    const {name, postal, diet, budget} = req.body || {}
+    const {name, lat, lng, diet, budget} = req.body || {}
 
-    if (!name || !postal || !budget) {
-        return res.status(400).json({error: "Name, postal code and budget are required!"})
+    if (!name || lat == null || lng == null|| !budget) {
+        return res.status(400).json({error: "Name, location and budget are required!"})
     }
     try {
         const plan = await Plan.findByCode(code)
@@ -52,16 +52,10 @@ exports.joinPlan = async (req,res) => {
             return res.status(404).json({error: "No plan with that code"})
         }
 
-        const location = await getLatLng(postal)
-
-        if (!location) {
-            return res.status(400).json({error: "Postal code not found!"})
-        }
-
         const member = {
             name: name,
-            lat: location.lat,
-            lng: location.lng,
+            lat: Number(lat),
+            lng: Number(lng),
             diet: diet,
             budget: Number(budget)
         }
@@ -76,3 +70,44 @@ exports.joinPlan = async (req,res) => {
     }
 
 }
+
+exports.getPlan = async(req,res) => {
+    const code = req.params.code
+
+    if (!code) {
+        return res.status(400).json({error: "Plan code is required!"})
+    }
+    try {
+        const plan = await Plan.findByCode(code)
+
+        if (!plan) {
+            return res.status(404).json({error: "Plan not found!"})
+    }
+        res.json(plan)
+
+    } catch(error) {
+        console.error(error)
+        res.status(500).json({error: "Could not get plan"})
+    }
+
+}
+
+exports.getLocation = async (req, res) => {
+  const postal = req.query.postal
+
+  if (!postal) {
+    return res.status(400).json({ error: "Postal code is required!"})
+  }
+
+  try {
+    const location = await getLatLng(postal)
+    if (!location) {
+      return res.status(404).json({ error: "Postal code not found!"})
+    }
+    res.json(location)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ error: "Could not look up postal code."})
+  }
+}
+
