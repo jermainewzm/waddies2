@@ -41,7 +41,14 @@ const planSchema = new mongoose.Schema({
       type: String, 
       required: true 
     },   
-    members: [memberSchema]
+    members: [memberSchema],
+
+    status: {
+      type: String,
+      enum: ["joining", "swiping", "done"],
+      default: "joining"
+
+    }
   },
   { timestamps: true }
 )
@@ -62,6 +69,15 @@ exports.addMember = function(code, member) {
     {$push: {members:member}},
     {new: true}
 
+  )
+}
+
+exports.updatePlanStatus = function(code,status) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$set: {status: status}},
+    {new: true}
+  
   )
 }
 
