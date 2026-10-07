@@ -18,11 +18,6 @@ const router = createRouter({
     },
 
     {
-      path: "/plan/join", 
-      name: "join-plan", 
-      component: () => import("../views/JoinPlanView.vue")
-    },
-    {
       path: "/plan/:code/lobby", 
       name: "plan-lobby", 
       component: () => import("../views/PlanLobby.vue")

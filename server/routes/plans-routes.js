@@ -7,6 +7,5 @@ router.post("/", plansController.createPlan)
 router.get("/location", plansController.getLocation)
 router.get("/:code", plansController.getPlan)
 router.post("/:code/members", plansController.joinPlan)
-router.post("/:code/start", plansController.startSwiping)
 
 module.exports = router
