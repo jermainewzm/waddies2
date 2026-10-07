@@ -18,3 +18,12 @@ const centreSchema = new mongoose.Schema({
 })
 
 const Centre = mongoose.model("Centre", centreSchema, "centres")
+
+exports.addCentre = function(centre) {
+    return Centre.create(centre)
+}
+
+exports.countCentres = function() {
+    return Centre.countDocuments()
+}
+
