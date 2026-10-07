@@ -111,3 +111,28 @@ exports.getLocation = async (req, res) => {
   }
 }
 
+exports.startSwiping = async (req,res) => {
+    const code = req.params.code
+    const memberId = req.body.memberId || {}
+
+    try {
+        //Check if the plan even exists
+        const plan = await Plan.findByCode(code)
+        if (!plan) {
+            return res.status(404).json({error: "Can't find a plan with that code."})
+        }
+        //else check if the member is the HOST. only the host can start
+        if (plan.members.length === 0 || String(plan.members[0]._id) !== memberId) {
+            return res.status(403).json({error: "Only the host can start swiping!"})
+        }
+        if (plan.members.length < 2) {
+            return res.status(400).json({error: "Not enough people to start swiping! Wait for at least one friend to join."})
+        }
+
+        const updatedPlan = await Plan.updatePlanStatus(code, "swiping")
+        res.json(updatedPlan)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({error : "Could not start swiping."})
+    }
+}
