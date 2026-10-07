@@ -1,3 +1,4 @@
+
 const express = require("express")
 const dotenv = require("dotenv")
 const cors = require("cors")
@@ -12,8 +13,14 @@ dotenv.config({path: "./.env"})
 const planRoutes = require("./routes/plans-routes")
 const errorHandler = require("./middleware/errors-middleware")
 
-server.use("/api/plans", planRoutes )
+const hawkerRoutes = require("./routes/hawkerRoutes")
 
+server.use("/api/plans", planRoutes )
+server.use('/api/hawker', hawkerRoutes)
+
+server.post('/api/hawker/apply-test', (req, res) => {
+  res.json({ message: 'route works' })
+})
 //error handling
 server.use(errorHandler)
 
