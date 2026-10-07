@@ -128,26 +128,28 @@ onUnmounted(() => {
       <!-- LEFT (top on phones): plan details + members -->
       <div class="col-12 col-lg-5">
         <div v-if="plan">
-          <h1 class="hh-display">{{ plan.name }}</h1>
-          <p class="mb-1">{{ plan.date }}, {{ plan.time }}</p>
-          <p>Plan code: <strong>{{ plan.code }}</strong></p>
+          <h1 class="display-5 fw-bold mb-1">{{ plan.name }}</h1>
+          <p class="text-muted mb-1">{{ plan.date }}, {{ plan.time }}</p>
+          <p>Plan code: <strong class="code">{{ plan.code }}</strong></p>
 
-          <h2 class="h4 mt-4">Members</h2>
-          <ul>
-            <li v-for="(member, index) in plan.members" :key="member._id">
-              {{ member.name }}
-                <!-- first person to join is the host -->
-               <span v-if="index === 0" class="badge rounded-pill bg-warning text-dark ms-1">Host</span>
-                 <!-- member._id matches the one saved in the browser = me -->
-               <span v-if="member._id === myId" class="badge rounded-pill bg-success ms-1">You</span>
+          <h2 class="h4 fw-bold mt-2">Members: {{ plan.members.length }}</h2>
+          <ul class="list-unstyled">
+            <li v-for="(member, index) in plan.members" :key="member._id"
+              class="member-row rounded-3 p-2 mb-1 d-flex align-items-center gap-2">
+              <span class="avatar">{{ member.name.charAt(0).toUpperCase() }}</span>
+              <span class="fw-bold">{{ member.name }}</span>
+              <!-- first person to join is ALWAYS the host -->
+              <span v-if="index === 0" class="badge rounded-pill bg-warning text-dark ms-1">Host</span>
+              <!-- member._id matches the one saved in the browser = me -->
+              <span v-if="member._id === myId" class="badge rounded-pill bg-success ms-1">You</span>
 
             </li>
            
           </ul>
         </div>
       </div>
-        <div class="col-12 col-lg-7">
-        <form v-if="!myId" v-on:submit.prevent="submitPreferences()">
+        <div class="col-12 col-lg-7 d-flex align-items-center">
+        <form v-if="!myId" class="w-100" v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
           <div class="mb-3">
@@ -180,17 +182,14 @@ onUnmounted(() => {
             <label for="budget" class="form-label fw-bold">Max budget per person ($)</label>
             <input id="budget" v-model="budget" type="number" min="1" max="50" class="form-control" placeholder="e.g. 8" />
           </div>
-
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-
           <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null || name === ''">I'm in</button>
         </form>
-        <div v-else class="text-center p4">
-            <h2 class="h4 fw-bold">You're in!</h2>
-            <p class="text-muted mb-0">Waiting for everyone to join...</p>
+        <div v-else class="w-100 card border-1 rounded-4 text-center p-4 p-md-5 waiting-card">
+          <h2 class="h3 fw-bold">You're in!</h2>
+          <p class="text-muted mb-0">Waiting for everyone to join...</p>
         </div>
-      </div>
-
+        </div>
     </div>
   </div>
 
@@ -206,5 +205,27 @@ onUnmounted(() => {
     height: 400px;
   }
 }
+
+.waiting-card {
+  background-color: #fff4e3;
+}
+
+.code {
+  letter-spacing: 3px;
+  font-size: 24px;
+}
+ 
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;           
+  background-color: #f48342;
+  color: #fff4e3;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 </style>
