@@ -15,7 +15,7 @@ const memberSchema = new mongoose.Schema({
 },
   diet: { 
     type: String, 
-    enum: ["any", "halal", "vegetarian", "no_pork", "no_beef"],  //enum = list of the ONLY values allowed for that field
+    enum: ["any", "halal", "vegetarian"],  //enum = list of the ONLY values allowed for that field
     default: "any" 
 },
   budget: { 
@@ -41,14 +41,7 @@ const planSchema = new mongoose.Schema({
       type: String, 
       required: true 
     },   
-    members: [memberSchema],
-
-    status: {
-      type: String,
-      enum: ["joining", "swiping", "done"],
-      default: "joining"
-
-    }
+    members: [memberSchema]
   },
   { timestamps: true }
 )
@@ -67,17 +60,8 @@ exports.addMember = function(code, member) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$push: {members:member}},
-    { returnDocument: "after" }
+    {new: true}
 
-  )
-}
-
-exports.updatePlanStatus = function(code,status) {
-  return Plan.findOneAndUpdate(
-    {code: code},
-    {$set: {status: status}},
-    { returnDocument: "after" }
-  
   )
 }
 

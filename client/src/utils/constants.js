@@ -5,11 +5,3 @@
 // so if we need to change the values of constants, just come here and change
 
 export const API_URL = "http://localhost:8000/api"
-
-export const DIET_OPTIONS = [
-  { value: "any", label: "No preference" },
-  { value: "halal", label: "Halal" },
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "no_pork", label: "No pork" },
-  { value: "no_beef", label: "No beef" }
-]
