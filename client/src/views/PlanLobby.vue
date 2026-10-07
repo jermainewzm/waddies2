@@ -30,6 +30,13 @@ const selectedLng = ref(null)
 let map = null
 let pinnedOnce = null
 
+const isHost = computed(() => {
+  if (!plan.value || !myId.value || plan.value.members.length == 0) {
+    return false
+  }
+  return plan.value.members[0]._id === myId.value
+})
+
 // Holds the timer that refreshes the plan, so we can stop it when leaving the page
 let refreshTimer = null
 
@@ -37,6 +44,11 @@ async function loadPlan() {
     try {
         const response = await axios.get(`${API_URL}/plans/${code}`)
         plan.value = response.data
+
+        //since we run loadPlan(), we check if swiping has started. 
+        if (plan.value.status === "swiping" && myId.value) {
+          router.push(`/plan/${code}/swipe`)
+        }
     } catch(error) {
         errorMessage.value = error.response ? error.response.data.error : 'Cant reach the server.'
     }
@@ -63,6 +75,21 @@ async function submitPreferences() {
     } catch(error) {
         errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
     }
+}
+
+async function startSwiping() {
+  errorMessage.value = ""
+
+  try {
+    const response = await axios.post(`${API_URL}/plans/${code}/start`, {
+        memberId : myId.value
+    })
+    plan.value = response.data
+
+    router.push(`/plan/${code}/swipe`)
+  } catch (error) {
+    errorMessage.value = error.response ? error.response.data.error: "Cant reach the server."
+  }
 }
 
 function movePin(position) {
@@ -124,8 +151,6 @@ onUnmounted(() => {
 <template>
   <div class="container py-4">
     <div class="row g-4">
-
-      <!-- LEFT (top on phones): plan details + members -->
       <div class="col-12 col-lg-5">
         <div v-if="plan">
           <h1 class="display-5 fw-bold mb-1">{{ plan.name }}</h1>
@@ -142,9 +167,7 @@ onUnmounted(() => {
               <span v-if="index === 0" class="badge rounded-pill bg-warning text-dark ms-1">Host</span>
               <!-- member._id matches the one saved in the browser = me -->
               <span v-if="member._id === myId" class="badge rounded-pill bg-success ms-1">You</span>
-
-            </li>
-           
+            </li>     
           </ul>
         </div>
       </div>
@@ -166,7 +189,7 @@ onUnmounted(() => {
                <button type="button" class="btn btn-outline-dark" v-on:click="getPostal()">Find</button>
            </div>
             <div id="map"></div>
-            <p v-if="selectedLat" class="small text-success mt-2 mb-0">Location set</p>
+            <p v-if="selectedLat !== null && selectedLng !== null" class="small text-success mt-2 mb-0">Location set</p>
           </div>
 
           <div class="mb-3">
@@ -188,6 +211,8 @@ onUnmounted(() => {
         <div v-else class="w-100 card border-1 rounded-4 text-center p-4 p-md-5 waiting-card">
           <h2 class="h3 fw-bold">You're in!</h2>
           <p class="text-muted mb-0">Waiting for everyone to join...</p>
+          <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn btn-lg btn-hh-red w-100 mt-4">Start swiping!</button>
+          <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-3 mb-0">{{ errorMessage }}</p>
         </div>
         </div>
     </div>

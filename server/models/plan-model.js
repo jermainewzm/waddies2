@@ -67,7 +67,7 @@ exports.addMember = function(code, member) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$push: {members:member}},
-    {new: true}
+    { returnDocument: "after" }
 
   )
 }
@@ -76,7 +76,7 @@ exports.updatePlanStatus = function(code,status) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$set: {status: status}},
-    {new: true}
+    { returnDocument: "after" }
   
   )
 }
