@@ -209,7 +209,7 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-        <div class="col-12 col-lg-7 d-flex align-items-center">
+        <div class="col-12 col-lg-7">
         <form v-if="!myId" class="w-100" v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
@@ -247,11 +247,61 @@ onUnmounted(() => {
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
           <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
         </form>
-         <div v-else class="w-100 card border-1 rounded-4 text-center p-4 p-md-5 waiting-card">
+         <div v-else class="waiting-card">
             <h2 class="h3 fw-bold">You're in!</h2>
-            <p class="text-muted mb-0">Waiting for everyone to join...</p>
-            <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn btn-lg btn-hh-red w-100 mt-4">Start swiping!</button>
+            <div class="loading-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="waiting-status"> 
+              <span class="status-dot"></span>
+              Waiting for everyone to join...
+            </div>
+            <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn start-btn w-50 mt-4">Start swiping!</button>
             <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0">{{ errorMessage }}</p>
+        </div>
+
+        <div v-if="myId" class="next-section">
+          <div class="h3 fw-bold mb-3"> What's next?</div>
+          <div class="row g-3">
+            <div class="col-12 col-lg-4">
+              <div class="card h-100 p-3 step-card">
+                <p class="step-number mb-2">1</p>
+                <h3 class="h5 fw-bold"> Everyone joins</h3>
+                <p class="text-muted mb-0"> Share the code with your friends</p>
+              </div>
+            </div>
+            <div class="col-12 col-lg-4">
+              <div class="card h-100 p-3 step-card">
+                <p class="step-number mb-2">2</p>
+                <h3 class="h5 fw-bold">Wait for everyone</h3>
+                <p class="text-muted mb-0">
+                 Once everyone's in, the host can start swiping.
+                </p>
+              </div>
+            </div>
+            <div class="col-12 col-lg-4">
+              <div class="card h-100 p-3 step-card">
+                  <p class="step-number mb-2">3</p>
+                  <h3 class="h5 fw-bold">Find a match</h3>
+                  <p class="text-muted mb-0">Swipe together and find a hawker centre everyone likes. 
+                  </p>
+              </div>
+            </div>    
+          </div>
+        </div>
+        <div v-if="myId" class="dish-search-prompt mt-4">
+          <div class="dish-search-content">
+            <div class="dish-search-icon">🔎</div>
+            <div>
+              <h3 class="h5 fw-bold mb-1">Got specific cravings? </h3>
+              <p class="text-muted mb-0">
+                Search dishes and add your desired hawker centre to swipe!
+              </p>
+              </div>
+          </div>
+          <button type="button" class="btn btn-outline-dark" v-on:click="router.push(`/dish-search?plan=${code}`)"> Search dishes</button>
         </div>
       </div>
     </div>
@@ -267,10 +317,6 @@ onUnmounted(() => {
   #map {
     height: 400px;
   }
-}
-
-.waiting-card {
-  background-color: #faf2e5;
 }
 
 .code-row {
@@ -295,7 +341,7 @@ onUnmounted(() => {
   font-size: 24px;
   background: #fff4e3;
   border-radius: 10px;
-  color: #ea351d;
+  color: #c4521f;
   font-weight: 800;
   padding-top: 8px;
   padding-bottom: 8px;
@@ -303,7 +349,24 @@ onUnmounted(() => {
   padding-right: 12px;
   margin-bottom: 0px;
 }
- 
+
+.start-btn {
+  background-color: #c4521f;         
+  color: #fff4e3;
+  border-radius: 14px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: 0 6px 0 #9e4018;        
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #9e4018;        
+}
+
 .avatar {
   width: 24px;
   height: 24px;
@@ -315,7 +378,6 @@ onUnmounted(() => {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-
 }
 
 .plan-card {
@@ -355,7 +417,7 @@ onUnmounted(() => {
   background: #ffffff;
   border: 1px solid #e9e9e9;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px rgba(59, 42, 32, 0.1);
 }
 
 .member-count {
@@ -390,4 +452,136 @@ onUnmounted(() => {
   color: #267344;
 }
 
+.waiting-card {
+  width: 100%;
+  background: #fefefe;
+  border: 1px solid #e5e1dc;
+  border-radius: 18px;
+  padding-top: 32px;
+  padding-bottom: 32px;
+  padding-left: 32px;
+  padding-right: 32px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(59, 42, 32, 0.25);
+}
+
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+.loading-dots span {
+  width: 7px;
+  height: 7px;
+  background: #ea351d;
+  border-radius: 50%;
+  animation: loading 1s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loading {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.waiting-status {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 12px;
+  border-radius: 20px;
+  background: #e3f3e8;
+  color: #267344;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin: auto;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #267344;
+}
+
+.next-section {
+  margin-top: 24px;
+}
+
+.step-card {
+  border: 1px solid #e5e1dc;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 15px rgba(59, 42, 32, 0.1);
+}
+
+.step-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #c8372d;
+  line-height: 1;
+}
+
+.step-card:hover {
+  background-color: #faf8f3;
+}
+
+.dish-search-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  padding-left: 24px;
+  padding-right: 24px;  
+  background-color: #fff4e3;           
+  border: 2px dashed #c4521f;           
+  border-radius: 16px;
+}
+
+.dish-search-prompt h3 {
+  color: #3b2a20;                     
+  font-size: 20px;
+}
+
+.dish-search-prompt .btn {
+  background-color: #c4521f;           
+  border-color: #c4521f;
+  color: #fff4e3;
+  border-radius: 10px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  padding-left: 18px;
+  padding-right: 18px;
+  font-weight: bold;
+  box-shadow: 0 6px 0 #9e4018;   
+  transition: transform 0.15s ease, box-shadow 0.15s ease; 
+}
+
+.dish-search-prompt .btn:hover {
+  transform: translateY(-2px);
+  background-color: #c4521f;
+  box-shadow: 0 8px 0 #9e4018;  
+}
 </style>
