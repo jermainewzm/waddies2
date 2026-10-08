@@ -14,6 +14,7 @@ const code = route.params.code
 const plan = ref(null)
 const errorMessage = ref("")
 const isLoading = ref(true)
+const isJoining = ref(false)
 
 const name = ref("")
 const diet = ref("any")
@@ -57,6 +58,10 @@ async function loadPlan() {
 }
 
 async function submitPreferences() {
+  if (isJoining.value) {
+    return
+  }
+  isJoining.value = true
   try {
       const response = await axios.post(`${API_URL}/plans/${code}/members`, {
           name: name.value,
@@ -73,6 +78,7 @@ async function submitPreferences() {
       myId.value = me._id
     } catch(error) {
         errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+        isJoining.value = false
     }
 }
 
@@ -188,7 +194,7 @@ onUnmounted(() => {
 
           <div class="mb-3">
             <label for="name" class="form-label fw-bold">Your name</label>
-            <input id="name" v-model="name" class="form-control" placeholder="e.g. Aisha" />
+            <input id="name" maxlength="30" v-model="name" class="form-control" placeholder="e.g. Aisha" />
           </div>
 
           <div class="mb-3">
@@ -218,8 +224,7 @@ onUnmounted(() => {
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-
-          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">I'm in</button>
+          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
         </form>
          <div v-else class="w-100 card border-1 rounded-4 text-center p-4 p-md-5 waiting-card">
             <h2 class="h3 fw-bold">You're in!</h2>
