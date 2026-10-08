@@ -45,6 +45,10 @@ exports.joinPlan = async (req,res) => {
     if (!name || lat == null || lng == null|| !budget) {
         return res.status(400).json({error: "Name, location and budget are required!"})
     }
+
+    if (Number(budget) < 1 || Number(budget) > 100) {
+        return res.status(400).json({error: "Budget must be between $1 and $100"})
+    }
     try {
         const plan = await Plan.findByCode(code)
 
