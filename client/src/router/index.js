@@ -49,6 +49,13 @@ const router = createRouter({
       name: "centres",
       component: () => import("../views/CentresView.vue")
     },
+
+    {
+      path: "/dish-search",
+      name: "dish-search",
+      component: () => import("../views/DishSearch.vue")
+    },
+
     {
       path: "/centres/:id",
       name: "centre-detail",
