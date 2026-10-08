@@ -56,6 +56,10 @@ exports.joinPlan = async (req,res) => {
             return res.status(404).json({error: "No plan with that code"})
         }
 
+        if (plan.status === "swiping") {
+            return res.status(400).json({error: "This plan has already started swiping"})
+        }
+
         const member = {
             name: name,
             lat: Number(lat),
