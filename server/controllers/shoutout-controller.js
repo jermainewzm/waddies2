@@ -18,9 +18,7 @@ async function createShoutout(req, res) {
             })
         }
 
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
+        const stall = req.stall
 
         if (!stall) {
             return res.status(404).json({
@@ -77,9 +75,7 @@ async function createShoutout(req, res) {
 
 async function getTodayShoutout(req, res) {
     try {
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
+        const stall = req.stall
 
         if (!stall) {
             return res.status(404).json({

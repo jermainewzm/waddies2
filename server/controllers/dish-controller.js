@@ -8,9 +8,7 @@ function hasMaxTwoDecimalPlaces(price){
 
 async function getMyStallDishes(req, res) {
     try {
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
+        const stall = req.stall
 
         if (!stall) {
             return res.status(404).json({
@@ -41,9 +39,7 @@ async function addDish(req, res) {
             is_available
         } = req.body
 
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
+        const stall = req.stall
 
         if (!stall) {
             return res.status(404).json({
@@ -94,9 +90,7 @@ async function addDish(req, res) {
 
 async function updateDish(req, res) {
     try {
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
+        const stall = req.stall
 
         if (!stall) {
             return res.status(404).json({
@@ -174,10 +168,8 @@ async function updateDish(req, res) {
 
 async function deleteDish(req, res) {
     try {
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
-
+        const stall = req.stall
+        
         if (!stall) {
             return res.status(404).json({
                 message: "No stall found for this hawker."

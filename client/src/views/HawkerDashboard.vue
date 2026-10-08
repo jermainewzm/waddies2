@@ -14,7 +14,13 @@ const stall = ref(null)
 const errorMsg = ref('')
 const loading = ref(true)
 
-// stall status 
+const dishes = ref([])
+
+const shoutout = ref(null)
+const shoutoutMessage = ref('')
+
+
+// stalls
 
 async function loadStall() {
     try {
@@ -25,13 +31,25 @@ async function loadStall() {
         stall.value = response.data
         errorMsg.value = ''
 
+        return true
+
     } catch (error) {
-        errorMsg.value = 'Unable to load your stall.'
+
+        if (error.response?.status === 403) {
+            errorMsg.value =
+                'You do not have an approved stall yet.'
+        } else {
+            errorMsg.value =
+                'Unable to load your stall.'
+        }
+
+        return false
 
     } finally {
         loading.value = false
     }
 }
+
 
 async function updateStatus(newStatus) {
     try {
@@ -46,11 +64,13 @@ async function updateStatus(newStatus) {
         errorMsg.value = ''
 
     } catch (error) {
-        errorMsg.value = 'Unable to update stall status.'
+        errorMsg.value =
+            'Unable to update stall status.'
     }
 }
 
-// rest days update
+
+// restdays
 
 async function updateRestDays(newRestDays) {
     try {
@@ -65,13 +85,12 @@ async function updateRestDays(newRestDays) {
         errorMsg.value = ''
 
     } catch (error) {
-        errorMsg.value = 'Unable to update rest days.'
+        errorMsg.value =
+            'Unable to update rest days.'
     }
 }
 
-// dish crud 
-
-const dishes = ref([])
+// dishes
 
 async function loadDishes() {
     try {
@@ -82,9 +101,11 @@ async function loadDishes() {
         dishes.value = response.data
 
     } catch (error) {
-        errorMsg.value = 'Unable to load dishes.'
+        errorMsg.value =
+            'Unable to load dishes.'
     }
 }
+
 
 async function deleteDish(id) {
     try {
@@ -93,11 +114,14 @@ async function deleteDish(id) {
         )
 
         await loadDishes()
+        errorMsg.value = ''
 
     } catch (error) {
-        errorMsg.value = 'Unable to delete dish.'
+        errorMsg.value =
+            'Unable to delete dish.'
     }
 }
+
 
 async function addDish(newDish) {
     try {
@@ -110,9 +134,11 @@ async function addDish(newDish) {
         errorMsg.value = ''
 
     } catch (error) {
-        errorMsg.value = 'Unable to add dish.'
+        errorMsg.value =
+            'Unable to add dish.'
     }
 }
+
 
 async function updateDish(id, updatedDish) {
     try {
@@ -125,14 +151,12 @@ async function updateDish(id, updatedDish) {
         errorMsg.value = ''
 
     } catch (error) {
-        errorMsg.value = 'Unable to update dish.'
+        errorMsg.value =
+            'Unable to update dish.'
     }
 }
 
 // shoutouts
-
-const shoutout = ref(null)
-const shoutoutMessage = ref('')
 
 async function loadShoutout() {
     try {
@@ -143,15 +167,18 @@ async function loadShoutout() {
         shoutout.value = response.data
 
         if (response.data) {
-            shoutoutMessage.value = response.data.message
+            shoutoutMessage.value =
+                response.data.message
         } else {
             shoutoutMessage.value = ''
         }
 
     } catch (error) {
-        errorMsg.value = 'Unable to load today\'s shout-out.'
+        errorMsg.value =
+            'Unable to load today\'s shout-out.'
     }
 }
+
 
 async function saveShoutout() {
     try {
@@ -162,18 +189,30 @@ async function saveShoutout() {
             }
         )
 
-        shoutout.value = response.data.shoutout
-        shoutoutMessage.value = response.data.shoutout.message
+        shoutout.value =
+            response.data.shoutout
+
+        shoutoutMessage.value =
+            response.data.shoutout.message
+
+        errorMsg.value = ''
 
     } catch (error) {
-        errorMsg.value = 'Unable to save shout-out.'
+        errorMsg.value =
+            'Unable to save shout-out.'
     }
 }
 
-onMounted(() => {
-    loadStall()
-    loadDishes()
-    loadShoutout()
+onMounted(async () => {
+
+    const approvedHawker =
+        await loadStall()
+
+    if (approvedHawker) {
+        await loadDishes()
+        await loadShoutout()
+    }
+
 })
 </script>
 
@@ -190,12 +229,12 @@ onMounted(() => {
             Loading stall...
         </p>
 
-        <p
+        <div
             v-if="errorMsg"
-            class="text-danger"
+            class="alert alert-danger"
         >
             {{ errorMsg }}
-        </p>
+        </div>
 
         <div v-if="stall">
 
@@ -210,24 +249,29 @@ onMounted(() => {
                 </p>
 
                 <p>
-                    Centre ID: {{ stall.centre_id }}
+                    Centre ID:
+                    {{ stall.centre_id }}
                 </p>
 
             </div>
+
 
             <StallStatusCard
                 :status="stall.status"
                 @update-status="updateStatus"
             />
 
+
             <RestDaysForm
                 :rest-days="stall.rest_days"
                 @update-rest-days="updateRestDays"
             />
 
+
             <DishForm
                 @add-dish="addDish"
             />
+
 
             <DishList
                 :dishes="dishes"
@@ -235,12 +279,16 @@ onMounted(() => {
                 @update-dish="updateDish"
             />
 
+
             <ShoutoutForm
                 :shoutout="shoutout"
                 :message="shoutoutMessage"
-                @update-message="shoutoutMessage = $event"
+                @update-message="
+                    shoutoutMessage = $event
+                "
                 @save-shoutout="saveShoutout"
             />
+
         </div>
 
     </div>

@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { DIET_OPTIONS } from '../utils/constants'
 
 const props = defineProps({
     dishes: {
@@ -22,6 +23,15 @@ const editVegetarian = ref(false)
 const editHalal = ref(false)
 const editNoPork = ref(false)
 const editNoBeef = ref(false)
+
+
+function getDietLabel(tag) {
+    const option = DIET_OPTIONS.find(
+        item => item.value === tag
+    )
+
+    return option ? option.label : tag
+}
 
 function startEdit(dish) {
     editingId.value = dish._id
@@ -112,7 +122,7 @@ function removeDish(id) {
                 <p>
                     Tags:
                     {{ dish.tags.length > 0
-                        ? dish.tags.join(', ')
+                        ? dish.tags.map(getDietLabel).join(', ')
                         : 'None'
                     }}
                 </p>
