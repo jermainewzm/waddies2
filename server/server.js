@@ -13,10 +13,10 @@ dotenv.config({
   path: "./.env"
 })
 
-const hawkerRoutes = require("./routes/hawkerRoutes")
-const stallRoutes = require("./routes/stallRoutes")
-const dishRoutes = require("./routes/dishRoutes")
-const shoutoutRoutes = require("./routes/shoutoutRoutes")
+const hawkerRoutes = require("./routes/hawker-routes")
+const stallRoutes = require("./routes/stall-routes")
+const dishRoutes = require("./routes/dish-routes")
+const shoutoutRoutes = require("./routes/shoutout-routes")
 
 const planRoutes = require("./routes/plans-routes")
 const centreRoutes = require("./routes/centres-routes")

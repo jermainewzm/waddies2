@@ -53,7 +53,7 @@ const router = createRouter({
     {
       path: "/hawker/dashboard",
       name: 'hawker-dashboard',
-      component: () => import("../views/hawker/HawkerDashboard.vue")
+      component: () => import("../views/HawkerDashboard.vue")
     }
   ]
 })

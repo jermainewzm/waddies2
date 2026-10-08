@@ -6,7 +6,7 @@ const {
     addDish,
     updateDish,
     deleteDish
-} = require("../controllers/dishController")
+} = require("../controllers/dish-controller")
 
 
 router.get("/my-stall/dishes", getMyStallDishes)

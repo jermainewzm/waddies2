@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_URL } from '../utils/constants'
 
-import StallStatusCard from '../../components/hawker/StallStatusCard.vue'
-import RestDaysForm from '../../components/hawker/RestDaysForm.vue'
-import DishList from '../../components/hawker/Dishlist.vue'
-import DishForm from '../../components/hawker/DishForm.vue'
-import ShoutoutForm from '../../components/hawker/ShoutoutForm.vue'
+import StallStatusCard from '../components/StallStatusCard.vue'
+import RestDaysForm from '../components/RestDaysForm.vue'
+import DishList from '../components/Dishlist.vue'
+import DishForm from '../components/DishForm.vue'
+import ShoutoutForm from '../components/ShoutoutForm.vue'
 
 
 const stall = ref(null)
@@ -18,7 +19,7 @@ const loading = ref(true)
 async function loadStall() {
     try {
         const response = await axios.get(
-            'http://localhost:8000/api/hawker/my-stall'
+            `${API_URL}/hawker/my-stall`
         )
 
         stall.value = response.data
@@ -35,7 +36,7 @@ async function loadStall() {
 async function updateStatus(newStatus) {
     try {
         const response = await axios.patch(
-            'http://localhost:8000/api/hawker/my-stall/status',
+            `${API_URL}/hawker/my-stall/status`,
             {
                 status: newStatus
             }
@@ -54,7 +55,7 @@ async function updateStatus(newStatus) {
 async function updateRestDays(newRestDays) {
     try {
         const response = await axios.patch(
-            'http://localhost:8000/api/hawker/my-stall/rest-days',
+            `${API_URL}/hawker/my-stall/rest-days`,
             {
                 rest_days: newRestDays
             }
@@ -75,7 +76,7 @@ const dishes = ref([])
 async function loadDishes() {
     try {
         const response = await axios.get(
-            'http://localhost:8000/api/hawker/my-stall/dishes'
+            `${API_URL}/hawker/my-stall/dishes`
         )
 
         dishes.value = response.data
@@ -88,7 +89,7 @@ async function loadDishes() {
 async function deleteDish(id) {
     try {
         await axios.delete(
-            `http://localhost:8000/api/hawker/dishes/${id}`
+            `${API_URL}/hawker/dishes/${id}`
         )
 
         await loadDishes()
@@ -101,7 +102,7 @@ async function deleteDish(id) {
 async function addDish(newDish) {
     try {
         await axios.post(
-            'http://localhost:8000/api/hawker/my-stall/dishes',
+            `${API_URL}/hawker/my-stall/dishes`,
             newDish
         )
 
@@ -116,7 +117,7 @@ async function addDish(newDish) {
 async function updateDish(id, updatedDish) {
     try {
         await axios.patch(
-            `http://localhost:8000/api/hawker/dishes/${id}`,
+            `${API_URL}/hawker/dishes/${id}`,
             updatedDish
         )
 
@@ -136,7 +137,7 @@ const shoutoutMessage = ref('')
 async function loadShoutout() {
     try {
         const response = await axios.get(
-            'http://localhost:8000/api/hawker/my-stall/shoutout'
+            `${API_URL}/hawker/my-stall/shoutout`
         )
 
         shoutout.value = response.data
@@ -155,7 +156,7 @@ async function loadShoutout() {
 async function saveShoutout() {
     try {
         const response = await axios.post(
-            'http://localhost:8000/api/hawker/my-stall/shoutout',
+            `${API_URL}/hawker/my-stall/shoutout`,
             {
                 message: shoutoutMessage.value
             }

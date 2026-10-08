@@ -1,5 +1,5 @@
 const currentUser = require("../utils/mockUser")
-const Stall= require("../models/Stall")
+const Stall= require("../models/stall-model")
 
 async function getMyStall(req, res) {
     try {
