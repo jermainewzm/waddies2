@@ -101,6 +101,11 @@ function movePin(position) {
     selectedLng.value = position.lng
 }
 
+//sg's rough edges, so users dont click from johor, batam
+function pinInSingapore(position) {
+    return position.lat >= 1.22 && position.lat <= 1.47 && position.lng >= 103.62 && position.lng <= 104.08
+}
+
 async function getPostal() {
     errorMessage.value = ""
     try {
@@ -128,6 +133,10 @@ onMounted(async () => {
       return
     }
     map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
+
+    //Keep map view around SG, we pass in a nested arr of coordinates
+    map.setMaxBounds([[1.22,103.62], [1.47,104.08]])
+
     //leaflet gets the map tiles from this URL from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors"
@@ -135,6 +144,11 @@ onMounted(async () => {
 
     //Leaflet gives the function an object that contains lat and lng values
     map.on("click", function(clickInfo) {
+        if (!pinInSingapore(clickInfo.latlng)) {
+          errorMessage.value = "Please select a location within Singapore!"
+          return
+        }
+        errorMessage.value = ""
         movePin(clickInfo.latlng)
     }
       )
@@ -186,7 +200,7 @@ onUnmounted(() => {
                <button type="button" class="btn btn-outline-dark" v-on:click="getPostal()">Find</button>
            </div>
             <div id="map"></div>
-            <p v-if="selectedLat !== null && selectedLng !== null" class="small text-success mt-2 mb-0">Location set</p>
+            <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="small text-success mt-2 mb-0">Location set</p>
           </div>
 
           <div class="mb-3">
@@ -200,12 +214,12 @@ onUnmounted(() => {
 
           <div class="mb-4">
             <label for="budget" class="form-label fw-bold">Max budget per person ($)</label>
-            <input id="budget" v-model="budget" type="number" min="1" max="50" class="form-control" placeholder="e.g. 8" />
+            <input id="budget" v-model="budget" type="number" min="1" max="100" class="form-control" placeholder="e.g. 8" />
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
 
-          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null || name === '' ||budget === ''">I'm in</button>
+          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">I'm in</button>
         </form>
          <div v-else class="w-100 card border-1 rounded-4 text-center p-4 p-md-5 waiting-card">
             <h2 class="h3 fw-bold">You're in!</h2>
