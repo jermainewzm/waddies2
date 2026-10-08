@@ -46,9 +46,14 @@ async function loadPlan() {
         const response = await axios.get(`${API_URL}/plans/${code}`)
         plan.value = response.data
 
-        //since we run loadPlan(), we check if swiping has started. 
-        if (plan.value.status === "swiping" && myId.value) {
-          router.push(`/plan/${code}/swipe`)
+        //we check if swiping has started and the person has joined the plan 
+        if (plan.value.status === "swiping") {
+          if (myId.value) {
+            router.push(`/plan/${code}/swipe`)
+          } else {
+            router.push('/plan/join')
+          }
+          return
         }
         isLoading.value = false
     } catch(error) {
