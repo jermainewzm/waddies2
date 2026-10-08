@@ -1,6 +1,6 @@
 const axios = require("axios")
 
-const NEA_URL = "https://data.gov.sg/api/action/datastore_search?resource_id=d_bda4baa634dd1cc7a6c7cad5f19e2d68&limit=200"
+const NEA_URL = "https://data.gov.sg/api/action/datastore_search?resource_id=d_bda4baa634dd1cc7a6c7cad5f19e2d68"
 
 exports.fetchAllCentres = async function() {
     const response = await axios.get(NEA_URL)
