@@ -23,6 +23,11 @@ const router = createRouter({
       component: () => import("../views/PlanLobby.vue")
       },
     {
+      path: "/plan/:code", 
+      name: "plan-direct", 
+      component: () => import("../views/PlanLobby.vue")
+      },  
+    {
       path: "/plan/:code/swipe", 
       name: "plan-swipe", 
       component: () => import("../views/SwipeLobby.vue")
@@ -48,6 +53,10 @@ const router = createRouter({
       path: "/centres/:id",
       name: "centre-detail",
       component: () => import("../views/CentreDetailView.vue")
+    },
+     {
+      path: "/:pathMatch(.*)*", // (.*) matches any sequence of char, then * behind allows the match to cover multiple URL segments
+      redirect: "/plan/join"
     }
   ]
 })

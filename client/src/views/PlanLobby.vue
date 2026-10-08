@@ -13,6 +13,7 @@ const router = useRouter()
 const code = route.params.code
 const plan = ref(null)
 const errorMessage = ref("")
+const isLoading = ref(true)
 
 const name = ref("")
 const diet = ref("any")
@@ -48,7 +49,9 @@ async function loadPlan() {
         if (plan.value.status === "swiping" && myId.value) {
           router.push(`/plan/${code}/swipe`)
         }
+        isLoading.value = false
     } catch(error) {
+        isLoading.value = false
         errorMessage.value = error.response ? error.response.data.error : 'Cant reach the server.'
     }
 }
@@ -144,10 +147,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="container py-4">
+  <div v-if="!isLoading && plan" class="container py-4">
     <div class="row g-4">
       <div class="col-12 col-lg-5">
-        <div v-if="plan"> 
+        <div> 
           <h1 class="display-5 fw-bold mb-1">{{ plan.name }}</h1>
           <p class="text-muted mb-1">{{ plan.date }}, {{ plan.time }}</p>
           <p>Plan code: <strong class="code">{{ plan.code }}</strong></p>
