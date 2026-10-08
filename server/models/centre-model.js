@@ -7,6 +7,7 @@ const closureSchema = new mongoose.Schema({
 })
 
 const centreSchema = new mongoose.Schema({
+    id: {type: String, required: true, unique: true},
     name: {type: String, required: true, unique: true},
     address: {type: String},
     lat: {type: Number, required: true},

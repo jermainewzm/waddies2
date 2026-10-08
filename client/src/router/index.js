@@ -57,6 +57,12 @@ const router = createRouter({
      {
       path: "/:pathMatch(.*)*", // (.*) matches any sequence of char, then * behind allows the match to cover multiple URL segments
       redirect: "/plan/join"
+
+     },
+     {
+      path: "/hawker/dashboard",
+      name: 'hawker-dashboard',
+      component: () => import("../views/hawker/HawkerDashboard.vue")
     }
   ]
 })
