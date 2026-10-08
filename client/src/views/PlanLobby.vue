@@ -332,7 +332,7 @@ onUnmounted(() => {
   margin-bottom: 4px;
   color: #777;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: bold;
 }
 
 .code {
@@ -342,7 +342,7 @@ onUnmounted(() => {
   background: #fff4e3;
   border-radius: 10px;
   color: #c4521f;
-  font-weight: 800;
+  font-weight: bold;
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 12px;
