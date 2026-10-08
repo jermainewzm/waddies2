@@ -48,6 +48,12 @@ const router = createRouter({
       path: "/centres/:id",
       name: "centre-detail",
       component: () => import("../views/CentreDetailView.vue")
+    },
+
+    {
+      path: "/hawker/dashboard",
+      name: 'hawker-dashboard',
+      component: () => import("../views/hawker/HawkerDashboard.vue")
     }
   ]
 })
