@@ -5,7 +5,7 @@ const {
     getMyStall,
     updateMyStallStatus,
     updateMyStallRestDays,
-} = require("../controllers/stallController")
+} = require("../controllers/stall-controller")
 
 router.get("/my-stall", getMyStall)
 router.patch("/my-stall/status", updateMyStallStatus)

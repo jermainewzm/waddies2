@@ -7,7 +7,7 @@ const {
     rejectHawkerRequest,
     
 
-} = require("../controllers/hawkerController")
+} = require("../controllers/hawker-controller")
 
 const router = express.Router()
 

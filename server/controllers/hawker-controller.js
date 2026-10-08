@@ -1,6 +1,6 @@
-const HawkerRequest = require("../models/HawkerRequest")
+const HawkerRequest = require("../models/hawker-request-model")
 const currentUser = require("../utils/mockUser")
-const Stall = require("../models/Stall")
+const Stall = require("../models/stall-model")
 
 async function createHawkerRequest(req, res) {
     try {

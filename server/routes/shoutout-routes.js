@@ -4,7 +4,7 @@ const router = express.Router()
 const {
     createShoutout,
     getTodayShoutout
-} = require("../controllers/shoutoutController")
+} = require("../controllers/shoutout-controller")
 
 router.get("/my-stall/shoutout", getTodayShoutout)
 router.post("/my-stall/shoutout", createShoutout)
