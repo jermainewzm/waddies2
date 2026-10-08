@@ -97,6 +97,24 @@ async function startSwiping() {
   }
 }
 
+function formatTime(time) {
+  const [hours, minutes] = time.split(":")
+  const period = hours >= 12 ? "PM" : "AM"
+  const hour = hours % 12 || 12
+
+  return `${hour}:${minutes} ${period}`
+}
+
+function formatDate(date) {
+  const dateObj = new Date(date)
+
+  return dateObj.toLocaleDateString("en-SG", {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
 function movePin(position) {
     if (pinnedOnce === null) {
         pinnedOnce = L.marker(position).addTo(map)
@@ -170,22 +188,25 @@ onUnmounted(() => {
   <div v-if="!isLoading && plan" class="container py-4">
     <div class="row g-4">
       <div class="col-12 col-lg-5">
-        <div> 
-          <h1 class="display-5 fw-bold mb-1">{{ plan.name }}</h1>
-          <p class="text-muted mb-1">{{ plan.date }}, {{ plan.time }}</p>
-          <p>Plan code: <strong class="code">{{ plan.code }}</strong></p>
-          <h2 class="h4 fw-bold mt-2">Members: {{ plan.members.length }}</h2>
-          <ul class="list-unstyled">
-             <li v-for="(member, index) in plan.members" :key="member._id"
-              class="member-row rounded-3 p-2 mb-1 d-flex align-items-center gap-2">
+        <div class="plan-card"> 
+          <h1 class="display-6 fw-bold mb-1">{{ plan.name }}</h1>
+          <p class="plan-date">{{ formatDate(plan.date) }} · {{ formatTime(plan.time) }}</p>
+          <div class="code-row">
+            <p class="code-label">Plan code: </p>
+            <p class="code">{{ plan.code }}</p>
+          </div>
+          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }} </span> </h2>
+          <div class="members-list">
+          <div class="member-card"
+              v-for="(member, index) in plan.members" :key="member._id">
               <span class="avatar">{{ member.name.charAt(0).toUpperCase() }}</span>
-              <span class="fw-bold">{{ member.name }}</span>
+              <span class="fw-bold member-name">{{ member.name }}</span>
               <!-- the first person to join is the host -->
-              <span v-if="index === 0" class="badge rounded-pill bg-warning text-dark ms-1">Host</span>
+              <span v-if="index === 0" class="member-badge host">Host</span>
               <!-- this member's _id matches the one saved in my browser = this is me -->
-              <span v-if="member._id === myId" class="badge rounded-pill bg-success ms-1">You</span>
-          </li>
-        </ul>
+              <span v-if="member._id === myId" class="member-badge you">You</span>   
+          </div>
+          </div>
         </div>
       </div>
         <div class="col-12 col-lg-7 d-flex align-items-center">
@@ -230,7 +251,7 @@ onUnmounted(() => {
             <h2 class="h3 fw-bold">You're in!</h2>
             <p class="text-muted mb-0">Waiting for everyone to join...</p>
             <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn btn-lg btn-hh-red w-100 mt-4">Start swiping!</button>
-            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-3 mb-0">{{ errorMessage }}</p>
+            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0">{{ errorMessage }}</p>
         </div>
       </div>
     </div>
@@ -249,12 +270,38 @@ onUnmounted(() => {
 }
 
 .waiting-card {
-  background-color: #fff4e3;
+  background-color: #faf2e5;
+}
+
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.code-label {
+  margin-top: 20px;
+  margin-bottom: 4px;
+  color: #777;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .code {
+  display: inline-block;
   letter-spacing: 3px;
   font-size: 24px;
+  background: #fff4e3;
+  border-radius: 10px;
+  color: #ea351d;
+  font-weight: 800;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+  margin-bottom: 0px;
 }
  
 .avatar {
@@ -265,9 +312,82 @@ onUnmounted(() => {
   color: #fff4e3;
   font-weight: bold;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+
 }
 
+.plan-card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 35px rgba(59, 42, 32, 0.25);
+}
+
+.plan-date {
+  margin: 8px 0 0;
+  color: #777;
+  font-size: 15px;
+}
+
+.members-title {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  color: #3b2a20;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.member-count {
+  margin-left: 6px;
+  color: #ea351d;
+}
+
+.member-name {
+  color: #3b2a20;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-badge {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.host {
+  background: #fff0d6;
+  color: #a85d00;
+}
+
+.you {
+  background: #e3f3e8;
+  color: #267344;
+}
 
 </style>
