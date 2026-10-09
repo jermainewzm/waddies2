@@ -3,9 +3,7 @@ const Stall= require("../models/stall-model")
 
 async function getMyStall(req, res) {
     try {
-        const stall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
+        const stall = req.stall
 
         if (!stall) {
             return res.status(404).json({
