@@ -58,7 +58,7 @@ const planSchema = new mongoose.Schema({
       type: String,
       enum: ["joining", "swiping", "done"],
       default: "joining"
-    }
+    },
     shortlist: [shortlistSchema] //ADDED for Dish Search
   },
   { timestamps: true }
@@ -87,8 +87,8 @@ exports.updatePlanStatus = function(code,status) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$set: {status: status}},
-    { returnDocument: "after" }
-  
+    { returnDocument: "after" })}
+
 //ADDED for Dish Search: adds one centre to the shortlist
 exports.addToShortlist = function(code, item) {
   return Plan.findOneAndUpdate(

@@ -19,7 +19,7 @@ const dishRoutes = require("./routes/dish-routes")
 const shoutoutRoutes = require("./routes/shoutout-routes")
 
 const planRoutes = require("./routes/plans-routes")
-
+const dishSearchRoutes = require("./routes/dish-search-routes")
 const centreRoutes = require("./routes/centres-routes")
 
 const errorHandler = require("./middleware/errors-middleware")
