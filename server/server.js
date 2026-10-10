@@ -10,11 +10,9 @@ server.use(cors())
 dotenv.config({path: "./.env"})
 
 const planRoutes = require("./routes/plans-routes")
-  const dishSearchRoutes = require("./routes/dish-search-routes")
 const errorHandler = require("./middleware/errors-middleware")
 
 server.use("/api/plans", planRoutes )
-server.use("/api/dishes", dishSearchRoutes)
 
 //error handling
 server.use(errorHandler)
