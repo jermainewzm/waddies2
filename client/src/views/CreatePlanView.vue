@@ -262,14 +262,21 @@ function formatTime(time) {
 }
 
 .create-button {
-  border-radius: 10px;
+  background-color: #c4521f;         
+  color: #fff4e3;
+  border-radius: 14px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  font-size: 20px;
   font-weight: bold;
+  box-shadow: 0 6px 0 #9e4018;        
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 
 }
 
 .create-button:hover {
-  background-color: #f8756b;
-  color:white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #9e4018;  
   
 }
 
@@ -341,18 +348,19 @@ function formatTime(time) {
 }
 
 .btn-lobby {
-  background-color:  #287C7A;;
+  background-color:  #287C7A;
   color: white;
   border: none;
   border-radius: 10px;
   padding: 12px;
   font-weight: bold;
-  transition: 0.2s;
+  box-shadow: 0 6px 0 #154a49;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-lobby:hover {
-  background-color: #48538F;
-  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #154a49;
 }
 
 </style>

@@ -15,7 +15,7 @@ const memberSchema = new mongoose.Schema({
 },
   diet: { 
     type: String, 
-    enum: ["any", "halal", "vegetarian"],  //enum = list of the ONLY values allowed for that field
+    enum: ["any", "halal", "vegetarian", "no_pork", "no_beef"],  //enum = list of the ONLY values allowed for that field
     default: "any" 
 },
   budget: { 
@@ -41,7 +41,14 @@ const planSchema = new mongoose.Schema({
       type: String, 
       required: true 
     },   
-    members: [memberSchema]
+    members: [memberSchema],
+
+    status: {
+      type: String,
+      enum: ["joining", "swiping", "done"],
+      default: "joining"
+    },
+    shortlist: [shortlistSchema] //ADDED for Dish Search
   },
   { timestamps: true }
 )
@@ -60,8 +67,22 @@ exports.addMember = function(code, member) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$push: {members:member}},
-    {new: true}
+    {returnDocument: "after" }
 
   )
 }
 
+exports.updatePlanStatus = function(code,status) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$set: {status: status}},
+    { returnDocument: "after" })}
+
+//ADDED for Dish Search: adds one centre to the shortlist
+exports.addToShortlist = function(code, item) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {shortlist: item}},
+    {new: true}
+  )
+}
