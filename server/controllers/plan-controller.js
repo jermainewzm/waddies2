@@ -1,5 +1,8 @@
 const Plan = require("../models/plan-model")
 const { getLatLng } = require("../utils/onemap-helper")
+const Stall = require("../models/stall-model") //ADDED for Dish Search
+const MAX_SHORTLIST = 5 //ADDED for Dish Search
+
 
 function generateCode() {
     return String(Math.floor(100000+ Math.random() * 900000))
@@ -111,3 +114,54 @@ exports.getLocation = async (req, res) => {
   }
 }
 
+
+//ADDED for Dish Search
+//POST /api/plans/:code/shortlist   body: { centre_id, added_by }
+//adds a hawker centre to the plan's shortlist (used by Dish Search's "Add to plan")
+exports.addToShortlist = async (req, res) => {
+    const code = req.params.code
+    const {centre_id, added_by} = req.body || {}
+
+    if (!centre_id || !String(centre_id).trim()) {
+        return res.status(400).json({error: "Centre is required!"})
+    }
+
+    const centreId = String(centre_id).trim()
+
+    try {
+        const plan = await Plan.findByCode(code)
+
+        if (!plan) {
+            return res.status(404).json({error: "No plan with that code"})
+        }
+
+        //checks the centre is real (at least one stall belongs to it)
+        //change this to the centres collection once it exists
+        const centreExists = await Stall.exists({centre_id: centreId})
+
+        if (!centreExists) {
+            return res.status(404).json({error: "Centre not found!"})
+        }
+
+        const shortlist = plan.shortlist || []
+
+        if (shortlist.some(item => item.centre_id === centreId)) {
+            return res.status(409).json({error: "This centre is already on the shortlist."})
+        }
+
+        if (shortlist.length >= MAX_SHORTLIST) {
+            return res.status(400).json({error: "The shortlist is full (max 5 centres)."})
+        }
+
+        const updatedPlan = await Plan.addToShortlist(code, {
+            centre_id: centreId,
+            added_by: String(added_by || "").trim()
+        })
+
+        res.json(updatedPlan)
+
+    } catch(error) {
+        console.error(error)
+        res.status(500).json({error: "Could not add to plan. Please try again."})
+    }
+}
