@@ -23,6 +23,17 @@ const memberSchema = new mongoose.Schema({
     required: true }
 })
 
+//ADDED for Dish Search: one centre on the plan's shortlist
+const shortlistSchema = new mongoose.Schema({
+  centre_id: {
+    type: String,
+    required: true
+  },
+  added_by: {
+    type: String,
+    default: ""
+  }
+})
 const planSchema = new mongoose.Schema({
     code: { 
       type: String, 
@@ -48,6 +59,7 @@ const planSchema = new mongoose.Schema({
       enum: ["joining", "swiping", "done"],
       default: "joining"
     }
+    shortlist: [shortlistSchema] //ADDED for Dish Search
   },
   { timestamps: true }
 )
@@ -77,5 +89,11 @@ exports.updatePlanStatus = function(code,status) {
     {$set: {status: status}},
     { returnDocument: "after" }
   
+//ADDED for Dish Search: adds one centre to the shortlist
+exports.addToShortlist = function(code, item) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {shortlist: item}},
+    {new: true}
   )
 }

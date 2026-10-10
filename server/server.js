@@ -19,12 +19,14 @@ const dishRoutes = require("./routes/dish-routes")
 const shoutoutRoutes = require("./routes/shoutout-routes")
 
 const planRoutes = require("./routes/plans-routes")
+
 const centreRoutes = require("./routes/centres-routes")
 
 const errorHandler = require("./middleware/errors-middleware")
 
 server.use("/api/plans", planRoutes )
 server.use("/api/centres", centreRoutes)
+server.use("/api/dishes", dishSearchRoutes)
 
 server.use('/api/hawker', hawkerRoutes)
 server.use('/api/hawker', stallRoutes)
