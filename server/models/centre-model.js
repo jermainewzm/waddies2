@@ -27,3 +27,7 @@ exports.addCentre = function(centre) {
 exports.countCentres = function() {
     return Centre.countDocuments()
 }
+
+exports.findSomeCentres = function(count) {
+    return Centre.find().limit(count)
+}

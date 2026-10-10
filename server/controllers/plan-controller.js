@@ -124,7 +124,7 @@ exports.getLocation = async (req, res) => {
 
 exports.startSwiping = async (req,res) => {
     const code = req.params.code
-    const memberId = req.body.memberId || {}
+    const memberId = req.body || {}
 
     try {
         //Check if the plan even exists

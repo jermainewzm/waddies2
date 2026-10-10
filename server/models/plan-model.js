@@ -26,7 +26,8 @@ const memberSchema = new mongoose.Schema({
 //ADDED for Dish Search: one centre on the plan's shortlist
 const shortlistSchema = new mongoose.Schema({
   centre_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Centre",
     required: true
   },
   added_by: {
@@ -59,9 +60,18 @@ const planSchema = new mongoose.Schema({
       enum: ["joining", "swiping", "done"],
       default: "joining"
     },
-    shortlist: [shortlistSchema] //ADDED for Dish Search
-  },
-  { timestamps: true }
+    shortlist: [shortlistSchema], //ADDED for Dish Search
+
+    swipes : [
+      {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
+       centreId: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", required: true},
+       liked: {type: Boolean, required: true}
+    }
+    ],
+
+    winner: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", default: null}
+    },
+    { timestamps: true }
 )
 
 const Plan = mongoose.model("Plan", planSchema, "plan")
@@ -94,6 +104,15 @@ exports.addToShortlist = function(code, item) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$push: {shortlist: item}},
-    {new: true}
+    { returnDocument: "after" }
+  )
+}
+
+// Replace the plan's shortlist with a new list
+exports.setShortlist = function (code, newShortList) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    { $set: {shortlist: newShortList}},
+    { returnDocument: "after" }
   )
 }
