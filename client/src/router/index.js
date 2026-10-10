@@ -20,11 +20,6 @@ const router = createRouter({
       name: "plan-lobby", 
       component: () => import("../views/PlanLobby.vue")
       },
-        {
-      path: "/dish-search",
-      name: "dish-search",
-      component: () => import("../views/DishSearch.vue")
-    },
   ],
 })
 

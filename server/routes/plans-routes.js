@@ -8,6 +8,4 @@ router.get("/location", plansController.getLocation)
 router.get("/:code", plansController.getPlan)
 router.post("/:code/members", plansController.joinPlan)
 
-router.post("/:code/shortlist", plansController.addToShortlist) //ADDED for Dish Search
-
 module.exports = router
