@@ -33,6 +33,10 @@ const shortlistSchema = new mongoose.Schema({
   added_by: {
     type: String,
     default: ""
+  },
+  added_by_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null
   }
 })
 const planSchema = new mongoose.Schema({
@@ -77,7 +81,7 @@ const planSchema = new mongoose.Schema({
 const Plan = mongoose.model("Plan", planSchema, "plan")
 
 exports.findByCode = function (code) {
-  return Plan.findOne({ code: code })
+  return Plan.findOne({ code: code }).populate('shortlist.centre_id')
 }
 
 exports.addPlan = function (code, name, date, time) {
