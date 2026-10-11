@@ -1,5 +1,7 @@
 const Plan = require("../models/plan-model")
+const Centre = require("../models/centre-model")
 const { getLatLng } = require("../utils/onemap-helper")
+const { rankCentres } = require("../utils/shortlist-helper")
 const Stall = require("../models/stall-model") //ADDED for Dish Search
 const MAX_SHORTLIST = 5 //ADDED for Dish Search
 
@@ -124,13 +126,18 @@ exports.getLocation = async (req, res) => {
 
 exports.startSwiping = async (req,res) => {
     const code = req.params.code
-    const memberId = req.body || {}
+    const {memberId} = req.body || {}
 
     try {
         //Check if the plan even exists
         const plan = await Plan.findByCode(code)
         if (!plan) {
             return res.status(404).json({error: "Can't find a plan with that code."})
+        }
+
+        // is the plan already swiping? dont rebuild shortlist if already swiping
+        if (plan.status !== "joining") {
+            return res.status(400).json({error: "Swiping has already started for this plan."})
         }
         //else check if the member is the HOST. only the host can start
         if (plan.members.length === 0 || String(plan.members[0]._id) !== memberId) {
@@ -140,6 +147,37 @@ exports.startSwiping = async (req,res) => {
             return res.status(400).json({error: "Not enough people to start swiping! Wait for at least one friend to join."})
         }
 
+        const shortlist = []
+        const duplicateIds = []
+
+        //save the centres that plan members added from Dish Search
+        for (const item of plan.shortlist) {
+            shortlist.push({centre_id : item.centre_id,
+                            added_by : item.added_by,
+                            added_by_id : item.added_by_id
+            })
+            duplicateIds.push(String(item.centre_id))
+        }
+
+        const allCentres = await Centre.findAllCentres()
+        const centresRanked = await rankCentres(plan,allCentres)
+
+        for (const centre of centresRanked) {
+            if (shortlist.length >= MAX_SHORTLIST) {
+                break
+            }
+
+            if (!duplicateIds.includes(String(centre._id))) {
+                shortlist.push({centre_id : centre._id, added_by: ""})
+                duplicateIds.push(String(centre._id))
+            }
+        }
+
+        if (shortlist.length === 0) {
+            return res.status(400).json({error: "No nearby centre fits everyone's diets. Try raising budgets or add a centre from Dish Search!"})
+        }
+
+        await Plan.setShortlist(code, shortlist)
         const updatedPlan = await Plan.updatePlanStatus(code, "swiping")
         res.json(updatedPlan)
     } catch (error) {
@@ -153,7 +191,7 @@ exports.startSwiping = async (req,res) => {
 //adds a hawker centre to the plan's shortlist (used by Dish Search's "Add to plan")
 exports.addToShortlist = async (req, res) => {
     const code = req.params.code
-    const {centre_id, added_by} = req.body || {}
+    const {centre_id, added_by, member_id} = req.body || {}
 
     if (!centre_id || !String(centre_id).trim()) {
         return res.status(400).json({error: "Centre is required!"})
@@ -168,6 +206,20 @@ exports.addToShortlist = async (req, res) => {
             return res.status(404).json({error: "No plan with that code"})
         }
 
+        if (plan.status !== "joining") {
+            return res.status(400).json({error: "This plan has already started swiping."})
+        }
+
+        let isMember = false
+        for (const member of plan.members) {
+            if (String(member._id) === String(member_id)) {
+                isMember = true
+            }
+        }
+        if (!isMember) {
+            return res.status(403).json({error: "Join the plan before adding centres."})
+        }
+
         //checks the centre is real (at least one stall belongs to it)
         //change this to the centres collection once it exists
         const centreExists = await Stall.exists({centre_id: centreId})
@@ -178,7 +230,7 @@ exports.addToShortlist = async (req, res) => {
 
         const shortlist = plan.shortlist || []
 
-        if (shortlist.some(item => item.centre_id === centreId)) {
+        if (shortlist.some(item => String(item.centre_id) === centreId)) {
             return res.status(409).json({error: "This centre is already on the shortlist."})
         }
 
@@ -188,7 +240,8 @@ exports.addToShortlist = async (req, res) => {
 
         const updatedPlan = await Plan.addToShortlist(code, {
             centre_id: centreId,
-            added_by: String(added_by || "").trim()
+            added_by: String(added_by || "").trim(),
+            added_by_id: member_id
         })
 
         res.json(updatedPlan)
