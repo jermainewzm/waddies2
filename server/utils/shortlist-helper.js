@@ -16,13 +16,13 @@ exports.getMidPoint = function(members) {
     }
 }
 
-console.log(exports.getMidPoint([
-    { lat: 1.2979, lng: 103.8489 },   //  SMU
-    { lat: 1.4377, lng: 103.7858 },   // Woodlands
-    { lat: 1.3510, lng: 103.8485 }    // Bishan
-]))
+/* console.log(exports.getMidPoint([
+//     { lat: 1.2979, lng: 103.8489 },   //  SMU
+//     { lat: 1.4377, lng: 103.7858 },   // Woodlands
+//     { lat: 1.3510, lng: 103.8485 }    // Bishan
+// ]))
 
-// { lat: 1.3621999999999999, lng: 103.82773333333334 }
+ { lat: 1.3621999999999999, lng: 103.82773333333334 } */
 
 /* straight line distance between 2 points in km.
  sg is small so we dont have to use the complext Haversine formula,
@@ -34,14 +34,12 @@ exports.getDistance = function(a,b) {
     const eastToWest = (b.lng - a.lng) * 111
 
     return Math.sqrt(northToSouth ** 2 + eastToWest ** 2)
-
 }
 
-// TEMP TEST: Woodlands to Maxwell, should be about 18-19 km
-console.log(exports.getDistance(
-    { lat: 1.4377, lng: 103.7858 },   // Woodlands
-    { lat: 1.2803, lng: 103.8448 }    // Maxwell
-))
+// console.log(exports.getDistance(
+//     { lat: 1.4377, lng: 103.7858 },   // Woodlands
+//     { lat: 1.2803, lng: 103.8448 }    // Maxwell
+// ))
 
 //Step 3: Is the centre even open on the plan's date?
 
@@ -57,13 +55,13 @@ exports.isCentreOpen = function(centre, planDate) {
     return true
 }
 
-// TEMP TEST: a fake centre closed from 30 to 31 March 2026
-const testCentre = {
-    closures: [{ start: new Date("2026-03-30T00:00:00+08:00"), end: new Date("2026-03-31T00:00:00+08:00") }]
-}
-console.log(exports.isCentreOpen(testCentre, "2026-03-30"))  // false (closed)
-console.log(exports.isCentreOpen(testCentre, "2026-03-31"))  // false (closed, last day)
-console.log(exports.isCentreOpen(testCentre, "2026-04-01"))  // true  (open again)
+// // TEMP TEST: a fake centre closed from 30 to 31 March 2026
+// const testCentre = {
+//     closures: [{ start: new Date("2026-03-30T00:00:00+08:00"), end: new Date("2026-03-31T00:00:00+08:00") }]
+// }
+// console.log(exports.isCentreOpen(testCentre, "2026-03-30"))  // false (closed)
+// console.log(exports.isCentreOpen(testCentre, "2026-03-31"))  // false (closed, last day)
+// console.log(exports.isCentreOpen(testCentre, "2026-04-01"))  // true  (open again)
 
 
 //Step 4:  Check if everyone can eat at that hawker centre
@@ -151,7 +149,6 @@ exports.getValidDishes = async function (centre, planDate) {
         if (restThatDay) {
             continue
         }
-
         // 'sold out' or 'closed early' only matter if the plan is today and they were set today
         const updatedToday = stall.status_updated_at && stall.status_updated_at.toLocaleDateString("en-CA", {timeZone: "Asia/Singapore"}) === today
 
@@ -176,10 +173,23 @@ exports.getValidDishes = async function (centre, planDate) {
 
 }
 
+/* Final step, where we rank the candidate centres into:
+good: everyone can eat
+unknown: this is for not seeded stalls (not included in demo)
+bad: someone cant eat there, or no stall is open that day */
 
-// last step: rank the candidates =====
-// Sorts the nearest open centres into:
-//   good:    everyone can eat (checked against real dishes)
-//   unknown: no dishes in our data yet, so we can't check
-// Centres where someone CAN'T eat are dropped.
-// Returns good centres first, then unknown ones (each already nearest-first).
+const CANDIDATE_CENTRES = 15 
+
+exports.rankCentres = async function (plan,centres) {
+    const candidates = exports.findCentreCandidates(centres,plan, CANDIDATE_CENTRES)
+    const goodCentres = []
+
+    for (const candidate of candidates) {
+        const dishes = await exports.getValidDishes(candidate.centre, plan.date)
+
+        if (dishes.length > 0 && exports.canEveryoneEat(plan.members, dishes)) {
+            goodCentres.push(candidate.centre)
+        }
+    }
+    return goodCentres
+}
