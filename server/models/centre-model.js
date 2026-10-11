@@ -31,3 +31,7 @@ exports.countCentres = function() {
 exports.findSomeCentres = function(count) {
     return Centre.find().limit(count)
 }
+
+exports.findAllCentres = function() {
+    return Centre.find()
+}
