@@ -88,10 +88,12 @@ async function addToPlan(data) {
     planLoading.value = true
     planError.value = ''
 
+     const memberId = localStorage.getItem(`memberId-${data.code}`)
     try {
         await axios.post(`${API_URL}/plans/${data.code}/shortlist`, {
             centre_id: data.centre.centre_id,
-            added_by: data.name
+            added_by: data.name,
+            member_id: memberId
         })
 
         // remember it so the card shows "Added to plan ..."
