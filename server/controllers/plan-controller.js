@@ -1,7 +1,10 @@
 const Plan = require("../models/plan-model")
 const Centre = require("../models/centre-model")
 const { getLatLng } = require("../utils/onemap-helper")
-const { rankCentres } = require("../utils/shortlist-helper")
+const { rankCentres, getDistance, getValidDishes, canMemberEat } = require("../utils/shortlist-helper") //for Swiping Card
+const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Swiping Card
+const { summariseCrowd } = require("./centres-controller") //for Swiping Card
+const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
 const Stall = require("../models/stall-model") //ADDED for Dish Search
 const MAX_SHORTLIST = 5 //ADDED for Dish Search
 
@@ -96,7 +99,16 @@ exports.getPlan = async(req,res) => {
         if (!plan) {
             return res.status(404).json({error: "Plan not found!"})
     }
-        res.json(plan)
+        const data = plan.toObject()    //plain copy to safely change (for swiping)
+        data.finishedIds = getFinishedIds(plan)     //members who finished swiping
+
+        if (plan.status === "done") {
+            data.results = getResults(plan)     //revealing the results once all done
+        } else {
+            data.swipes = []    //keep swipes secret until everyone is done
+        }
+
+        res.json(data)
 
     } catch(error) {
         console.error(error)
@@ -249,5 +261,146 @@ exports.addToShortlist = async (req, res) => {
     } catch(error) {
         console.error(error)
         res.status(500).json({error: "Could not add to plan. Please try again."})
+    }
+}
+
+//GET /api/plans/:code/cards?memberId=...
+//swipe cards for ONE member (crowd level, distance from them & stalls for them)
+exports.getSwipeCards = async (req, res) => {
+    const code = req.params.code
+    const memberId = req.query.memberId
+
+    try {
+        const plan = await Plan.findByCode(code)
+
+        if (!plan) {
+            return res.status(404).json({error: "Plan not found!"})
+        }
+
+        let me = null
+        for (const member of plan.members) {
+            if (String(member._id) === String(memberId)) {
+                me = member
+            }
+        }
+        if (!me) {
+            return res.status(403).json({error: "Join the plan first."})
+        }
+        if (plan.status === "joining") {
+            return res.status(400).json({error: "Swiping hasn't started yet."})
+        }
+
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+        const cards = []
+
+        for (const item of plan.shortlist) {
+            const centre = item.centre_id
+            if (!centre) {
+                continue
+            }
+
+            //Dishes THIS member can eat at this centre (within diet + budget)
+            const openDishes = await getValidDishes(centre, plan.date)
+            const myDishes = openDishes.filter(dish => canMemberEat(me, dish))
+
+            //Find the stalls by the dishes (Set removes dupes, Map looks up)
+            const stallIds = [...new Set(myDishes.map(dish => String(dish.stall_id)))]
+            const stalls = await Stall.find({_id: {$in: stallIds}})
+
+            const suitableStalls = stalls.map(stall => ({
+                name: stall.name,
+                dishes: myDishes
+                    .filter(dish => String(dish.stall_id) === String(stall._id))
+                    .map(dish => ({name: dish.name, price: dish.price}))
+            }))
+
+            //Crowd level from the reports of the last hour only
+            const reports = await CrowdReport.find({
+                centreId: centre.id,
+                createdAt: {$gte: oneHourAgo}
+            }).sort({createdAt: -1}).lean()
+
+            cards.push({
+                centreId: centre._id,
+                name: centre.name,
+                address: centre.address,
+                photoUrl: centre.photoUrl,
+                foodStalls: centre.foodStalls,
+                distanceKm: Math.round(getDistance(me, centre) * 10) / 10,
+                crowd: summariseCrowd(reports),
+                stalls: suitableStalls
+            })
+        }
+
+        res.json({cards})
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({error: "Could not load the swipe cards."})
+    }
+}
+
+//POST /api/plans/:code/swipes   body: { memberId, swipes: [{centreId, liked}, ...] }
+//saves ONE member's swipes. Only when all members done, then select winning centre
+exports.submitSwipes = async (req, res) => {
+    const code = req.params.code
+    const {memberId, swipes} = req.body || {}
+
+    if (!memberId || !Array.isArray(swipes)) {
+        return res.status(400).json({error: "Member and swipes are required!"})
+    }
+
+    try {
+        const plan = await Plan.findByCode(code)
+
+        if (!plan) {
+            return res.status(404).json({error: "Plan not found!"})
+        }
+        if (plan.status !== "swiping") {
+            return res.status(400).json({error: "This plan is not swiping right now."})
+        }
+
+        const isMember = plan.members.some(member => String(member._id) === String(memberId))
+        if (!isMember) {
+            return res.status(403).json({error: "Only members of this plan can swipe."})
+        }
+
+        if (getFinishedIds(plan).includes(String(memberId))) {
+            return res.status(400).json({error: "You have already sent your swipes."})
+        }
+
+        // the swipes must cover every shortlisted centre exactly once
+        const centreIds = plan.shortlist
+            .filter(item => item.centre_id)
+            .map(item => String(item.centre_id._id))
+        const swipedIds = swipes.map(swipe => String(swipe.centreId))
+        const coversAll = swipedIds.length === centreIds.length && centreIds.every(id => swipedIds.includes(id))
+
+        if (!coversAll) {
+            return res.status(400).json({error: "Please swipe on every centre."})
+        }
+
+        const newSwipes = swipes.map(swipe => ({
+            memberId: memberId,
+            centreId: swipe.centreId,
+            liked: swipe.liked === true
+        }))
+        await Plan.addSwipes(code, newSwipes)
+
+        //fetch again so the new swipes are included to see once everyone is done.
+        const freshPlan = await Plan.findByCode(code)
+        const finishedIds = getFinishedIds(freshPlan)
+
+        if (finishedIds.length === freshPlan.members.length) {
+            const results = getResults(freshPlan)
+            // no winner if nobody liked anything
+            const winnerId = results.length > 0 && results[0].likes > 0 ? results[0].centreId : null
+            await Plan.finishPlan(code, winnerId)
+        }
+
+        res.json({message: "Swipes saved.", finished: finishedIds.length, total: freshPlan.members.length})
+
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({error: "Could not save your swipes."})
     }
 }

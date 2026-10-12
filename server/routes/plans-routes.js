@@ -11,4 +11,7 @@ router.post("/:code/start", plansController.startSwiping)
 
 router.post("/:code/shortlist", plansController.addToShortlist) //ADDED for Dish Search
 
+router.get("/:code/cards", plansController.getSwipeCards)   //for swiping
+router.post("/:code/swipes", plansController.submitSwipes)
+
 module.exports = router

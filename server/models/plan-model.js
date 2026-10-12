@@ -120,3 +120,21 @@ exports.setShortlist = function (code, newShortList) {
     { returnDocument: "after" }
   )
 }
+
+//Save one member's swipes ($each pushes every item of the array)
+exports.addSwipes = function(code, newSwipes) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {swipes: {$each: newSwipes}}},
+    {returnDocument: "after"}
+  )
+}
+
+//Everyone has swiped: save the winner and finish plan
+exports.finishPlan = function(code, winnerId) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$set: {status: "done", winner: winnerId}},
+    {returnDocument: "after"}
+  )
+}
