@@ -445,5 +445,6 @@ async function submitCrowdReport(req, res, next) {
 module.exports = {
   listCentres,
   getCentre,
-  submitCrowdReport
+  submitCrowdReport,
+  summariseCrowd
 }

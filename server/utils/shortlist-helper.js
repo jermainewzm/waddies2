@@ -90,6 +90,8 @@ function canMemberEat(member,dish) {
     return false
 }
 
+exports.canMemberEat = canMemberEat     //for swiping (to check a person against a dish)
+
 //Step 5: Does this centre have dishes that every member can eat?
 exports.canEveryoneEat = function (members, dishes) {
     for (const member of members) {
