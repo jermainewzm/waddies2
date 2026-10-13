@@ -31,10 +31,10 @@ async function seedShoutouts() {
         }
 
         const messages = [
-            "Fresh roast chicken available today!",
-            "Fresh fish soup until sold out!",
-            "Curry rice special today!",
-            "Fresh batch out now!"
+            "Fresh steamed chicken available today! - Sunrise Chicken Rice",
+            "Fresh fish soup until sold out! - Bismillah Chicken Rice",
+            "Curry rice special today! - Warung Selera Nasi Padang",
+            "Fresh batch out now! - Prata Paradise"
         ]
 
         const now = new Date()
