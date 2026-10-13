@@ -182,7 +182,7 @@ async function seedPilotStalls() {
     const dishes = []
 
     for (let c = 0; c < centres.length; c++) {
-      const centreId = String(centres[c]._id)        // stalls store centre_id as text
+      const centreId = String(centres[c].serialNo)        // stalls store centre_id as text
 
       // Small price difference between centres (+$0, +$0.50 or +$1)
       const priceOffset = (c % 3) * 0.5

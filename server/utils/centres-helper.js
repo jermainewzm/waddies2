@@ -45,7 +45,7 @@ exports.formatCentre = function(record) {
 
 
     return {
-        id: String(record._id ?? record.serial_no),
+        serialNo: String(record.serial_no).trim(),
         name: record.name,
         address: record.address_myenv,
         lat: Number(record.latitude_hc),
