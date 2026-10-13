@@ -316,7 +316,7 @@ exports.getSwipeCards = async (req, res) => {
 
             //Crowd level from the reports of the last hour only
             const reports = await CrowdReport.find({
-                centreId: centre.id,
+                centreId: String(centre.serialNo),
                 createdAt: {$gte: oneHourAgo}
             }).sort({createdAt: -1}).lean()
 
