@@ -1,5 +1,20 @@
 const Stall = require("../models/stall-model")
 const Dish = require("../models/dish-model")
+const CrowdReport = require("../models/crowd-report-model")
+const {summariseCrowd} = require("../controllers/centres-controller")
+
+
+/* extra "km" for how crowded a centre is right now.
+Full is worth 1.5km of extra travel
+*/
+const CROWD_PENALTY_KM = {
+    plenty: 0,
+    few: 0.5,
+    full: 1.5
+}
+
+const RECENT_REPORT_MS = 60 * 60 * 1000 // only reports from the last hour
+const PLAN_SOON_MS = 2 * 60 * 60 * 1000 //crowd only matters if the plan starts within 2hrs
 
 //Step 1: Find middle of everyone's location
 exports.getMidPoint = function(members) {
@@ -175,6 +190,13 @@ exports.getValidDishes = async function (centre, planDate) {
 
 }
 
+ function isPlanSoon(plan) {
+    const planTime = new Date(`${plan.date}T${plan.time}:00+08:00`) 
+    const timeRemaining =  planTime.getTime() - Date.now()
+
+    return timeRemaining <= PLAN_SOON_MS
+}
+
 /* Final step, where we rank the candidate centres into:
 good: everyone can eat
 unknown: this is for not seeded stalls (not included in demo)
@@ -184,14 +206,45 @@ const CANDIDATE_CENTRES = 15
 
 exports.rankCentres = async function (plan,centres) {
     const candidates = exports.findCentreCandidates(centres,plan, CANDIDATE_CENTRES)
-    const goodCentres = []
+    const goodCandidates = []
 
     for (const candidate of candidates) {
         const dishes = await exports.getValidDishes(candidate.centre, plan.date)
 
         if (dishes.length > 0 && exports.canEveryoneEat(plan.members, dishes)) {
-            goodCentres.push(candidate.centre)
+            goodCandidates.push(candidate)
         }
+    }
+    if (isPlanSoon(plan)) {
+        const serialNo = []
+        for (const candidate of goodCandidates) {
+            serialNo.push(String(candidate.centre.serialNo))
+        }
+
+        const timeSince = new Date(Date.now() - RECENT_REPORT_MS)
+        const reports = await CrowdReport.find({
+            centreId: {$in: serialNo},
+            createdAt: {$gte: timeSince}
+        })
+
+        for (const candidate of goodCandidates) {
+            const centreReports = [] //this centre's reports only
+            for (const report of reports) {
+                if (report.centreId === String(candidate.centre.serialNo)) {
+                    centreReports.push(report)
+                }
+            }
+            let penalty = 0
+            if (centreReports.length > 0) {
+                penalty = CROWD_PENALTY_KM[summariseCrowd(centreReports).level]
+            }
+            candidate.score = candidate.distance + penalty
+        }
+        goodCandidates.sort((a,b) => a.score - b.score)
+    }
+    const goodCentres = []
+    for (const candidate of goodCandidates) {
+        goodCentres.push(candidate.centre)
     }
     return goodCentres
 }
