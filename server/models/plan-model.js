@@ -138,3 +138,7 @@ exports.finishPlan = function(code, winnerId) {
     {returnDocument: "after"}
   )
 }
+
+exports.findWinnerByCode = function(code) {
+  return Plan.findOne({code:code}).populate('winner')
+}
