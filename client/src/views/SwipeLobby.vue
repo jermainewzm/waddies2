@@ -223,7 +223,7 @@ onUnmounted(() => {
         <p v-else class="text-center text-muted">
           Nobody liked any of the centres. Try a new plan with different choices.
         </p>
-
+        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn btn-hh-red w-100 mb-4"> Take me there!</button>
         <h3 class="h6 fw-bold mb-2">All centres</h3>
         <div v-for="result in plan.results" :key="result.centreId"
              class="result-row d-flex justify-content-between">
