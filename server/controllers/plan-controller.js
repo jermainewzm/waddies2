@@ -1,6 +1,6 @@
 const Plan = require("../models/plan-model")
 const Centre = require("../models/centre-model")
-const { getLatLng } = require("../utils/onemap-helper")
+const { getLatLng, getRoute } = require("../utils/onemap-helper")
 const { rankCentres, getDistance, getValidDishes, canMemberEat } = require("../utils/shortlist-helper") //for Swiping Card
 const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Swiping Card
 const { summariseCrowd } = require("./centres-controller") //for Swiping Card
@@ -402,5 +402,42 @@ exports.submitSwipes = async (req, res) => {
     } catch (error) {
         console.error(error)
         res.status(500).json({error: "Could not save your swipes."})
+    }
+}
+
+/* GET /api/plans/:code/route?memberId=...
+   One member's public transport route to the winning centre. */
+exports.getRouteToWinner = async (req,res) => {
+    const code = req.params.code
+    const memberId = req.query.memberId
+    try {
+        const plan = await Plan.findWinnerByCode(code)
+
+        if (!plan) {
+            return res.status(404).json({error: "Plan not found!"})
+        }
+    
+        let me = null
+        for (const member of plan.members) {
+            if (String(member._id) === String(memberId)) {
+                me = member
+            }
+        }
+        if (!me) {
+            return res.status(403).json({error: "Join the plan first."})
+        }
+        if (plan.status !== "done" || !plan.winner) {
+            return res.status(400).json({error: "The group hasn't picked a centre yet!"})
+        }
+        const routeToCentre = await getRoute(me, plan.winner, plan.date, plan.time, plan.winner.name)
+
+        if (!routeToCentre) {
+            return res.status(502).json({error: "Could not find a route to this centre."})
+        }
+
+        res.json(routeToCentre)
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({error: "Could not load the route."})
     }
 }
