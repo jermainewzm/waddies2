@@ -56,7 +56,7 @@ function toRoutingDate(planDate) {
 /* Public transport route from one point to another, at the plan's date and time.
    start/end are { lat, lng }. Returns null if no route is found. */
 
-exports.getRoute = async function (start, end, planDate, planTime) {
+exports.getRoute = async function (start, end, planDate, planTime, centreName) {
     const response = await axios.get("https://www.onemap.gov.sg/api/public/routingsvc/route" , {
         params: {
             start: `${start.lat},${start.lng}`,
@@ -73,9 +73,9 @@ exports.getRoute = async function (start, end, planDate, planTime) {
 
     const itineraries = response.data.plan.itineraries
 
-    if (!iternararies || itineraries.length === 0) {
+    if (!itineraries || itineraries.length === 0) {
         return null
-}   
+    }   
     const bestRoute = itineraries[0]
 
     const legs = []
@@ -85,14 +85,16 @@ exports.getRoute = async function (start, end, planDate, planTime) {
             mode: leg.mode,
             minutes: Math.round(leg.duration /60),
             service: leg.routeShortName || "",
-            to: leg.to.name
+            to: leg.to.name === "Destination" ? centreName : leg.to.name,
+            geometry: leg.legGeometry.points
         })
     }
 
     return {
-        totalMinutes: Math.round(bestRoute.duration/60 ),
+        totalMinutes: Math.round(bestRoute.duration /60 ),
         fare: bestRoute.fare,
         transfers: bestRoute.transfers,
         legs: legs
     }
+}
 
