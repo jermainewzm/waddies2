@@ -90,7 +90,7 @@ function formatStationName(name) {
     if (word === "MRT" || word === "LRT") {
       result += word + " "
     } else {
-      result += word.charAt(0) + word.slice(1).toLowerCase() + " "
+      result += word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() + " "
     }
   }
 
