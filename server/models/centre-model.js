@@ -7,7 +7,7 @@ const closureSchema = new mongoose.Schema({
 })
 
 const centreSchema = new mongoose.Schema({
-    id: {type: String, required: true, unique: true},
+    serialNo : {type: String, required: true, unique: true},
     name: {type: String, required: true, unique: true},
     address: {type: String},
     lat: {type: Number, required: true},
@@ -26,4 +26,12 @@ exports.addCentre = function(centre) {
 
 exports.countCentres = function() {
     return Centre.countDocuments()
+}
+
+exports.findSomeCentres = function(count) {
+    return Centre.find().limit(count)
+}
+
+exports.findAllCentres = function() {
+    return Centre.find()
 }

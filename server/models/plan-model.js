@@ -23,6 +23,22 @@ const memberSchema = new mongoose.Schema({
     required: true }
 })
 
+//ADDED for Dish Search: one centre on the plan's shortlist
+const shortlistSchema = new mongoose.Schema({
+  centre_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Centre",
+    required: true
+  },
+  added_by: {
+    type: String,
+    default: ""
+  },
+  added_by_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null
+  }
+})
 const planSchema = new mongoose.Schema({
     code: { 
       type: String, 
@@ -48,15 +64,24 @@ const planSchema = new mongoose.Schema({
       enum: ["joining", "swiping", "done"],
       default: "joining"
     },
-    shortlist: [shortlistSchema] //ADDED for Dish Search
-  },
-  { timestamps: true }
+    shortlist: [shortlistSchema], //ADDED for Dish Search
+
+    swipes : [
+      {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
+       centreId: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", required: true},
+       liked: {type: Boolean, required: true}
+    }
+    ],
+
+    winner: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", default: null}
+    },
+    { timestamps: true }
 )
 
 const Plan = mongoose.model("Plan", planSchema, "plan")
 
 exports.findByCode = function (code) {
-  return Plan.findOne({ code: code })
+  return Plan.findOne({ code: code }).populate('shortlist.centre_id')
 }
 
 exports.addPlan = function (code, name, date, time) {
@@ -83,6 +108,37 @@ exports.addToShortlist = function(code, item) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$push: {shortlist: item}},
-    {new: true}
+    { returnDocument: "after" }
   )
+}
+
+// Replace the plan's shortlist with a new list
+exports.setShortlist = function (code, newShortList) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    { $set: {shortlist: newShortList}},
+    { returnDocument: "after" }
+  )
+}
+
+//Save one member's swipes ($each pushes every item of the array)
+exports.addSwipes = function(code, newSwipes) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {swipes: {$each: newSwipes}}},
+    {returnDocument: "after"}
+  )
+}
+
+//Everyone has swiped: save the winner and finish plan
+exports.finishPlan = function(code, winnerId) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$set: {status: "done", winner: winnerId}},
+    {returnDocument: "after"}
+  )
+}
+
+exports.findWinnerByCode = function(code) {
+  return Plan.findOne({code:code}).populate('winner')
 }

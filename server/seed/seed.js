@@ -11,8 +11,8 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') })
 
 const { fetchAllCentres, formatCentre } = require('../utils/centres-helper')
 const centreModel = require('../models/centre-model')
-const User = require("../models/user-model")
-const {adminUsers} = require("./hawkerTestData")
+// const User = require("../models/user-model") 
+const {adminUsers} = require("./hawker-test-data")
 
 async function seed() {
     try {

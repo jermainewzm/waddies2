@@ -192,26 +192,46 @@ onUnmounted(() => {
 <template>
   <div v-if="!isLoading && plan" class="container py-4">
     <div class="row g-4">
-      <div class="col-12 col-lg-5">
-        <div class="plan-card"> 
-          <h1 class="display-6 fw-bold mb-1">{{ plan.name }}</h1>
-          <p class="plan-date">{{ formatDate(plan.date) }} · {{ formatTime(plan.time) }}</p>
-          <div class="code-row">
-            <p class="code-label">Plan code: </p>
-            <p class="code">{{ plan.code }}</p>
+            <div class="col-12 col-lg-5">
+        <div class="plan-card">
+          <div class="text-center">
+            <div class="food-icon">🍜</div>
+            <h1 class="plan-name mb-1">{{ plan.name }}</h1>
+            <span class="plan-type">MAKAN PLAN</span>
           </div>
-          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }} </span> </h2>
+          <div class="plan-details">
+            <div class="plan-detail">
+              <span class="detail-icon">📅</span>
+              <div>
+                <small>Date</small>
+                <strong>{{ formatDate(plan.date) }}</strong>
+              </div>
+            </div>
+            <div class="plan-detail">
+              <span class="detail-icon">🕐</span>
+              <div>
+                <small>Time</small>
+                <strong>{{ formatTime(plan.time) }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="text-center mt-3">
+            <small class="code-label">PLAN CODE</small>
+            <p class="preview-code mb-0">{{ plan.code }}</p>
+          </div>
+
+          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h2>
           <div class="members-list">
-          <div class="member-card"
-              v-for="(member, index) in plan.members" :key="member._id">
+            <div class="member-card" v-for="(member, index) in plan.members" :key="member._id">
               <span class="avatar">{{ member.name.charAt(0).toUpperCase() }}</span>
               <span class="fw-bold member-name">{{ member.name }}</span>
               <!-- the first person to join is the host -->
               <span v-if="index === 0" class="member-badge host">Host</span>
               <!-- this member's _id matches the one saved in my browser = this is me -->
-              <span v-if="member._id === myId" class="member-badge you">You</span>   
+              <span v-if="member._id === myId" class="member-badge you">You</span>
+            </div>
           </div>
-          </div>
+
         </div>
       </div>
         <div class="col-12 col-lg-7">
@@ -314,6 +334,71 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+
+.plan-card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 35px rgba(59, 42, 32, 0.12);
+}
+
+.food-icon {
+  font-size: 30px;
+  margin-bottom: 4px;
+}
+
+.plan-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.plan-type {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--hh-red);
+}
+
+.plan-details {
+  margin-top: 24px;
+  padding: 18px 20px;
+  background-color: var(--hh-steel);
+  border-radius: 12px;
+}
+
+.plan-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.plan-detail:last-child {
+  margin-bottom: 0;
+}
+
+.plan-detail small {
+  display: block;
+  color: #777;
+}
+
+.code-label {
+  display: block;
+  margin-top: 0;
+  color: #777;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.preview-code {
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: var(--hh-kopi);
+}
+
 #map {
   height: 280px;
 }

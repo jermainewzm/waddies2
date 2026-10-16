@@ -1,4 +1,4 @@
 module.exports = {
-    id: "user_hawker_004",
+    id: "seed_owner",
     role: "hawker"
 }

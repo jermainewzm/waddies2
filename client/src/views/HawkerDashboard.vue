@@ -12,6 +12,12 @@ import ShoutoutForm from '../components/ShoutoutForm.vue'
 
 const stall = ref(null)
 const errorMsg = ref('')
+
+const statusError = ref('')
+const restDaysError = ref('')
+const dishError = ref('')
+const shoutoutError = ref('')
+
 const loading = ref(true)
 
 const dishes = ref([])
@@ -61,10 +67,10 @@ async function updateStatus(newStatus) {
         )
 
         stall.value = response.data
-        errorMsg.value = ''
+        statusError.value = ''
 
     } catch (error) {
-        errorMsg.value =
+        statusError.value =
             'Unable to update stall status.'
     }
 }
@@ -82,10 +88,10 @@ async function updateRestDays(newRestDays) {
         )
 
         stall.value = response.data
-        errorMsg.value = ''
+        restDaysError.value = ''
 
     } catch (error) {
-        errorMsg.value =
+        restDaysError.value =
             'Unable to update rest days.'
     }
 }
@@ -99,9 +105,10 @@ async function loadDishes() {
         )
 
         dishes.value = response.data
+        dishError.value= ''
 
     } catch (error) {
-        errorMsg.value =
+        dishError.value =
             'Unable to load dishes.'
     }
 }
@@ -114,10 +121,10 @@ async function deleteDish(id) {
         )
 
         await loadDishes()
-        errorMsg.value = ''
+        dishError.value = ''
 
     } catch (error) {
-        errorMsg.value =
+        dishError.value =
             'Unable to delete dish.'
     }
 }
@@ -131,10 +138,10 @@ async function addDish(newDish) {
         )
 
         await loadDishes()
-        errorMsg.value = ''
+        dishError.value = ''
 
     } catch (error) {
-        errorMsg.value =
+        dishError.value =
             'Unable to add dish.'
     }
 }
@@ -148,10 +155,10 @@ async function updateDish(id, updatedDish) {
         )
 
         await loadDishes()
-        errorMsg.value = ''
+        dishError.value = ''
 
     } catch (error) {
-        errorMsg.value =
+        dishError.value =
             'Unable to update dish.'
     }
 }
@@ -173,8 +180,10 @@ async function loadShoutout() {
             shoutoutMessage.value = ''
         }
 
+        shoutoutError.value = ''
+
     } catch (error) {
-        errorMsg.value =
+        shoutoutError.value =
             'Unable to load today\'s shout-out.'
     }
 }
@@ -192,13 +201,12 @@ async function saveShoutout() {
         shoutout.value =
             response.data.shoutout
 
-        shoutoutMessage.value =
-            response.data.shoutout.message
+        shoutoutMessage.value = ''
 
-        errorMsg.value = ''
+        shoutoutError.value = ''
 
     } catch (error) {
-        errorMsg.value =
+        shoutoutError.value =
             'Unable to save shout-out.'
     }
 }
@@ -261,17 +269,34 @@ onMounted(async () => {
                 @update-status="updateStatus"
             />
 
+            <div  v-if="statusError"
+                class="alert alert-danger mt-2">
+                {{ statusError }}
+            </div>
+
 
             <RestDaysForm
                 :rest-days="stall.rest_days"
                 @update-rest-days="updateRestDays"
             />
 
-
+            <div
+                v-if="restDaysError"
+                class="alert alert-danger mt-2"
+            >
+                {{ restDaysError }}
+            </div>
+            
             <DishForm
                 @add-dish="addDish"
             />
 
+            <div
+                v-if="dishError"
+                class="alert alert-danger mt-2"
+            >
+                {{ dishError }}
+            </div>
 
             <DishList
                 :dishes="dishes"
@@ -288,6 +313,13 @@ onMounted(async () => {
                 "
                 @save-shoutout="saveShoutout"
             />
+
+            <div
+                v-if="shoutoutError"
+                class="alert alert-danger mt-2"
+            >
+                {{ shoutoutError }}
+            </div>
 
         </div>
 

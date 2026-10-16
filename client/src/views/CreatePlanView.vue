@@ -152,8 +152,8 @@ function formatTime(time) {
            <div class="section-label">
             02
            </div>
-           <h2 class="hh-display mb-2"> What your friends see </h2>
-           <p class="text-muted mb-4"> This is what your plan will look like when they join.</p>
+           <h2 class="hh-display mb-2"> Your plan preview </h2>
+           <p class="text-muted mb-4"> This is how your plan will appear in the lobby.</p>
 
            <div class="plan-preview">
 
@@ -188,9 +188,9 @@ function formatTime(time) {
           </div>
         </div>
         <div class="join-section text-center">
-          <small class="text-muted fw-bold">ENTER CODE TO JOIN</small>
-          <input class="form-control mt-2" disabled placeholder="Enter 6-digit code"/>
-          <button class="btn btn-hh-red fw-bold w-100 mt-3" > Join Plan → </button>
+          <small class="text-muted fw-bold">PLAN CODE</small>
+          <p class="preview-code mt-2 mb-0">{{ code || '------' }}</p>
+          <small class="text-muted"> {{ code ? 'Share this with your friends' : 'Your code appears here once you create the plan' }}</small>
         </div>
           </div>
         </div>
@@ -291,8 +291,8 @@ function formatTime(time) {
 }
 
 .form-control:focus {
-  border-color: #6b8e5a;
-  box-shadow: 0 0 0 3px rgba(107, 142, 90, 0.15);
+  border-color: #c4521f;
+  box-shadow: 0 0 0 3px rgba(196, 82, 31, 0.15);
 }
 
 .plan-details {
@@ -363,4 +363,10 @@ function formatTime(time) {
   box-shadow: 0 8px 0 #154a49;
 }
 
+.preview-code {
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: var(--hh-kopi);
+}
 </style>
