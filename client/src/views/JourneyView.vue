@@ -171,6 +171,16 @@ function legTitle(leg) {
   return getMRTLine(leg.service)
 }
 
+// a round white badge with emoji inside (plain html)
+function makeIcon(emoji, size, ring = "white") {
+  return L.divIcon({
+    className: "",    //removes Leaflet's default white box
+    html: `<div class="map-icon" style="width:${size}px; height:${size}px; font-size:${Math.round(size*0.55)}px; border-color:${ring}">${emoji}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2]    //center of the badge sits on the point
+  })
+}
+
 function drawMap() {
   // remove an earlier map first (e.g. after "Try again")
   if (map) {
@@ -195,36 +205,49 @@ function drawMap() {
 
     const line = L.polyline(points, {
       color: legColour(leg),
-      weight: 5,
-      opacity: 0.9,
-      dashArray: leg.mode === "WALK" ? "2 10" : null,   // dotted for walking
+      weight: 7,
+      opacity: 1,
+      dashArray: leg.mode === "WALK" ? "1 14" : null,   // dotted for walking
       lineCap: "round"
     }).addTo(map)
 
     line.bindTooltip(`${legTitle(leg)} · ${leg.minutes} min`, { sticky: true })
     line.on("click", () => selectLeg(index))
     legLines.push(line)
+
+    //icons for where you board: bus icon for buses and train for MRT/LRT
+    if (leg.mode !== "WALK" && points.length > 0) {
+      const isBus = leg.mode === "BUS"
+      const previousLeg = index > 0 ? routeLegs.value[index-1] : null
+
+      //bus: number to take, train: station name
+      const label = isBus ? `Bus ${leg.service}` : (previousLeg ? formatStationName(previousLeg.to) : legTitle(leg)) 
+      L.marker(points[0], { icon: makeIcon(isBus ? "🚌" : "🚆", 30) })
+        .addTo(map)
+        .bindTooltip(label, { direction: "top", offset: [0, -16] })
+    }
   }
 
   if (allPoints.length === 0) {
     return
   }
 
-  // green dot = where you start (first point), red dot = the hawker centre (last point)
+  // green dot = where you start (first point)
   endMarkers.push(
     L.circleMarker(allPoints[0], {
       radius: 9, color: "white", weight: 3, fillColor: "#2f9e44", fillOpacity: 1
     }).addTo(map).bindTooltip("You start here")
   )
-  endMarkers.push(
-    L.circleMarker(allPoints[allPoints.length - 1], {
-      radius: 11, color: "white", weight: 3, fillColor: "#c8372d", fillOpacity: 1
-    }).addTo(map).bindTooltip("Your hawker centre")
-  )
+
+  //hawker centre: food icon (end point)
+  const lastLeg = routeLegs.value[routeLegs.value.length - 1]
+  L.marker(allPoints[allPoints.length-1], { icon: makeIcon("🍜", 40, "#c8372d") })
+    .addTo(map)
+    .bindTooltip(lastLeg.to || "Your hawker centre", { direction: "top", offset: [0, -22] })
 
   // zoom so the whole route fits, with some breathing room
   routeBounds = L.latLngBounds(allPoints)
-  map.fitBounds(routeBounds, { padding: [30, 30] })
+  map.fitBounds(routeBounds, { padding: [25, 25] })
 }
 
 const selectedLeg = ref(null)      // which step is highlighted (null = none)
@@ -236,8 +259,8 @@ function styleLines() {
     const nothingSelected = selectedLeg.value === null
 
     legLines[i].setStyle({
-      weight: isSelected ? 9 : 5,
-      opacity: (nothingSelected || isSelected) ? 0.9 : 0.25
+      weight: isSelected ? 9 : 7,
+      opacity: (nothingSelected || isSelected) ? 1 : 0.75
     })
 
     if (isSelected) {
@@ -337,7 +360,7 @@ onUnmounted(() => {
         </p>
       </section>
 
-      <!-- Map placeholder -->
+      <!-- Map -->
       <section class="card shadow-sm border-0 rounded-4 p-4 mb-4">
         <h2 class="hh-display h4 mb-3">Route map</h2>
         <div id="journey-map" class="journey-map rounded-3"></div>
@@ -350,7 +373,6 @@ onUnmounted(() => {
         <div v-for="(leg, index) in routeLegs" v-bind:key="index" 
           class="d-flex gap-3 mb-4"
           v-bind:class="{'step-active' : selectedLeg === index }"
-          role="button" tabindex="0"
           v-on:click="selectLeg(index)">
           <div class="journey-icon rounded-circle d-flex
             align-items-center justify-content-center">
@@ -400,10 +422,15 @@ onUnmounted(() => {
   z-index: 0;   /* keeps map from floating over navbar when scrolling */
 }
 
-@media (max-width: 576px) {
-  .journey-map {
-    height: 300px;  /* shorter on phones */
-  }
+/* icon badges (need deep to reach the html made by Leaflet*/
+.journey-map :deep(.map-icon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .journey-step {
