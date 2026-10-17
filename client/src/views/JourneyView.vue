@@ -111,8 +111,11 @@ function formatStationName(name) {
 //MAP stuffs:
 let map = null            //leaflet map (plain variable that display Leaflet will manage)
 let legLines = []         //one line per leg, same order as routeLegs
-let endMarkers = []       //start and end dots
 let routeBounds = null    //area that contains the whole route
+let stopIcons = []        //bus/train icons: one for each point where a leg ends and the next begins
+let stopLayer = null      //holds only the stop icons currently shown on the map
+let startMarker = null    //the green start dot
+let endMarker = null      //the hawker centre icon
 
 //Turns OneMap's compressed text into [lat,lng] points
 function decodePolyline(encoded) {
@@ -172,10 +175,10 @@ function legTitle(leg) {
 }
 
 // a round white badge with emoji inside (plain html)
-function makeIcon(emoji, size, ring = "white") {
+function makeIcon(emoji, size, ring = "white", fill = "white") {
   return L.divIcon({
     className: "",    //removes Leaflet's default white box
-    html: `<div class="map-icon" style="width:${size}px; height:${size}px; font-size:${Math.round(size*0.55)}px; border-color:${ring}">${emoji}</div>`,
+    html: `<div class="map-icon" style="width:${size}px; height:${size}px; font-size:${Math.round(size*0.55)}px; border-color:${ring}; background:${fill}">${emoji}</div>`,
     iconSize: [size, size],
     iconAnchor: [size/2, size/2]    //center of the badge sits on the point
   })
@@ -187,7 +190,9 @@ function drawMap() {
     map.remove()
   }
   legLines = []
-  endMarkers = []
+  stopIcons = []
+  startMarker = null
+  endMarker = null
 
   // start zoomed out over Singapore; we zoom to the route below
   map = L.map("journey-map").setView([1.3521, 103.8198], 11)
@@ -195,6 +200,8 @@ function drawMap() {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map)
+
+  stopLayer = L.layerGroup().addTo(map)     // a box we can empty and refill with icons for each step
 
   let allPoints = []
 
@@ -215,16 +222,19 @@ function drawMap() {
     line.on("click", () => selectLeg(index))
     legLines.push(line)
 
-    //icons for where you board: bus icon for buses and train for MRT/LRT
-    if (leg.mode !== "WALK" && points.length > 0) {
-      const isBus = leg.mode === "BUS"
-      const previousLeg = index > 0 ? routeLegs.value[index-1] : null
+    //the stop icon at the END of this leg (where the next leg starts)
+    //only created here: it is added to the map when a step next to it is selected
+    if (index < routeLegs.value.length - 1 && points.length > 0) {
+      const nextLeg = routeLegs.value[index + 1]
+      const vehicle = leg.mode !== "WALK" ? leg : nextLeg      // which bus/train is at this stop
+      const isBus = vehicle.mode === "BUS"
 
-      //bus: number to take, train: station name
-      const label = isBus ? `Bus ${leg.service}` : (previousLeg ? formatStationName(previousLeg.to) : legTitle(leg)) 
-      L.marker(points[0], { icon: makeIcon(isBus ? "🚌" : "🚆", 30) })
-        .addTo(map)
-        .bindTooltip(label, { direction: "top", offset: [0, -16] })
+      stopIcons.push(
+        L.marker(points[points.length - 1], { icon: makeIcon(isBus ? "🚌" : "🚆", 30) })
+          .bindTooltip(formatStationName(leg.to), { direction: "top", offset: [0, -16] })
+      )
+    } else {
+      stopIcons.push(null)       // the last leg has no icon (the 🍜 is there), but this keeps the numbering lined up
     }
   }
 
@@ -233,24 +243,70 @@ function drawMap() {
   }
 
   // green dot = where you start (first point)
-  endMarkers.push(
-    L.circleMarker(allPoints[0], {
-      radius: 9, color: "white", weight: 3, fillColor: "#2f9e44", fillOpacity: 1
-    }).addTo(map).bindTooltip("You start here")
-  )
+  startMarker = L.marker(allPoints[0], { icon: makeIcon("", 25, "white", "#2f9e44") })
+                  .addTo(map)
+                  .bindTooltip("You start here", { direction: "top", offset: [0, -12]})
 
   //hawker centre: food icon (end point)
   const lastLeg = routeLegs.value[routeLegs.value.length - 1]
-  L.marker(allPoints[allPoints.length-1], { icon: makeIcon("🍜", 40, "#c8372d") })
-    .addTo(map)
-    .bindTooltip(lastLeg.to || "Your hawker centre", { direction: "top", offset: [0, -22] })
+  endMarker = L.marker(allPoints[allPoints.length-1], { icon: makeIcon("🍜", 40, "#c8372d") })
+                .addTo(map)
+                .bindTooltip(lastLeg.to || "Your hawker centre", { direction: "top", offset: [0, -22] })
 
   // zoom so the whole route fits, with some breathing room
   routeBounds = L.latLngBounds(allPoints)
   map.fitBounds(routeBounds, { padding: [25, 25] })
+
+  // re-check whenever the zoom changes
+  map.on("zoomend", updateEndIcons)
 }
 
 const selectedLeg = ref(null)      // which step is highlighted (null = none)
+
+const OVERLAP_PX = 35     // closer than this and the icons would overlap
+
+// hide the green dot / food icon when a stop icon is shown right next to it
+function updateEndIcons() {
+  if (!map || !startMarker || !endMarker) {
+    return
+  }
+
+  for (const marker of [startMarker, endMarker]) {
+    const markerPoint = map.latLngToContainerPoint(marker.getLatLng())   // where it is on screen
+    let crowded = false
+
+    stopLayer.eachLayer(stop => {                                        // every stop icon currently shown
+      const stopPoint = map.latLngToContainerPoint(stop.getLatLng())
+      if (markerPoint.distanceTo(stopPoint) < OVERLAP_PX) {
+        crowded = true
+      }
+    })
+
+    if (crowded) {
+      marker.remove()          // take it off the map
+    } else {
+      marker.addTo(map)        // put it back (does nothing if it's already there)
+    }
+  }
+}
+
+// show only the stop icons that belong to the selected step (none if no step is selected)
+function showStopIcons(index) {
+  stopLayer.clearLayers()          // takes every stop icon off the map (they still exist in stopIcons)
+
+  if (index === null) {
+    return
+  }
+
+  if (index > 0 && stopIcons[index - 1]) {
+    stopLayer.addLayer(stopIcons[index - 1])     // where this step starts
+  }
+  if (index < routeLegs.value.length - 1 && stopIcons[index]) {
+    stopLayer.addLayer(stopIcons[index])         // where this step ends
+  }
+
+  updateEndIcons()   // hide the green dot/food icon if a stop icon is right next to it
+}
 
 // restyle every line: the selected one bold, the others faded
 function styleLines() {
@@ -260,7 +316,7 @@ function styleLines() {
 
     legLines[i].setStyle({
       weight: isSelected ? 9 : 7,
-      opacity: (nothingSelected || isSelected) ? 1 : 0.75
+      opacity: (nothingSelected || isSelected) ? 1 : 0.5
     })
 
     if (isSelected) {
@@ -268,10 +324,7 @@ function styleLines() {
     }
   }
 
-  // keep the start and end dots on top of the lines
-  for (const marker of endMarkers) {
-    marker.bringToFront()
-  }
+  showStopIcons(selectedLeg.value)
 }
 
 function selectLeg(index) {
@@ -367,7 +420,7 @@ onUnmounted(() => {
       <section class="card shadow-sm border-0 rounded-4 p-4 mb-4">
         <h2 class="hh-display h4 mb-3">Route map</h2>
         <div id="journey-map" class="journey-map rounded-3"></div>
-        <p class="text-muted small mt-2 mb-0">Tap a step below to see it on the map.</p>
+        <p class="text-muted small mt-2 mb-0">Tap a step below to zoom in and see where it starts and ends.</p>
       </section>
 
       <!-- Step-by-step directions -->
