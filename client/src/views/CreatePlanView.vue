@@ -37,6 +37,17 @@ function goToLobby() {
   router.push(`/plan/${code.value}/lobby`)
 }
 
+// most hawker stalls are closed within 6am-10pm,
+// and public transport may not be running. but we 
+//just warn the user because some centres are 24/7.
+const isOddHour = computed(() => {
+  if (!time.value) {
+    return false
+  }
+  const hour = Number(time.value.split(":")[0])
+  return hour < 6 || hour >= 22
+})
+
 const minDate = computed(() => getLocalDateString())    //earliest allowed date
 const minTime = computed(() => date.value === getLocalDateString() ? getLocalTimeString() : undefined) //earliest allowed time: only restricted when chosen date is today
 
@@ -127,6 +138,9 @@ function formatTime(time) {
             <div class="mb-3">
               <label for="time" class="form-label">Time</label>
               <input id="time" v-model="time" type="time" class="form-control" :min="minTime" />
+              <p v-if="isOddHour" class="text-warning fw-bold small mb-0 mt-1">
+                NOTE: Most hawker centres are closed at this hour, and public transport may not be running.
+              </p>
             </div>
 
             <button type="submit" class="btn btn-hh-red w-100 create-button">Create plan →</button>
@@ -141,7 +155,7 @@ function formatTime(time) {
       
         <div class="preview-tip">
             <span>💡</span>
-            <p class="mb-0 fw-bold"> Share the code with your friends so they can join your plan! </p>
+            <p class="fs-5 mb-0 fw-bold"> Head to the lobby and join first, then share the code with your friends.</p>
           </div>
       </div>
      </div>
@@ -190,7 +204,7 @@ function formatTime(time) {
         <div class="join-section text-center">
           <small class="text-muted fw-bold">PLAN CODE</small>
           <p class="preview-code mt-2 mb-0">{{ code || '------' }}</p>
-          <small class="text-muted"> {{ code ? 'Share this with your friends' : 'Your code appears here once you create the plan' }}</small>
+          <small class="text-muted"> {{ code ? 'Join the lobby first, then share this' : 'Your code appears here once you create the plan'}}</small>
         </div>
           </div>
         </div>
