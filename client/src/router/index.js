@@ -10,6 +10,7 @@ import CentresView from "../views/CentresView.vue"
 import DishSearch from "../views/DishSearch.vue"
 import CentreDetailView from "../views/CentreDetailView.vue"
 import HawkerDashboard from "../views/HawkerDashboard.vue"
+import NotFoundView from "@/views/NotFoundView.vue"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -71,8 +72,9 @@ const router = createRouter({
       component: HawkerDashboard
     },
     {
-      path: "/:pathMatch(.*)*",
-      redirect: "/plan/join" //// (.*) matches any sequence of char, then * behind allows the match to cover multiple URL segments
+      path: "/:pathMatch(.*)*", //// (.*) matches any sequence of char, then * behind allows the match to cover multiple URL segments
+      name: "not-found",
+      component: NotFoundView
     }
   ]
 })

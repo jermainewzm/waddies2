@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted} from "vue"
 import axios from "axios"
 import { API_URL, DIET_OPTIONS } from "@/utils/constants"
-import { useRoute, useRouter } from "vue-router"
+import { useRoute, useRouter, RouterLink } from "vue-router"
 
 import L from 'leaflet' //import leaflet javascript code
 import 'leaflet/dist/leaflet.css' //import leaflet css styling
@@ -46,13 +46,14 @@ async function loadPlan() {
         const response = await axios.get(`${API_URL}/plans/${code}`)
         plan.value = response.data
 
-        //we check if swiping has started and the person has joined the plan 
-        if (plan.value.status === "swiping") {
-          if (myId.value) {
-            router.push(`/plan/${code}/swipe`)
-          } else {
-            router.push('/plan/join')
-          }
+        //members who are mid-swipe belong on the swipe bage, non members see the too late card
+        if (plan.value.status === "swiping" && myId.value) {
+          router.push(`/plan/${code}/swipe`)
+          return
+        }
+        // else if plan is already finished, redirect to journey page
+        if (plan.value.status === "done" && myId.value) {
+          router.push(`/plan/${code}/swipe`)
           return
         }
         isLoading.value = false
@@ -161,6 +162,9 @@ onMounted(async () => {
     if (myId.value) {
       return
     }
+    if (plan.value.status !== "joining") {
+      return
+    }
     map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
 
     //Keep map view around SG, we pass in a nested arr of coordinates
@@ -190,10 +194,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="!isLoading && plan" class="container py-4">
+  <div class="container py-4">
     <div class="row g-4">
             <div class="col-12 col-lg-5">
-        <div class="plan-card">
+        <div v-if="plan" class="plan-card">
           <div class="text-center">
             <div class="food-icon">🍜</div>
             <h1 class="plan-name mb-1">{{ plan.name }}</h1>
@@ -235,7 +239,7 @@ onUnmounted(() => {
         </div>
       </div>
         <div class="col-12 col-lg-7">
-        <form v-if="!myId" class="w-100" v-on:submit.prevent="submitPreferences()">
+        <form v-if="plan && !myId && plan.status === 'joining'" class="w-100" v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
           <div class="mb-3">
@@ -272,6 +276,14 @@ onUnmounted(() => {
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
           <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
         </form>
+
+        <!--arrived after swiping started -->
+        <div v-else-if="plan && !myId" class="waiting-card ">
+          <h2 class="h3 fw-bold">Too late!</h2>
+          <p class="text-muted mb-0">This group has already started swiping.</p>
+          <RouterLink class="btn start-btn w-50 mt-4" to="/plan/new">Start your own plan</RouterLink>
+        </div>
+
          <div v-else class="waiting-card">
             <h2 class="h3 fw-bold">You're in!</h2>
             <div class="loading-dots">

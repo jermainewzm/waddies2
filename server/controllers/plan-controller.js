@@ -64,7 +64,7 @@ exports.joinPlan = async (req,res) => {
             return res.status(404).json({error: "No plan with that code"})
         }
 
-        if (plan.status === "swiping") {
+        if (plan.status !== "joining") {
             return res.status(400).json({error: "This plan has already started swiping"})
         }
 
@@ -435,7 +435,11 @@ exports.getRouteToWinner = async (req,res) => {
             return res.status(502).json({error: "Could not find a route to this centre."})
         }
 
-        res.json(routeToCentre)
+        res.json({...routeToCentre, centre: {
+            serialNo: plan.winner.serialNo,
+            name: plan.winner.name,
+            address: plan.winner.address
+        }})
     } catch (error) {
         console.error(error)
         res.status(500).json({error: "Could not load the route."})

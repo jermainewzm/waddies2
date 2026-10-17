@@ -358,6 +358,9 @@ onUnmounted(() => {
         <p class="mb-0 text-muted">
           {{ myRoute.transfers }} transfer(s)
         </p>
+        <p v-if="myRoute.totalMinutes > 120" class="alert alert-warning mt-3 mb-0">
+          NOTE: Long travelling time may be due to public transport running at this hour!
+        </p>
       </section>
 
       <!-- Map -->
@@ -411,6 +414,15 @@ onUnmounted(() => {
           </div>
         </div>
       </section>
+      <!-- Where to next -->
+      <div v-if="myRoute.centre" class="text-center mt-4">
+        <RouterLink class="btn btn-outline-dark me-2" v-bind:to="`/centres/${myRoute.centre.serialNo}`">
+          See live seats at the centre
+        </RouterLink>
+        <RouterLink class="btn" to="/plan/new">
+          Start a new Makan Plan
+        </RouterLink>
+      </div>
     </template>
   </main>
 </template>
