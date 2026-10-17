@@ -1,26 +1,158 @@
 @import './base.css';
 /* similar logic to constants in utils file, define once, use everywhere */
 :root {
-  --hh-red: #c8372d;
-  --hh-kopi: #3b2a20;
-  --hh-steel: #eef0f1;
+  --sun: #FFD23F;
+  --tomato: #FF5A4E;
+  --sky: #4CC9F0;
+  --pandan: #3CC47C;
+  --pink: #FF8FC7;
+  --lilac: #A78BFA;
+  --cream: #FFF6E5;
+  --paper: #FFFFFF;
+  --ink: #1D1A1A;
+  --muted: #5E554D;
+  --line: #E6DCCB;
+  --ok: #1E9E57;
+  --warn: #E89B0C;
+  --bad: #D93A2F;
 }
-
 
 body {
-  font-family: 'Archivo', Arial, sans-serif;
-  color: var(--hh-kopi);
-  background-color: var(--hh-steel);
+  background: var(--sun);
+  color: var(--ink);
+  font-family: 'Sour Gummy', 'Trebuchet MS', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.5;
 }
 
-/* 3. Big signboard-style headings */
-.hh-display {
-  font-stretch: 75%;
-  font-weight: bold;
+h1, h2, h3, h4 {
+  font-family: 'Sour Gummy', 'Trebuchet MS', sans-serif;
+  font-weight: 800;
+  line-height: 1.05;
+  margin: 0;
 }
 
-/* 4. Red button: use as class="btn btn-hh-red" */
-.btn-hh-red {
-  background-color: var(--hh-red);
-  color: white;
+.outline {
+  font-weight: 800;
+  -webkit-text-stroke: .085em var(--ink); /* adds an outline around the text*/
+  paint-order: stroke fill;
+  text-shadow: .055em .07em 0 var(--ink);
+  letter-spacing: .01em;
+}
+
+.handwritten {
+  font-family: 'Gochi Hand', 'Comic Sans MS', cursive;
+  font-weight: 400;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background-color: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink); /* horizontal offset vertical offset blur-radius color*/
+  font-weight: 800;
+  font-size: 18px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+  line-height: 1.1;
+}
+
+.btn:hover {
+  transform: translate(-2px, -2px); /*move 2px to left, 2px up */
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.btn[disabled] {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.btn.big {
+  padding: 16px 28px;
+  font-size: 23px;
+  border-radius: 20px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.btn.sm {
+  padding: 7px 12px;
+  font-size: 15px;
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn.red {
+   background: var(--tomato); 
+}
+.btn.yellow {
+   background: var(--sun); 
+}
+.btn.green {
+   background: var(--pandan); 
+}
+.btn.blue {
+   background: var(--sky); 
+}
+.btn.pink {
+   background: var(--pink); 
+}
+
+.card {
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  border-radius: 26px;
+  box-shadow: 8px 8px 0 var(--ink);
+}
+
+.bg-cups {
+  background-color: var(--sun);
+  background-image: url("@/assets/cups.svg");
+}
+
+.bg-hdb {
+  background-color: var(--sky);
+  background-image: url("@/assets/hdb.svg");
+}
+
+.bg-stools {
+  background-color: var(--pink);
+  background-image: url("@/assets/stools.svg");
+}
+
+.bg-hooks {
+  background-color: var(--pandan);
+  background-image: url("@/assets/hooks.svg");
+}
+
+.bg-tiles {
+  background-color: var(--cream);
+  background-image: url("@/assets/tiles.svg");
+}
+
+@media (max-width: 760px) {
+  .section {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
 }
