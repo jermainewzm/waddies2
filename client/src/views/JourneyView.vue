@@ -498,6 +498,12 @@ onUnmounted(() => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* hover labels (over the icons and the route lines): bigger text */
+.journey-map :deep(.leaflet-tooltip) {
+  font-size: 18px;      
+  font-weight: 600;     /* bolder text */
+}
+
 .journey-step {
   cursor: pointer;
   padding: 12px;
