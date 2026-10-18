@@ -106,6 +106,7 @@ function formatTime(time) {
 </script>
 
 <template>
+  <main class="bg-cups">
   <div class="container py-5">
 
     <!-- page heading -->
@@ -143,14 +144,14 @@ function formatTime(time) {
               </p>
             </div>
 
-            <button type="submit" class="btn btn-hh-red w-100 create-button">Create plan →</button>
+            <button type="submit" class="btn w-100 red">Create plan →</button>
           </form>
 
         <p v-if="errorMessage" class="error-message text-danger mt-3">{{ errorMessage }}</p>
 
         <div v-if="code" class="alert alert-success mt-4">
           Your makan plan code is: <strong>{{ code }}</strong>
-          <button v-on:click="goToLobby()" type="button" class="btn btn-lobby w-100 mt-3"> Go to Plan Lobby </button>
+          <button v-on:click="goToLobby()" type="button" class="btn green w-100 mt-3"> Go to Plan Lobby </button>
         </div>
       
         <div class="preview-tip">
@@ -211,6 +212,7 @@ function formatTime(time) {
      </div>
      </div>
   </div>
+  </main>
 </template>
 
 <style scoped>
@@ -273,25 +275,6 @@ function formatTime(time) {
 
 .create-plan-card h2 {
   font-size: 28px;
-}
-
-.create-button {
-  background-color: #c4521f;         
-  color: #fff4e3;
-  border-radius: 14px;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  font-size: 20px;
-  font-weight: bold;
-  box-shadow: 0 6px 0 #9e4018;        
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-
-}
-
-.create-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 0 #9e4018;  
-  
 }
 
 .form-label {

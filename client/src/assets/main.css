@@ -74,6 +74,7 @@ h1, h2, h3, h4 {
 .btn:hover {
   transform: translate(-2px, -2px); /*move 2px to left, 2px up */
   box-shadow: 6px 6px 0 var(--ink);
+  background-color: var(--paper);
 }
 
 .btn:active {

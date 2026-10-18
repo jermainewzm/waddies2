@@ -52,7 +52,7 @@ async function joinPlan() {
                      placeholder="123456" inputmode="numeric" maxlength="6" />
             </div>
 
-            <button type="submit" class="btn btn-hh-red w-100 join-button">Join plan →</button>
+            <button type="submit" class="btn red w-100">Join plan →</button>
           </form>
 
           <p v-if="errorMessage" class="text-danger mt-3">{{ errorMessage }}</p>
