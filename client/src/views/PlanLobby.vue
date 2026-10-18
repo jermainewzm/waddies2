@@ -63,8 +63,34 @@ async function loadPlan() {
     }
 }
 
+const MIN_BUDGET = 1
+const MAX_BUDGET = 100
+
+function blockBadKeys(event) {
+  if (["-", "+", "e", "E"].includes(event.key)) {
+    event.preventDefault()
+  }
+}
+
+
+//error prevention: red message under the budget box, updates as you type
+const budgetError = computed(() => {
+  if (budget.value === "" || budget.value === null) {
+    return "" //empty: no message yet (the "I'm in!" button is disabled anyway)
+  }
+  const budgetNumber = Number(budget.value)
+  if (Number.isNaN(budgetNumber) || budgetNumber < MIN_BUDGET || budgetNumber > MAX_BUDGET) {
+    return `Budget must be between $${MIN_BUDGET} and $${MAX_BUDGET}.`
+  }
+  return ""
+})
+
 async function submitPreferences() {
   if (isJoining.value) {
+    return
+  }
+      //error prevention: stop if the budget box has a problem (the red line under the box already explains it)
+  if (budget.value === "" || budgetError.value) {
     return
   }
   isJoining.value = true
@@ -239,7 +265,7 @@ onUnmounted(() => {
         </div>
       </div>
         <div class="col-12 col-lg-7">
-        <form v-if="plan && !myId && plan.status === 'joining'" class="w-100" v-on:submit.prevent="submitPreferences()">
+        <form v-if="plan && !myId && plan.status === 'joining'" class="w-100" novalidate v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
           <div class="mb-3">
@@ -266,11 +292,26 @@ onUnmounted(() => {
                  {{ option.label }} 
               </option>
             </select>
-          </div>
+                    </div>
 
           <div class="mb-4">
             <label for="budget" class="form-label fw-bold">Max budget per person ($)</label>
-            <input id="budget" v-model="budget" type="number" min="1" max="100" class="form-control" placeholder="e.g. 8" />
+            <input
+                id="budget"
+                v-model="budget"
+                type="number"
+                inputmode="decimal"
+                :min="MIN_BUDGET"
+                :max="MAX_BUDGET"
+                step="0.5"
+                class="form-control"
+                :class="{ 'is-invalid': budgetError }"
+                placeholder="e.g. 8"
+                @keydown="blockBadKeys"
+              />
+            <!-- NEW (error prevention): red line ABOVE the hint, only when the budget is wrong -->
+            <p v-if="budgetError" class="text-danger small fw-bold mt-1 mb-0" role="alert">{{ budgetError }}</p>
+            <small class="text-muted">Between ${{ MIN_BUDGET }} and ${{ MAX_BUDGET }}</small>
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>

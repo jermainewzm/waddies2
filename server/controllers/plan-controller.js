@@ -1,14 +1,15 @@
 const Plan = require("../models/plan-model")
 const Centre = require("../models/centre-model")
 const { getLatLng, getRoute } = require("../utils/onemap-helper")
-const { rankCentres, getDistance, getValidDishes, canMemberEat } = require("../utils/shortlist-helper") //for Swiping Card
+const { rankCentres, getDistance, getValidDishes, canMemberEat, pickBestCentres } = require("../utils/shortlist-helper") //for Swiping Card //CHANGED: + pickBestCentres
 const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Swiping Card
 const { summariseCrowd } = require("./centres-controller") //for Swiping Card
 const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
 const Stall = require("../models/stall-model") //ADDED for Dish Search
-const MAX_SHORTLIST = 5 //ADDED for Dish Search
-
-
+const mongoose = require("mongoose") //NEW (Dish Search fix): needed for isValidObjectId
+const CentreModel = mongoose.model("Centre") //NEW (Dish Search fix): the real Centre model (centre-model.js only exports helpers)
+const MAX_SHORTLIST = 5 //ADDED for Dish Search (CHANGED: now = how many swipe cards the best centres fill)
+const MAX_PICKS = 10 //NEW: each Makan Plan can pick up to 10 centres in Dish Search
 function generateCode() {
     return String(Math.floor(100000+ Math.random() * 900000))
 }
@@ -54,7 +55,9 @@ exports.joinPlan = async (req,res) => {
         return res.status(400).json({error: "Name, location and budget are required!"})
     }
 
-    if (Number(budget) < 1 || Number(budget) > 100) {
+        //error prevention: also rejects things that aren't numbers (eg. "abc" or "1e5abc")
+    const budgetNumber = Number(budget)
+    if (Number.isNaN(budgetNumber) || budgetNumber < 1 || budgetNumber > 100) {
         return res.status(400).json({error: "Budget must be between $1 and $100"})
     }
     try {
@@ -159,30 +162,37 @@ exports.startSwiping = async (req,res) => {
             return res.status(400).json({error: "Not enough people to start swiping! Wait for at least one friend to join."})
         }
 
-        const shortlist = []
-        const duplicateIds = []
+        //CHANGED: Dish Search adds are now "picks" (up to 10). Picks + nearby centres are scored
+        //together and the BEST 5 for the whole group become the swipe cards
 
-        //save the centres that plan members added from Dish Search
+        //centres members picked in Dish Search (findByCode filled in the full centre)
+        const pickedCentres = []
         for (const item of plan.shortlist) {
-            shortlist.push({centre_id : item.centre_id,
-                            added_by : item.added_by,
-                            added_by_id : item.added_by_id
-            })
-            duplicateIds.push(String(item.centre_id))
+            if (item.centre_id && item.centre_id._id) {   //skip a centre that was deleted
+                pickedCentres.push(item.centre_id)
+            }
         }
 
         const allCentres = await Centre.findAllCentres()
-        const centresRanked = await rankCentres(plan,allCentres)
+        const centresRanked = await rankCentres(plan, allCentres)
 
-        for (const centre of centresRanked) {
-            if (shortlist.length >= MAX_SHORTLIST) {
-                break
-            }
+        //NEW: score picks + nearby centres together, keep the best 5
+        const bestCentres = await pickBestCentres(plan, pickedCentres, centresRanked, MAX_SHORTLIST)
 
-            if (!duplicateIds.includes(String(centre._id))) {
-                shortlist.push({centre_id : centre._id, added_by: ""})
-                duplicateIds.push(String(centre._id))
+        const shortlist = []
+        for (const centre of bestCentres) {
+            //if someone picked it, keep who added it (saved in the database)
+            let pick = null
+            for (const item of plan.shortlist) {
+                if (item.centre_id && String(item.centre_id._id) === String(centre._id)) {
+                    pick = item
+                }
             }
+            shortlist.push({
+                centre_id: centre._id,
+                added_by: pick ? pick.added_by : "",
+                added_by_id: pick ? pick.added_by_id : null
+            })
         }
 
         if (shortlist.length === 0) {
@@ -199,17 +209,22 @@ exports.startSwiping = async (req,res) => {
 }
 
 //ADDED for Dish Search
-//POST /api/plans/:code/shortlist   body: { centre_id, added_by }
-//adds a hawker centre to the plan's shortlist (used by Dish Search's "Add to plan")
+//CHANGED: body now documents member_id too
+//POST /api/plans/:code/shortlist   body: { centre_id, added_by, member_id }
+//adds a hawker centre to the plan's picks (used by Dish Search's "Add to shortlist")
+//centre_id is the centre's real _id from the centres collection (Dish Search sends it)
+//CHANGED: up to 10 picks per plan. The best 5 are chosen when swiping starts (startSwiping)
 exports.addToShortlist = async (req, res) => {
     const code = req.params.code
     const {centre_id, added_by, member_id} = req.body || {}
 
-    if (!centre_id || !String(centre_id).trim()) {
-        return res.status(400).json({error: "Centre is required!"})
+    //CHANGED: was "is it empty?". The shortlist stores a Centre _id, so it must be a real Mongo id
+    //(eg. "72" used to crash the save with "Cast to ObjectId failed")
+    if (!centre_id || !mongoose.isValidObjectId(centre_id)) {
+        return res.status(400).json({error: "Please pick a valid centre."})
     }
 
-    const centreId = String(centre_id).trim()
+    const centreId = String(centre_id) //CHANGED: no .trim() needed, it's a valid id now
 
     try {
         const plan = await Plan.findByCode(code)
@@ -232,9 +247,9 @@ exports.addToShortlist = async (req, res) => {
             return res.status(403).json({error: "Join the plan before adding centres."})
         }
 
-        //checks the centre is real (at least one stall belongs to it)
-        //change this to the centres collection once it exists
-        const centreExists = await Stall.exists({centre_id: centreId})
+        //CHANGED: was Stall.exists({centre_id}) ("does any stall use this id?").
+        //Now checks the centres collection directly, because centre_id is a Centre _id
+        const centreExists = await CentreModel.exists({_id: centreId})
 
         if (!centreExists) {
             return res.status(404).json({error: "Centre not found!"})
@@ -242,12 +257,20 @@ exports.addToShortlist = async (req, res) => {
 
         const shortlist = plan.shortlist || []
 
-        if (shortlist.some(item => String(item.centre_id) === centreId)) {
+        //CHANGED: findByCode populates shortlist.centre_id, so it's a full centre OBJECT, not an id.
+        //The old String(item.centre_id) === centreId never matched, so duplicates got through.
+        const alreadyAdded = shortlist.some(item => {
+            const savedId = item.centre_id && item.centre_id._id ? item.centre_id._id : item.centre_id
+            return String(savedId) === centreId
+        })
+
+        if (alreadyAdded) {
             return res.status(409).json({error: "This centre is already on the shortlist."})
         }
 
-        if (shortlist.length >= MAX_SHORTLIST) {
-            return res.status(400).json({error: "The shortlist is full (max 5 centres)."})
+        //CHANGED: each plan can pick up to 10 centres (was max 5). The best 5 are chosen when swiping starts
+        if (shortlist.length >= MAX_PICKS) {
+            return res.status(400).json({error: `Your group has picked ${MAX_PICKS} centres already (max).`})
         }
 
         const updatedPlan = await Plan.addToShortlist(code, {
@@ -323,6 +346,7 @@ exports.getSwipeCards = async (req, res) => {
             cards.push({
                 centreId: centre._id,
                 name: centre.name,
+                addedBy: item.added_by || "", //NEW (Dish Search): who added this centre ("" = suggested by HawkerHop)
                 address: centre.address,
                 photoUrl: centre.photoUrl,
                 foodStalls: centre.foodStalls,
