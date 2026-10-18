@@ -17,6 +17,7 @@ const statusError = ref('')
 const restDaysError = ref('')
 const dishError = ref('')
 const shoutoutError = ref('')
+const restDaysSuccess = ref('')
 
 const loading = ref(true)
 
@@ -80,6 +81,9 @@ async function updateStatus(newStatus) {
 
 async function updateRestDays(newRestDays) {
     try {
+
+        restDaysSuccess.value = ''
+
         const response = await axios.patch(
             `${API_URL}/hawker/my-stall/rest-days`,
             {
@@ -88,9 +92,20 @@ async function updateRestDays(newRestDays) {
         )
 
         stall.value = response.data
+
         restDaysError.value = ''
 
+        restDaysSuccess.value =
+            'Rest days saved!'
+
+        setTimeout(() => {
+            restDaysSuccess.value = ''
+        }, 3000)
+
     } catch (error) {
+
+        restDaysSuccess.value = ''
+
         restDaysError.value =
             'Unable to update rest days.'
     }
@@ -229,7 +244,7 @@ onMounted(async () => {
 
     <div class="container py-4">
 
-        <h1 class="mb-4">
+        <h1 class="outline hawker-title">
             Hawker Dashboard
         </h1>
 
@@ -246,39 +261,74 @@ onMounted(async () => {
 
         <div v-if="stall">
 
-            <div class="mb-4">
+            <!-- decorative stall awning -->
+            <div
+                class="awning"
+                aria-hidden="true"
+            ></div>
 
-                <h2>
-                    {{ stall.name }}
-                </h2>
 
-                <p class="mb-1">
-                    Unit {{ stall.unit_no }}
-                </p>
+            <!-- stall summary -->
+            <div class="card panel hawker-summary mb-4">
 
-                <p>
-                    Centre ID:
-                    {{ stall.centre_id }}
-                </p>
+                <div class="summary-row">
+
+                    <div>
+
+                        <p class="lbl">
+                            Centre {{ stall.centre_id }}
+                        </p>
+
+                        <h2 class="stall-name">
+                            {{ stall.name }}
+                        </h2>
+
+                    </div>
+
+
+                    <div class="unit-plate">
+
+                        <span class="unit-label">
+                            STALL
+                        </span>
+
+                        <span class="stall-unit">
+                            {{ stall.unit_no }}
+                        </span>
+
+                    </div>
+
+                </div>
 
             </div>
 
 
+            <!-- stall status -->
             <StallStatusCard
                 :status="stall.status"
                 @update-status="updateStatus"
             />
 
-            <div  v-if="statusError"
-                class="alert alert-danger mt-2">
+            <div
+                v-if="statusError"
+                class="alert alert-danger mt-2"
+            >
                 {{ statusError }}
             </div>
 
 
+            <!-- rest days -->
             <RestDaysForm
                 :rest-days="stall.rest_days"
                 @update-rest-days="updateRestDays"
             />
+
+            <div
+                v-if="restDaysSuccess"
+                class="cute-success"
+            >
+                ✓ {{ restDaysSuccess }}
+            </div>
 
             <div
                 v-if="restDaysError"
@@ -286,7 +336,8 @@ onMounted(async () => {
             >
                 {{ restDaysError }}
             </div>
-            
+
+            <!-- add dish -->
             <DishForm
                 @add-dish="addDish"
             />
@@ -298,6 +349,8 @@ onMounted(async () => {
                 {{ dishError }}
             </div>
 
+
+            <!-- menu -->
             <DishList
                 :dishes="dishes"
                 @delete-dish="deleteDish"
@@ -305,12 +358,11 @@ onMounted(async () => {
             />
 
 
+            <!-- shout-out -->
             <ShoutoutForm
                 :shoutout="shoutout"
                 :message="shoutoutMessage"
-                @update-message="
-                    shoutoutMessage = $event
-                "
+                @update-message="shoutoutMessage = $event"
                 @save-shoutout="saveShoutout"
             />
 
@@ -327,5 +379,98 @@ onMounted(async () => {
 
 </template>
 
-<!-- Notes -->
-<!-- here, :status and :rest-days are not v-bind classes, but props you have created in the component files. these props are recieiving data -->
+
+<style scoped>
+
+.hawker-title {
+    color: var(--paper);
+    font-size: clamp(44px, 6vw, 72px);
+    margin-bottom: 24px;
+}
+
+
+.hawker-summary {
+    margin-top: 6px;
+    margin-bottom: 24px;
+}
+
+
+.summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+
+.stall-name {
+    font-size: 40px;
+    margin: 6px 0 0;
+}
+
+
+.unit-plate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 8px 18px;
+
+    background: var(--paper);
+
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+
+    box-shadow: 4px 4px 0 var(--ink);
+
+    transform: rotate(-3deg);
+}
+
+
+.unit-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+
+.stall-unit {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.cute-success {
+    display: inline-block;
+
+    margin-top: -8px;
+    margin-bottom: 24px;
+
+    padding: 10px 18px;
+
+    background: var(--pandan);
+
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+
+    box-shadow: 4px 4px 0 var(--ink);
+
+    font-weight: 800;
+
+    animation: pop-in .18s ease;
+}
+
+@keyframes pop-in {
+    from {
+        transform: scale(.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+</style>

@@ -60,7 +60,7 @@ function saveRestDays() {
         </div>
 
         <button
-            class="btn btn-primary"
+            class="btn purple"
             @click="saveRestDays"
         >
             Save Rest Days

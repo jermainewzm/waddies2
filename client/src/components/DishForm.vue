@@ -47,134 +47,231 @@ function submitDish() {
     noBeef.value = false
     isAvailable.value = true
 }
+
+function blockBadKeys(event) {
+    if (["-", "+", "e", "E"].includes(event.key)) {
+        event.preventDefault()
+    }
+}
+
 </script>
 
+
 <template>
-    <div class="card p-3 mb-4">
 
-        <h3>Add Dish</h3>
+    <div class="card panel mb-4">
 
-        <div class="mb-3">
-            <label class="form-label">
-                Dish Name
-            </label>
-
-            <input
-                v-model="name"
-                type="text"
-                class="form-control"
-            >
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">
-                Price
-            </label>
-
-            <input
-                v-model="price"
-                type="number"
-                step="0.01"
-                class="form-control"
-            >
-        </div>
-
-        <div class="mb-3">
-
-            <p class="mb-2">
-                Dietary Tags
-            </p>
-
-            <div class="form-check">
-                <input
-                    v-model="vegetarian"
-                    class="form-check-input"
-                    type="checkbox"
-                    id="vegetarian"
-                >
-
-                <label
-                    class="form-check-label"
-                    for="vegetarian"
-                >
-                    Vegetarian
-                </label>
-            </div>
-
-            <div class="form-check">
-                <input
-                    v-model="halal"
-                    class="form-check-input"
-                    type="checkbox"
-                    id="halal"
-                >
-
-                <label
-                    class="form-check-label"
-                    for="halal"
-                >
-                    Halal
-                </label>
-            </div>
-
-            <div class="form-check">
-                <input
-                    v-model="noPork"
-                    class="form-check-input"
-                    type="checkbox"
-                    id="noPork"
-                >
-
-                <label
-                    class="form-check-label"
-                    for="noPork"
-                >
-                    No Pork
-                </label>
-            </div>
-
-            <div class="form-check">
-                <input
-                    v-model="noBeef"
-                    class="form-check-input"
-                    type="checkbox"
-                    id="noBeef"
-                >
-
-                <label
-                    class="form-check-label"
-                    for="noBeef"
-                >
-                    No Beef
-                </label>
-            </div>
-
-        </div>
-
-        <div class="form-check mb-3">
-
-            <input
-                v-model="isAvailable"
-                class="form-check-input"
-                type="checkbox"
-                id="available"
-            >
-
-            <label
-                class="form-check-label"
-                for="available"
-            >
-                Available
-            </label>
-
-        </div>
-
-        <button
-            class="btn btn-primary"
-            @click="submitDish"
-        >
+        <h3 class="mb-3">
             Add Dish
-        </button>
+        </h3>
+
+
+        <div class="add-dish-box">
+
+            <!-- name + price -->
+            <div class="row-fields mb-3">
+
+                <div class="grow">
+
+                    <label
+                        class="form-label fw-bold"
+                        for="dishName"
+                    >
+                        Dish Name
+                    </label>
+
+                    <input
+                        id="dishName"
+                        v-model="name"
+                        type="text"
+                        class="form-control cute-input"
+                        placeholder="e.g. Roasted chicken rice"
+                    >
+
+                </div>
+
+
+                <div class="price-field">
+
+                    <label
+                        class="form-label fw-bold"
+                        for="dishPrice"
+                    >
+                        Price ($)
+                    </label>
+
+                    <input
+                        id="dishPrice"
+                        v-model="price"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        class="form-control cute-input"
+                        placeholder="0.00"
+                        @keydown="blockBadKeys"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- dietary tags -->
+            <div class="mb-3">
+
+                <p class="mb-2 fw-bold">
+                    Dietary Tags
+                </p>
+
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    <div class="chip-wrap">
+
+                        <input
+                            v-model="vegetarian"
+                            class="chip-input green"
+                            type="checkbox"
+                            id="vegetarian"
+                        >
+
+                        <label
+                            class="chip"
+                            for="vegetarian"
+                        >
+                            Vegetarian
+                        </label>
+
+                    </div>
+
+
+                    <div class="chip-wrap">
+
+                        <input
+                            v-model="halal"
+                            class="chip-input green"
+                            type="checkbox"
+                            id="halal"
+                        >
+
+                        <label
+                            class="chip"
+                            for="halal"
+                        >
+                            Halal
+                        </label>
+
+                    </div>
+
+
+                    <div class="chip-wrap">
+
+                        <input
+                            v-model="noPork"
+                            class="chip-input"
+                            type="checkbox"
+                            id="noPork"
+                        >
+
+                        <label
+                            class="chip"
+                            for="noPork"
+                        >
+                            No Pork
+                        </label>
+
+                    </div>
+
+
+                    <div class="chip-wrap">
+
+                        <input
+                            v-model="noBeef"
+                            class="chip-input"
+                            type="checkbox"
+                            id="noBeef"
+                        >
+
+                        <label
+                            class="chip"
+                            for="noBeef"
+                        >
+                            No Beef
+                        </label>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- availability + add button -->
+            <div
+                class="d-flex align-items-center justify-content-between flex-wrap gap-3"
+            >
+
+                <div class="d-flex align-items-center gap-2">
+
+                    <input
+                        v-model="isAvailable"
+                        class="switch-input"
+                        type="checkbox"
+                        id="available"
+                    >
+
+                    <label
+                        class="fw-bold"
+                        for="available"
+                    >
+                        Available today
+                    </label>
+
+                </div>
+
+
+                <button
+                    class="btn pink"
+                    @click="submitDish"
+                >
+                    Add Dish
+                </button>
+
+            </div>
+
+        </div>
 
     </div>
+
 </template>
+
+
+<style scoped>
+
+.add-dish-box {
+    padding: 16px;
+    border: 3px dashed var(--ink);
+    border-radius: 18px;
+    background: var(--paper);
+}
+
+.row-fields {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.row-fields .grow {
+    flex: 1;
+    min-width: 220px;
+}
+
+.price-field {
+    width: 170px;
+}
+
+.chip-wrap {
+    position: relative;
+}
+
+</style>

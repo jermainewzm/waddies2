@@ -118,6 +118,10 @@ h1, h2, h3, h4 {
    background: var(--pink); 
 }
 
+.btn.purple {
+  background: var(--lilac);
+}
+
 .card {
   background: var(--paper);
   border: 4px solid var(--ink);
@@ -155,4 +159,216 @@ h1, h2, h3, h4 {
     padding-top: 56px;
     padding-bottom: 56px;
   }
+}
+
+:root {
+  --orange: #FF9F43;
+}
+
+
+/* dashboard cards */
+
+.card.panel {
+  background: var(--cream);
+  padding: 24px;
+}
+
+.card.panel h3 {
+  font-size: 26px;
+}
+
+
+/* extra button styles */
+
+.btn.orange {
+  background: var(--orange);
+}
+
+.btn.pressed {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+
+/* cute form inputs */
+
+.cute-input.form-control,
+.cute-input.input {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+
+  box-shadow: 3px 3px 0 var(--ink);
+
+  font-weight: 600;
+  padding: 11px 14px;
+
+  transition:
+    transform .1s ease,
+    box-shadow .1s ease;
+}
+
+.cute-input.form-control:focus,
+.cute-input.input:focus {
+  outline: none;
+  border-color: var(--ink);
+
+  transform: translate(-1px, -1px);
+
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+
+/* checkbox -> chip */
+
+.chip-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 7px 16px;
+
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+
+  background: var(--paper);
+
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.1;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    transform .1s ease,
+    box-shadow .1s ease,
+    background .1s ease;
+}
+
+.chip:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.chip-input:checked + .chip {
+  background: var(--pink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.chip-input.green:checked + .chip {
+  background: var(--pandan);
+}
+
+.chip-input:focus-visible + .chip {
+  outline: 3px solid var(--lilac);
+  outline-offset: 2px;
+}
+
+
+/* checkbox -> toggle switch */
+
+.switch-input {
+  appearance: none;
+  -webkit-appearance: none;
+
+  position: relative;
+
+  width: 52px;
+  height: 30px;
+
+  margin: 0;
+
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+
+  background: var(--paper);
+
+  cursor: pointer;
+  flex-shrink: 0;
+
+  transition: background .15s ease;
+}
+
+.switch-input::after {
+  content: "";
+
+  position: absolute;
+
+  top: 2px;
+  left: 2px;
+
+  width: 18px;
+  height: 18px;
+
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+
+  background: var(--paper);
+
+  transition: transform .15s ease;
+}
+
+.switch-input:checked {
+  background: var(--pandan);
+}
+
+.switch-input:checked::after {
+  transform: translateX(22px);
+}
+
+.switch-input:focus-visible {
+  outline: 3px solid var(--lilac);
+  outline-offset: 2px;
+}
+
+
+/* decorative hawker-stall awning */
+
+.awning {
+  height: 34px;
+
+  border: 4px solid var(--ink);
+  border-bottom: 0;
+
+  border-radius: 20px 20px 0 0;
+
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--tomato) 0 50px,
+      var(--cream) 50px 100px
+    );
+}
+
+.awning::after {
+  content: "";
+
+  display: block;
+
+  height: 26px;
+
+  margin: 34px -4px 0;
+
+  background:
+    radial-gradient(
+      circle at 25px 0,
+      var(--tomato) 24px,
+      transparent 25px
+    )
+    0 0 / 100px 26px repeat-x,
+
+    radial-gradient(
+      circle at 75px 0,
+      var(--cream) 24px,
+      transparent 25px
+    )
+    0 0 / 100px 26px repeat-x;
+
+  filter: drop-shadow(0 3px 0 var(--ink));
 }
