@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink } from "vue-router"
-
+import HawkerScene from "../components/HawkerScene.vue" //NEW: animated kopitiam scene
 const steps = [
   { number: 1, colour: "var(--tomato)", title: "Gather the gang",
     text: "Start a plan and send the 6-digit code. Everyone adds where they're coming from, their diet and budget." },
@@ -33,8 +33,10 @@ const steps = [
           <RouterLink class="btn big red" to="/plan/new">Start a Makan Plan</RouterLink>
           <RouterLink class="btn big" to="/plan/join">Join with a code</RouterLink>
         </div>
-        Insert the dining animations here 
+        <!-- NEW: animated kopitiam scene (wok hei uncle, teh tarik, food friends) -->
+        <HawkerScene />
       </div>
+     
       
     </section>
 
@@ -82,7 +84,7 @@ const steps = [
 
 .hero h1 {
   margin-top: 14px;
-  font-size: clamp(44px, 10vw, 150px); /* makes the font responsive (min, value, max)*/
+  font-size: clamp(40px, 7vw, 100px); /* CHANGED: was clamp(44px, 10vw, 150px), smaller so the scene shows more */
   line-height: .92;
 }
 
@@ -95,9 +97,9 @@ const steps = [
 }
 
 .hero-lead {
-  margin: 22px auto 0;
-  max-width: 640px;
-  font-size: 22px;
+  margin: 18px auto 0;
+  max-width: 920px;  /* CHANGED: was 640px, wider so the text takes 2 lines instead of 3 */
+  font-size: 21px;   /* CHANGED: was 22px */
 }
 
 .hero-buttons {

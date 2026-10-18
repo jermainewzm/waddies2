@@ -248,3 +248,105 @@ exports.rankCentres = async function (plan,centres) {
     }
     return goodCentres
 }
+
+//NEW (Dish Search picks): choose the BEST few centres for the whole group
+// pickedCentres = centres members added from Dish Search (up to 10)
+// rankedCentres = nearby centres from rankCentres (everyone can eat there)
+// LOWER score = better. Score is in "km" so everything can be added together:
+//   distance from the group's midpoint
+// + price  (0 = very cheap for everyone, up to PRICE_WEIGHT_KM = right at everyone's budget)
+// + crowd  (only if the plan starts within 2 hours, same as rankCentres)
+// - bonus  (someone in the group picked it in Dish Search)
+const PICK_BONUS_KM = 2
+const PRICE_WEIGHT_KM = 2
+
+exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, count) {
+    const midpoint = exports.getMidPoint(plan.members)
+
+    const pickedIds = []
+    for (const centre of pickedCentres) {
+        pickedIds.push(String(centre._id))
+    }
+
+    // 1. put both lists together, without duplicates
+    const allCentres = []
+    const seenIds = []
+    for (const centre of [...pickedCentres, ...rankedCentres]) {
+        if (!seenIds.includes(String(centre._id))) {
+            seenIds.push(String(centre._id))
+            allCentres.push(centre)
+        }
+    }
+
+    // 2. crowd reports for all of them in ONE search (only if the plan is soon)
+    let reports = []
+    if (isPlanSoon(plan)) {
+        const serialNos = []
+        for (const centre of allCentres) {
+            serialNos.push(String(centre.serialNo))
+        }
+        reports = await CrowdReport.find({
+            centreId: {$in: serialNos},
+            createdAt: {$gte: new Date(Date.now() - RECENT_REPORT_MS)}
+        })
+    }
+
+    // 3. score every centre
+    const scored = []
+    for (const centre of allCentres) {
+        // a picked centre still has to work for EVERYONE (open, diet + budget)
+        if (!exports.isCentreOpen(centre, plan.date)) {
+            continue
+        }
+        const dishes = await exports.getValidDishes(centre, plan.date)
+        if (!exports.canEveryoneEat(plan.members, dishes)) {
+            continue
+        }
+
+        const distance = exports.getDistance(midpoint, centre)
+
+        // price: for each member, how much of their budget their cheapest dish uses (0 to 1), then the average
+        let priceTotal = 0
+        for (const member of plan.members) {
+            let cheapest = member.budget
+            for (const dish of dishes) {
+                if (canMemberEat(member, dish) && dish.price < cheapest) {
+                    cheapest = dish.price
+                }
+            }
+            priceTotal += cheapest / member.budget
+        }
+        const pricePenalty = (priceTotal / plan.members.length) * PRICE_WEIGHT_KM
+
+        // crowd: same penalty as rankCentres
+        const centreReports = []
+        for (const report of reports) {
+            if (report.centreId === String(centre.serialNo)) {
+                centreReports.push(report)
+            }
+        }
+        let crowdPenalty = 0
+        if (centreReports.length > 0) {
+            crowdPenalty = CROWD_PENALTY_KM[summariseCrowd(centreReports).level]
+        }
+
+        let bonus = 0
+        if (pickedIds.includes(String(centre._id))) {
+            bonus = PICK_BONUS_KM
+        }
+
+        scored.push({
+            centre: centre,
+            score: distance + pricePenalty + crowdPenalty - bonus
+        })
+    }
+
+    // 4. best (lowest score) first, keep the top few
+    scored.sort((a, b) => a.score - b.score)
+
+    const best = []
+    for (const item of scored.slice(0, count)) {
+        best.push(item.centre)
+    }
+    return best
+}
