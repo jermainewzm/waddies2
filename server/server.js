@@ -1,3 +1,4 @@
+
 const express = require("express")
 const dotenv = require("dotenv")
 const cors = require("cors")
@@ -12,27 +13,31 @@ dotenv.config({
   path: "./.env"
 })
 
-const planRoutes =
-  require("./routes/plans-routes")
+const hawkerRoutes = require("./routes/hawker-routes")
+const stallRoutes = require("./routes/stall-routes")
+const dishRoutes = require("./routes/dish-routes")
+const shoutoutRoutes = require("./routes/shoutout-routes")
 
-const centreRoutes =
-  require("./routes/centres-routes")
+const planRoutes = require("./routes/plans-routes")
+const dishSearchRoutes = require("./routes/dish-search-routes")
+const centreRoutes = require("./routes/centres-routes")
 
-const errorHandler =
-  require("./middleware/errors-middleware")
+const errorHandler = require("./middleware/errors-middleware")
 
-server.use(
-  "/api/plans",
-  planRoutes
-)
+server.use("/api/plans", planRoutes )
+server.use("/api/centres", centreRoutes)
+server.use("/api/dishes", dishSearchRoutes)
 
-server.use(
-  "/api/centres",
-  centreRoutes
-)
+server.use('/api/hawker', hawkerRoutes)
+server.use('/api/hawker', stallRoutes)
+server.use('/api/hawker', dishRoutes)
+server.use('/api/hawker', shoutoutRoutes)
 
-// Central error handling must remain
-// after all route registrations.
+
+server.post('/api/hawker/apply-test', (req, res) => {
+  res.json({ message: 'route works' })
+})
+//error handling
 server.use(errorHandler)
 
 async function connectDB() {

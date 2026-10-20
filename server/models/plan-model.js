@@ -15,7 +15,7 @@ const memberSchema = new mongoose.Schema({
 },
   diet: { 
     type: String, 
-    enum: ["any", "halal", "vegetarian"],  //enum = list of the ONLY values allowed for that field
+    enum: ["any", "halal", "vegetarian", "no_pork", "no_beef"],  //enum = list of the ONLY values allowed for that field
     default: "any" 
 },
   budget: { 
@@ -23,6 +23,22 @@ const memberSchema = new mongoose.Schema({
     required: true }
 })
 
+//ADDED for Dish Search: one centre on the plan's shortlist
+const shortlistSchema = new mongoose.Schema({
+  centre_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Centre",
+    required: true
+  },
+  added_by: {
+    type: String,
+    default: ""
+  },
+  added_by_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null
+  }
+})
 const planSchema = new mongoose.Schema({
     code: { 
       type: String, 
@@ -41,15 +57,31 @@ const planSchema = new mongoose.Schema({
       type: String, 
       required: true 
     },   
-    members: [memberSchema]
-  },
-  { timestamps: true }
+    members: [memberSchema],
+
+    status: {
+      type: String,
+      enum: ["joining", "swiping", "done"],
+      default: "joining"
+    },
+    shortlist: [shortlistSchema], //ADDED for Dish Search
+
+    swipes : [
+      {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
+       centreId: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", required: true},
+       liked: {type: Boolean, required: true}
+    }
+    ],
+
+    winner: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", default: null}
+    },
+    { timestamps: true }
 )
 
 const Plan = mongoose.model("Plan", planSchema, "plan")
 
 exports.findByCode = function (code) {
-  return Plan.findOne({ code: code })
+  return Plan.findOne({ code: code }).populate('shortlist.centre_id')
 }
 
 exports.addPlan = function (code, name, date, time) {
@@ -60,8 +92,53 @@ exports.addMember = function(code, member) {
   return Plan.findOneAndUpdate(
     {code: code},
     {$push: {members:member}},
-    {new: true}
+    {returnDocument: "after" }
 
   )
 }
 
+exports.updatePlanStatus = function(code,status) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$set: {status: status}},
+    { returnDocument: "after" })}
+
+//ADDED for Dish Search: adds one centre to the shortlist
+exports.addToShortlist = function(code, item) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {shortlist: item}},
+    { returnDocument: "after" }
+  )
+}
+
+// Replace the plan's shortlist with a new list
+exports.setShortlist = function (code, newShortList) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    { $set: {shortlist: newShortList}},
+    { returnDocument: "after" }
+  )
+}
+
+//Save one member's swipes ($each pushes every item of the array)
+exports.addSwipes = function(code, newSwipes) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$push: {swipes: {$each: newSwipes}}},
+    {returnDocument: "after"}
+  )
+}
+
+//Everyone has swiped: save the winner and finish plan
+exports.finishPlan = function(code, winnerId) {
+  return Plan.findOneAndUpdate(
+    {code: code},
+    {$set: {status: "done", winner: winnerId}},
+    {returnDocument: "after"}
+  )
+}
+
+exports.findWinnerByCode = function(code) {
+  return Plan.findOne({code:code}).populate('winner')
+}

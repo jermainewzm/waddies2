@@ -37,6 +37,17 @@ function goToLobby() {
   router.push(`/plan/${code.value}/lobby`)
 }
 
+// most hawker stalls are closed within 6am-10pm,
+// and public transport may not be running. but we 
+//just warn the user because some centres are 24/7.
+const isOddHour = computed(() => {
+  if (!time.value) {
+    return false
+  }
+  const hour = Number(time.value.split(":")[0])
+  return hour < 6 || hour >= 22
+})
+
 const minDate = computed(() => getLocalDateString())    //earliest allowed date
 const minTime = computed(() => date.value === getLocalDateString() ? getLocalTimeString() : undefined) //earliest allowed time: only restricted when chosen date is today
 
@@ -95,6 +106,7 @@ function formatTime(time) {
 </script>
 
 <template>
+  <main class="bg-cups">
   <div class="container py-5">
 
     <!-- page heading -->
@@ -127,21 +139,24 @@ function formatTime(time) {
             <div class="mb-3">
               <label for="time" class="form-label">Time</label>
               <input id="time" v-model="time" type="time" class="form-control" :min="minTime" />
+              <p v-if="isOddHour" class="text-warning fw-bold small mb-0 mt-1">
+                NOTE: Most hawker centres are closed at this hour, and public transport may not be running.
+              </p>
             </div>
 
-            <button type="submit" class="btn btn-hh-red w-100 create-button">Create plan →</button>
+            <button type="submit" class="btn w-100 red">Create plan →</button>
           </form>
 
         <p v-if="errorMessage" class="error-message text-danger mt-3">{{ errorMessage }}</p>
 
         <div v-if="code" class="alert alert-success mt-4">
           Your makan plan code is: <strong>{{ code }}</strong>
-          <button v-on:click="goToLobby()" type="button" class="btn btn-lobby w-100 mt-3"> Go to Plan Lobby </button>
+          <button v-on:click="goToLobby()" type="button" class="btn green w-100 mt-3"> Go to Plan Lobby </button>
         </div>
       
         <div class="preview-tip">
             <span>💡</span>
-            <p class="mb-0 fw-bold"> Share the code with your friends so they can join your plan! </p>
+            <p class="fs-5 mb-0 fw-bold"> Head to the lobby and join first, then share the code with your friends.</p>
           </div>
       </div>
      </div>
@@ -152,8 +167,8 @@ function formatTime(time) {
            <div class="section-label">
             02
            </div>
-           <h2 class="hh-display mb-2"> What your friends see </h2>
-           <p class="text-muted mb-4"> This is what your plan will look like when they join.</p>
+           <h2 class="hh-display mb-2"> Your plan preview </h2>
+           <p class="text-muted mb-4"> This is how your plan will appear in the lobby.</p>
 
            <div class="plan-preview">
 
@@ -188,15 +203,16 @@ function formatTime(time) {
           </div>
         </div>
         <div class="join-section text-center">
-          <small class="text-muted fw-bold">ENTER CODE TO JOIN</small>
-          <input class="form-control mt-2" disabled placeholder="Enter 6-digit code"/>
-          <button class="btn btn-hh-red fw-bold w-100 mt-3" > Join Plan → </button>
+          <small class="text-muted fw-bold">PLAN CODE</small>
+          <p class="preview-code mt-2 mb-0">{{ code || '------' }}</p>
+          <small class="text-muted"> {{ code ? 'Join the lobby first, then share this' : 'Your code appears here once you create the plan'}}</small>
         </div>
           </div>
         </div>
      </div>
      </div>
   </div>
+  </main>
 </template>
 
 <style scoped>
@@ -261,18 +277,6 @@ function formatTime(time) {
   font-size: 28px;
 }
 
-.create-button {
-  border-radius: 10px;
-  font-weight: bold;
-
-}
-
-.create-button:hover {
-  background-color: #f8756b;
-  color:white;
-  
-}
-
 .form-label {
   font-weight: bold;
   margin-bottom: 8px;
@@ -284,8 +288,8 @@ function formatTime(time) {
 }
 
 .form-control:focus {
-  border-color: #6b8e5a;
-  box-shadow: 0 0 0 3px rgba(107, 142, 90, 0.15);
+  border-color: #c4521f;
+  box-shadow: 0 0 0 3px rgba(196, 82, 31, 0.15);
 }
 
 .plan-details {
@@ -341,18 +345,25 @@ function formatTime(time) {
 }
 
 .btn-lobby {
-  background-color:  #287C7A;;
+  background-color:  #287C7A;
   color: white;
   border: none;
   border-radius: 10px;
   padding: 12px;
   font-weight: bold;
-  transition: 0.2s;
+  box-shadow: 0 6px 0 #154a49;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-lobby:hover {
-  background-color: #48538F;
-  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #154a49;
 }
 
+.preview-code {
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: var(--hh-kopi);
+}
 </style>

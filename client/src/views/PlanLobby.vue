@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, computed, onMounted, onUnmounted} from "vue"
 import axios from "axios"
-import { API_URL } from "@/utils/constants"
-import { useRoute, useRouter } from "vue-router"
+import { API_URL, DIET_OPTIONS } from "@/utils/constants"
+import { useRoute, useRouter, RouterLink } from "vue-router"
 
 import L from 'leaflet' //import leaflet javascript code
 import 'leaflet/dist/leaflet.css' //import leaflet css styling
@@ -13,11 +13,17 @@ const router = useRouter()
 const code = route.params.code
 const plan = ref(null)
 const errorMessage = ref("")
+const isLoading = ref(true)
+const isJoining = ref(false)
 
 const name = ref("")
 const diet = ref("any")
 const budget = ref("")
 const postal = ref("")
+
+// After joining, my member _id is saved in the browser (localStorage),
+// under a key that includes the plan code, e.g. "memberId-468353".
+const myId = ref(localStorage.getItem(`memberId-${code}`))
 
 const selectedLat = ref(null)
 const selectedLng = ref(null)
@@ -25,29 +31,120 @@ const selectedLng = ref(null)
 let map = null
 let pinnedOnce = null
 
+const isHost = computed(() => {
+  if (!plan.value || !myId.value || plan.value.members.length == 0) {
+    return false
+  }
+  return plan.value.members[0]._id === myId.value
+})
+
+// Holds the timer that refreshes the plan, so we can stop it when leaving the page
+let refreshTimer = null
+
 async function loadPlan() {
     try {
         const response = await axios.get(`${API_URL}/plans/${code}`)
         plan.value = response.data
+
+        //members who are mid-swipe belong on the swipe bage, non members see the too late card
+        if (plan.value.status === "swiping" && myId.value) {
+          router.push(`/plan/${code}/swipe`)
+          return
+        }
+        // else if plan is already finished, redirect to journey page
+        if (plan.value.status === "done" && myId.value) {
+          router.push(`/plan/${code}/swipe`)
+          return
+        }
+        isLoading.value = false
     } catch(error) {
+        isLoading.value = false
         errorMessage.value = error.response ? error.response.data.error : 'Cant reach the server.'
     }
 }
 
-async function submitPreferences() {
-    try {
-        const response = await axios.post(`${API_URL}/plans/${code}/members`, {
-            name: name.value,
-            lat: selectedLat.value,
-            lng: selectedLng.value,
-            diet: diet.value,
-            budget: budget.value
+const MIN_BUDGET = 1
+const MAX_BUDGET = 100
 
-        })
-        plan.value = response.data
+function blockBadKeys(event) {
+  if (["-", "+", "e", "E"].includes(event.key)) {
+    event.preventDefault()
+  }
+}
+
+
+//error prevention: red message under the budget box, updates as you type
+const budgetError = computed(() => {
+  if (budget.value === "" || budget.value === null) {
+    return "" //empty: no message yet (the "I'm in!" button is disabled anyway)
+  }
+  const budgetNumber = Number(budget.value)
+  if (Number.isNaN(budgetNumber) || budgetNumber < MIN_BUDGET || budgetNumber > MAX_BUDGET) {
+    return `Budget must be between $${MIN_BUDGET} and $${MAX_BUDGET}.`
+  }
+  return ""
+})
+
+async function submitPreferences() {
+  if (isJoining.value) {
+    return
+  }
+      //error prevention: stop if the budget box has a problem (the red line under the box already explains it)
+  if (budget.value === "" || budgetError.value) {
+    return
+  }
+  isJoining.value = true
+  try {
+      const response = await axios.post(`${API_URL}/plans/${code}/members`, {
+          name: name.value,
+          lat: selectedLat.value,
+          lng: selectedLng.value,
+          diet: diet.value,
+          budget: budget.value
+      })
+      plan.value = response.data
+      const members = response.data.members
+      const me = members[members.length -1]
+
+      localStorage.setItem(`memberId-${code}`, me._id)
+      myId.value = me._id
     } catch(error) {
         errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+        isJoining.value = false
     }
+}
+
+async function startSwiping() {
+  errorMessage.value = ""
+
+  try {
+    const response = await axios.post(`${API_URL}/plans/${code}/start`, {
+        memberId : myId.value
+    })
+    plan.value = response.data
+
+    router.push(`/plan/${code}/swipe`)
+  } catch (error) {
+    errorMessage.value = error.response ? error.response.data.error: "Cant reach the server."
+  }
+}
+
+function formatTime(time) {
+  const [hours, minutes] = time.split(":")
+  const period = hours >= 12 ? "PM" : "AM"
+  const hour = hours % 12 || 12
+
+  return `${hour}:${minutes} ${period}`
+}
+
+function formatDate(date) {
+  const dateObj = new Date(date)
+
+  return dateObj.toLocaleDateString("en-SG", {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
 }
 
 function movePin(position) {
@@ -58,6 +155,11 @@ function movePin(position) {
     }
     selectedLat.value = position.lat
     selectedLng.value = position.lng
+}
+
+//sg's rough edges, so users dont click from johor, batam
+function pinInSingapore(position) {
+    return position.lat >= 1.22 && position.lat <= 1.47 && position.lng >= 103.62 && position.lng <= 104.08
 }
 
 async function getPostal() {
@@ -74,12 +176,26 @@ async function getPostal() {
 }
 
 onMounted(async () => {
+    refreshTimer = setInterval(() => {
+      loadPlan()
+    }, 5000)
+    console.log(refreshTimer)
     await loadPlan()
     if (!plan.value) {
-        router.push("/plan/new")   // plan not found: just a placeholder for now. will redirect back to join page
+      router.push("/plan/join")   // plan not found: will redirect back to join page
     return
   }
+    if (myId.value) {
+      return
+    }
+    if (plan.value.status !== "joining") {
+      return
+    }
     map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
+
+    //Keep map view around SG, we pass in a nested arr of coordinates
+    map.setMaxBounds([[1.22,103.62], [1.47,104.08]])
+
     //leaflet gets the map tiles from this URL from OpenStreetMap
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors"
@@ -87,38 +203,74 @@ onMounted(async () => {
 
     //Leaflet gives the function an object that contains lat and lng values
     map.on("click", function(clickInfo) {
+        if (!pinInSingapore(clickInfo.latlng)) {
+          errorMessage.value = "Please select a location within Singapore!"
+          return
+        }
+        errorMessage.value = ""
         movePin(clickInfo.latlng)
     }
       )
 })
+
+onUnmounted(() => {
+    clearInterval(refreshTimer)
+})
+
 </script>
 
 <template>
   <div class="container py-4">
     <div class="row g-4">
+            <div class="col-12 col-lg-5">
+        <div v-if="plan" class="plan-card">
+          <div class="text-center">
+            <div class="food-icon">🍜</div>
+            <h1 class="plan-name mb-1">{{ plan.name }}</h1>
+            <span class="plan-type">MAKAN PLAN</span>
+          </div>
+          <div class="plan-details">
+            <div class="plan-detail">
+              <span class="detail-icon">📅</span>
+              <div>
+                <small>Date</small>
+                <strong>{{ formatDate(plan.date) }}</strong>
+              </div>
+            </div>
+            <div class="plan-detail">
+              <span class="detail-icon">🕐</span>
+              <div>
+                <small>Time</small>
+                <strong>{{ formatTime(plan.time) }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="text-center mt-3">
+            <small class="code-label">PLAN CODE</small>
+            <p class="preview-code mb-0">{{ plan.code }}</p>
+          </div>
 
-      <!-- LEFT (top on phones): plan details + members -->
-      <div class="col-12 col-lg-5">
-        <div v-if="plan">
-          <h1 class="hh-display">{{ plan.name }}</h1>
-          <p class="mb-1">{{ plan.date }}, {{ plan.time }}</p>
-          <p>Plan code: <strong>{{ plan.code }}</strong></p>
+          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h2>
+          <div class="members-list">
+            <div class="member-card" v-for="(member, index) in plan.members" :key="member._id">
+              <span class="avatar">{{ member.name.charAt(0).toUpperCase() }}</span>
+              <span class="fw-bold member-name">{{ member.name }}</span>
+              <!-- the first person to join is the host -->
+              <span v-if="index === 0" class="member-badge host">Host</span>
+              <!-- this member's _id matches the one saved in my browser = this is me -->
+              <span v-if="member._id === myId" class="member-badge you">You</span>
+            </div>
+          </div>
 
-          <h2 class="h4 mt-4">Members</h2>
-          <ul>
-            <li v-for="member in plan.members" :key="member._id">
-              {{ member.name }}
-            </li>
-          </ul>
         </div>
       </div>
         <div class="col-12 col-lg-7">
-        <form v-on:submit.prevent="submitPreferences()">
+        <form v-if="plan && !myId && plan.status === 'joining'" class="w-100" novalidate v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
           <div class="mb-3">
             <label for="name" class="form-label fw-bold">Your name</label>
-            <input id="name" v-model="name" class="form-control" placeholder="e.g. Aisha" />
+            <input id="name" maxlength="30" v-model="name" class="form-control" placeholder="e.g. Aisha" />
           </div>
 
           <div class="mb-3">
@@ -130,35 +282,176 @@ onMounted(async () => {
                <button type="button" class="btn btn-outline-dark" v-on:click="getPostal()">Find</button>
            </div>
             <div id="map"></div>
-            <p v-if="selectedLat" class="small text-success mt-2 mb-0">Location set</p>
+            <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="small text-success mt-2 mb-0">Location set</p>
           </div>
 
           <div class="mb-3">
             <label for="diet" class="form-label fw-bold">Dietary needs</label>
             <select id="diet" v-model="diet" class="form-select">
-              <option value="any">No preference</option>
-              <option value="halal">Halal</option>
-              <option value="vegetarian">Vegetarian</option>
+              <option v-for="option in DIET_OPTIONS" :key="option.value" :value="option.value" >
+                 {{ option.label }} 
+              </option>
             </select>
-          </div>
+                    </div>
 
           <div class="mb-4">
             <label for="budget" class="form-label fw-bold">Max budget per person ($)</label>
-            <input id="budget" v-model="budget" type="number" min="1" max="50" class="form-control" placeholder="e.g. 8" />
+            <input
+                id="budget"
+                v-model="budget"
+                type="number"
+                inputmode="decimal"
+                :min="MIN_BUDGET"
+                :max="MAX_BUDGET"
+                step="0.5"
+                class="form-control"
+                :class="{ 'is-invalid': budgetError }"
+                placeholder="e.g. 8"
+                @keydown="blockBadKeys"
+              />
+            <!-- NEW (error prevention): red line ABOVE the hint, only when the budget is wrong -->
+            <p v-if="budgetError" class="text-danger small fw-bold mt-1 mb-0" role="alert">{{ budgetError }}</p>
+            <small class="text-muted">Between ${{ MIN_BUDGET }} and ${{ MAX_BUDGET }}</small>
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-
-          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="selectedLat === null || selectedLng === null">I'm in</button>
+          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
         </form>
-      </div>
 
+        <!--arrived after swiping started -->
+        <div v-else-if="plan && !myId" class="waiting-card ">
+          <h2 class="h3 fw-bold">Too late!</h2>
+          <p class="text-muted mb-0">This group has already started swiping.</p>
+          <RouterLink class="btn start-btn w-50 mt-4" to="/plan/new">Start your own plan</RouterLink>
+        </div>
+
+         <div v-else class="waiting-card">
+            <h2 class="h3 fw-bold">You're in!</h2>
+            <div class="loading-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="waiting-status"> 
+              <span class="status-dot"></span>
+              Waiting for everyone to join...
+            </div>
+            <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn start-btn w-50 mt-4">Start swiping!</button>
+            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0">{{ errorMessage }}</p>
+        </div>
+
+        <div v-if="myId" class="next-section">
+          <div class="h3 fw-bold mb-3"> What's next?</div>
+          <div class="row g-3">
+            <div class="col-12 col-lg-4">
+              <div class="card h-100 p-3 step-card">
+                <p class="step-number mb-2">1</p>
+                <h3 class="h5 fw-bold"> Everyone joins</h3>
+                <p class="text-muted mb-0"> Share the code with your friends</p>
+              </div>
+            </div>
+            <div class="col-12 col-lg-4">
+              <div class="card h-100 p-3 step-card">
+                <p class="step-number mb-2">2</p>
+                <h3 class="h5 fw-bold">Wait for everyone</h3>
+                <p class="text-muted mb-0">
+                 Once everyone's in, the host can start swiping.
+                </p>
+              </div>
+            </div>
+            <div class="col-12 col-lg-4">
+              <div class="card h-100 p-3 step-card">
+                  <p class="step-number mb-2">3</p>
+                  <h3 class="h5 fw-bold">Find a match</h3>
+                  <p class="text-muted mb-0">Swipe together and find a hawker centre everyone likes. 
+                  </p>
+              </div>
+            </div>    
+          </div>
+        </div>
+        <div v-if="myId" class="dish-search-prompt mt-4">
+          <div class="dish-search-content">
+            <div class="dish-search-icon">🔎</div>
+            <div>
+              <h3 class="h5 fw-bold mb-1">Got specific cravings? </h3>
+              <p class="text-muted mb-0">
+                Search dishes and add your desired hawker centre to swipe!
+              </p>
+              </div>
+          </div>
+          <button type="button" class="btn btn-outline-dark" v-on:click="router.push(`/dish-search?plan=${code}`)"> Search dishes</button>
+        </div>
+      </div>
     </div>
   </div>
-
 </template>
 
 <style scoped>
+
+.plan-card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 35px rgba(59, 42, 32, 0.12);
+}
+
+.food-icon {
+  font-size: 30px;
+  margin-bottom: 4px;
+}
+
+.plan-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+.plan-type {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: var(--hh-red);
+}
+
+.plan-details {
+  margin-top: 24px;
+  padding: 18px 20px;
+  background-color: var(--hh-steel);
+  border-radius: 12px;
+}
+
+.plan-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.plan-detail:last-child {
+  margin-bottom: 0;
+}
+
+.plan-detail small {
+  display: block;
+  color: #777;
+}
+
+.code-label {
+  display: block;
+  margin-top: 0;
+  color: #777;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.preview-code {
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: var(--hh-kopi);
+}
+
 #map {
   height: 280px;
 }
@@ -169,4 +462,269 @@ onMounted(async () => {
   }
 }
 
+.code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.code-label {
+  margin-top: 20px;
+  margin-bottom: 4px;
+  color: #777;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.code {
+  display: inline-block;
+  letter-spacing: 3px;
+  font-size: 24px;
+  background: #fff4e3;
+  border-radius: 10px;
+  color: #c4521f;
+  font-weight: bold;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 12px;
+  padding-right: 12px;
+  margin-bottom: 0px;
+}
+
+.start-btn {
+  background-color: #c4521f;         
+  color: #fff4e3;
+  border-radius: 14px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  box-shadow: 0 6px 0 #9e4018;        
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #9e4018;        
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;           
+  background-color: #f48342;
+  color: #fff4e3;
+  font-weight: bold;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 35px rgba(59, 42, 32, 0.25);
+}
+
+.plan-date {
+  margin: 8px 0 0;
+  color: #777;
+  font-size: 15px;
+}
+
+.members-title {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  color: #3b2a20;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.member-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(59, 42, 32, 0.1);
+}
+
+.member-count {
+  margin-left: 6px;
+  color: #ea351d;
+}
+
+.member-name {
+  color: #3b2a20;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-badge {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.host {
+  background: #fff0d6;
+  color: #a85d00;
+}
+
+.you {
+  background: #e3f3e8;
+  color: #267344;
+}
+
+.waiting-card {
+  width: 100%;
+  background: #fefefe;
+  border: 1px solid #e5e1dc;
+  border-radius: 18px;
+  padding-top: 32px;
+  padding-bottom: 32px;
+  padding-left: 32px;
+  padding-right: 32px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(59, 42, 32, 0.25);
+}
+
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+.loading-dots span {
+  width: 7px;
+  height: 7px;
+  background: #ea351d;
+  border-radius: 50%;
+  animation: loading 1s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loading {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.waiting-status {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 12px;
+  border-radius: 20px;
+  background: #e3f3e8;
+  color: #267344;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin: auto;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #267344;
+}
+
+.next-section {
+  margin-top: 24px;
+}
+
+.step-card {
+  border: 1px solid #e5e1dc;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 15px rgba(59, 42, 32, 0.1);
+}
+
+.step-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #c8372d;
+  line-height: 1;
+}
+
+.step-card:hover {
+  background-color: #faf8f3;
+}
+
+.dish-search-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  padding-left: 24px;
+  padding-right: 24px;  
+  background-color: #fff4e3;           
+  border: 2px dashed #c4521f;           
+  border-radius: 16px;
+}
+
+.dish-search-prompt h3 {
+  color: #3b2a20;                     
+  font-size: 20px;
+}
+
+.dish-search-prompt .btn {
+  background-color: #c4521f;           
+  border-color: #c4521f;
+  color: #fff4e3;
+  border-radius: 10px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  padding-left: 18px;
+  padding-right: 18px;
+  font-weight: bold;
+  box-shadow: 0 6px 0 #9e4018;   
+  transition: transform 0.15s ease, box-shadow 0.15s ease; 
+}
+
+.dish-search-prompt .btn:hover {
+  transform: translateY(-2px);
+  background-color: #c4521f;
+  box-shadow: 0 8px 0 #9e4018;  
+}
 </style>
