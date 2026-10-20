@@ -206,23 +206,55 @@ async function getWp4Data(centreId) {
 
       const now = Date.now()
 
-      shoutouts = allShoutouts.filter((shoutout) => {
-        const expiry =
-          shoutout.expires_at ??
-          shoutout.expiresAt ??
-          null
+      const stallsById = new Map(
+        stalls.map((stall) => [
+          String(stall._id),
+          stall
+        ])
+      )
 
-        if (!expiry) {
-          return true
-        }
+      shoutouts = allShoutouts
+        .filter((shoutout) => {
+          const expiry =
+            shoutout.expires_at ??
+            shoutout.expiresAt ??
+            null
 
-        const expiryTime = new Date(expiry).getTime()
+          if (!expiry) {
+            return true
+          }
 
-        return (
-          !Number.isFinite(expiryTime) ||
-          expiryTime >= now
-        )
-      })
+          const expiryTime =
+            new Date(expiry).getTime()
+
+          return (
+            !Number.isFinite(expiryTime) ||
+            expiryTime >= now
+          )
+        })
+        .map((shoutout) => {
+          const stallId =
+            shoutout.stall_id ??
+            shoutout.stallId
+
+          const stall =
+            stallsById.get(
+              String(stallId)
+            )
+
+          return {
+            ...shoutout,
+
+            stall_name:
+              stall?.name ??
+              "Unknown stall",
+
+            stall_unit_no:
+              stall?.unit_no ??
+              stall?.unitNo ??
+              null
+          }
+        })
     }
   }
 
