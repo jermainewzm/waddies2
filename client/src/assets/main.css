@@ -194,10 +194,11 @@ h1, h2, h3, h4 {
 /* cute form inputs */
 
 .cute-input.form-control,
-.cute-input.input {
+.cute-input.input,
+.cute-input.form-select {
   border: 3px solid var(--ink);
   border-radius: 12px;
-  background: var(--paper);
+  background-color: var(--paper);
 
   box-shadow: 3px 3px 0 var(--ink);
 
@@ -219,6 +220,9 @@ h1, h2, h3, h4 {
   box-shadow: 5px 5px 0 var(--ink);
 }
 
+.cute-input.form-select {
+  padding-right: 36px;
+}
 
 /* checkbox -> chip */
 
