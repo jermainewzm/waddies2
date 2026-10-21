@@ -585,7 +585,7 @@ onUnmounted(() => {
               No shout-outs today.
             </p>
 
-            <div v-else>
+                        <div v-else>
               <div
                 v-for="shoutout in centre.shoutouts"
                 :key="
@@ -594,9 +594,27 @@ onUnmounted(() => {
                 "
                 class="shoutout"
               >
-                {{
-                  shoutout.message
-                }}
+                <div
+                  class="d-flex justify-content-between align-items-start gap-2 mb-1"
+                >
+                  <strong>
+                    {{
+                      shoutout.stall_name ||
+                      "Unknown stall"
+                    }}
+                  </strong>
+
+                  <small
+                    v-if="shoutout.stall_unit_no"
+                    class="text-muted"
+                  >
+                    {{ shoutout.stall_unit_no }}
+                  </small>
+                </div>
+
+                <p class="mb-0">
+                  {{ shoutout.message }}
+                </p>
               </div>
             </div>
           </section>
