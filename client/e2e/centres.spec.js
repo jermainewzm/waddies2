@@ -71,7 +71,15 @@ const centreDetail = {
 
   stalls: [],
 
-  shoutouts: []
+    shoutouts: [
+    {
+      _id: "shoutout-test-1",
+      stall_id: "671000000000000000000101",
+      stall_name: "Jurong Chicken Rice",
+      stall_unit_no: "#02-15",
+      message: "Fresh roast chicken available today!"
+    }
+  ]
 }
 
 test.beforeEach(
@@ -307,5 +315,32 @@ test(
     ).toBeGreaterThan(
       first.y
     )
+  }
+)
+
+test(
+  "shoutout shows the stall that posted it",
+  async ({ page }) => {
+    await page.goto(
+      "/centres/1"
+    )
+
+    await expect(
+      page.getByText(
+        "Jurong Chicken Rice"
+      )
+    ).toBeVisible()
+
+    await expect(
+      page.getByText(
+        "Fresh roast chicken available today!"
+      )
+    ).toBeVisible()
+
+    await expect(
+      page.getByText(
+        "#02-15"
+      )
+    ).toBeVisible()
   }
 )

@@ -40,7 +40,7 @@ const menuOpen = ref(false)
 .site-head {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 1000;
   background: var(--sun);
   border-bottom: 4px solid var(--ink);
 }

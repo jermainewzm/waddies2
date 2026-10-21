@@ -106,40 +106,41 @@ function formatTime(time) {
 </script>
 
 <template>
-  <main class="bg-cups">
+  <main class="bg-tiles">
   <div class="container py-5">
 
     <!-- page heading -->
     <div class="page-header text-center mb-5">
-        <div class="heading-icon">🍜</div>
-        <h1 class="hh-display mb-2">Start a Makan Plan</h1>
+        <svg width="70" height="77" aria-hidden="true"><use href="#av-waffle"/></svg>
+        <h1 class=" mb-2">Start a Makan Plan</h1>
         <p class="mb-0 text-muted fst-italic"> Get everyone together. We'll handle the makan. </p>
      </div>
 
      <div class="row justify-content-center align-items-start g-4">
      <div class="col-12 col-lg-6">
-        <div class="create-plan-card">
+        <div class="awning"></div>
+        <div class="card create-plan-card">
           <div class="section-label"> 01</div>
-          <h2 class="hh-display mb-2"> Set up your plan </h2>
+          <h2 class=" mb-2"> Set up your plan </h2>
           <p class="text-muted mb-4"> Give your makan session a name and choose when to meet.</p>
 
           <form v-on:submit.prevent="createPlan">
              <!-- makan plan name -->
             <div class="mb-3">
               <label for="name" class="form-label">Plan name</label>
-              <input id="name" v-model="name" class="form-control" placeholder="e.g. Saturday lunch" />
+              <input id="name" v-model="name" class="form-control cute-input" placeholder="e.g. Saturday lunch" />
             </div>
 
              <!-- date -->
             <div class="mb-3">
             <label for="date" class="form-label">Date</label>
-            <input id="date" v-model="date" type="date" class="form-control" :min="minDate" :max="maxDate"/>
+            <input id="date" v-model="date" type="date" class="form-control cute-input" :min="minDate" :max="maxDate"/>
             </div>
              <!-- time -->
             <div class="mb-3">
               <label for="time" class="form-label">Time</label>
-              <input id="time" v-model="time" type="time" class="form-control" :min="minTime" />
-              <p v-if="isOddHour" class="text-warning fw-bold small mb-0 mt-1">
+              <input id="time" v-model="time" type="time" class="form-control cute-input" :min="minTime" />
+              <p v-if="isOddHour" class="text-danger fw-bold small mb-0 mt-1">
                 NOTE: Most hawker centres are closed at this hour, and public transport may not be running.
               </p>
             </div>
@@ -163,17 +164,17 @@ function formatTime(time) {
 
      <!-- side preview-->
      <div class="col-12 col-lg-5">
-        <div class="preview-plan-card">
+        <div class="card preview-plan-card">
            <div class="section-label">
             02
            </div>
-           <h2 class="hh-display mb-2"> Your plan preview </h2>
+           <h2 class="mb-2"> Your plan preview </h2>
            <p class="text-muted mb-4"> This is how your plan will appear in the lobby.</p>
 
            <div class="plan-preview">
 
             <div class="plan-top">
-              <div class="food-icon">🍜 </div>
+              <svg width="70" height="77" aria-hidden="true"><use href="#av-milo"/></svg>
             </div>
             <h3 class="plan-name mb-1">
               {{ name || 'Saturday lunch' }}
@@ -217,15 +218,6 @@ function formatTime(time) {
 
 <style scoped>
 
-.heading-icon {
-  font-size: 48px;
-  margin-bottom: 5px;
-}
-
-.food-icon {
-  font-size: 30px;
-  margin-bottom:4px;
-}
 
 .plan-name {
   font-size: 24px;
@@ -238,17 +230,14 @@ function formatTime(time) {
 }
 
 .create-plan-card, .preview-plan-card {
-  background-color: white;
-  border-radius: 20px;
   padding: 32px;
-  box-shadow: 0 6px 24px rgba(59, 42, 32, 0.08);
 }
 
 .plan-preview {
-  background-color: white;
+  background-color: var(--paper);
   border-radius: 16px;
   padding: 24px;
-  border: 1px solid #e5e5e5;
+  border: 3px solid var(--ink);
   text-align: center;
 }
 
@@ -256,8 +245,8 @@ function formatTime(time) {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: var(--hh-steel);
-  color: var(--hh-kopi);
+  background-color: var(--cream);
+  color: var(--ink);
   font-size: 12px;
   font-weight: bold;
   display: flex;
@@ -270,31 +259,16 @@ function formatTime(time) {
   font-size: 11px;
   font-weight: bold;
   letter-spacing: 1px;
-  color: var(--hh-red)
+  color: var(--tomato)
 }
 
 .create-plan-card h2 {
   font-size: 28px;
 }
 
-.form-label {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.form-control {
-  border-radius: 10px;
-  padding: 12px 14px;
-}
-
-.form-control:focus {
-  border-color: #c4521f;
-  box-shadow: 0 0 0 3px rgba(196, 82, 31, 0.15);
-}
-
 .plan-details {
   margin-top: 24px;
-  background-color: var(--hh-steel);
+  background-color: var(--cream);
   border-radius: 12px;
   padding: 18px 20px;
  
@@ -320,50 +294,48 @@ function formatTime(time) {
   margin-top: 8px;
 }
 
+.form-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
 .preview-tip {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 16px;
   padding: 12px 14px;
-  background-color: var(--hh-steel);
+  background-color: var(--cream);
+  border: 3px solid var(--ink);
   border-radius: 10px;
   font-size: 13px;
  
 }
-
 .alert-success strong {
   display: inline-block;
   font-size: 24px;
   letter-spacing: 3px;
-  color: var(--hh-kopi);
-  background-color:white;
+  color: var(--ink);
+  background-color: var(--paper);
   padding: 6px 12px;
   border-radius: 8px;
   margin-left: 6px;
-  border: 1px solid #f0d8c0;
-}
-
-.btn-lobby {
-  background-color:  #287C7A;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 12px;
-  font-weight: bold;
-  box-shadow: 0 6px 0 #154a49;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.btn-lobby:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 0 #154a49;
+  border: 3px solid var(--ink);
 }
 
 .preview-code {
   font-size: 28px;
   font-weight: bold;
   letter-spacing: 6px;
-  color: var(--hh-kopi);
+  color: var(--ink);
+}
+
+.page-header svg {
+  animation: bob 2.6s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
 }
 </style>

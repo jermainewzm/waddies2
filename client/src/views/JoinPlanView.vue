@@ -30,6 +30,7 @@ async function joinPlan() {
 </script>
 
 <template>
+  <main class="bg-tiles">
   <div class="container py-5">
 
     <!-- page heading -->
@@ -41,7 +42,7 @@ async function joinPlan() {
 
     <div class="row justify-content-center">
       <div class="col-12 col-lg-5">
-        <div class="join-plan-card">
+        <div class="card join-plan-card">
           <h2 class="hh-display mb-2">Enter your code</h2>
           <p class="text-muted mb-4">Ask whoever created the plan for their 6-digit code.</p>
 
@@ -61,9 +62,15 @@ async function joinPlan() {
     </div>
 
   </div>
+  </main>
 </template>
 
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
+
 .heading-icon {
   font-size: 48px;
   margin-bottom: 5px;

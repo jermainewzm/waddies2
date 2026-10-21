@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted} from "vue"
 import axios from "axios"
 import { API_URL, DIET_OPTIONS } from "@/utils/constants"
 import { useRoute, useRouter, RouterLink } from "vue-router"
+const AVATARS = ["av-milo", "av-waffle", "av-toast", "av-tissue"]
 
 import L from 'leaflet' //import leaflet javascript code
 import 'leaflet/dist/leaflet.css' //import leaflet css styling
@@ -191,7 +192,7 @@ onMounted(async () => {
     if (plan.value.status !== "joining") {
       return
     }
-    map = L.map("map").setView([1.4382, 103.7891], 15) // tells Leaflet which HTML element to put the map inside
+    map = L.map("map").setView([1.3521, 103.8198], 11) // tells Leaflet which HTML element to put the map inside
 
     //Keep map view around SG, we pass in a nested arr of coordinates
     map.setMaxBounds([[1.22,103.62], [1.47,104.08]])
@@ -220,12 +221,13 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <main class="bg-tiles">
   <div class="container py-4">
     <div class="row g-4">
             <div class="col-12 col-lg-5">
-        <div v-if="plan" class="plan-card">
+        <div v-if="plan" class="card plan-card">
           <div class="text-center">
-            <div class="food-icon">🍜</div>
+             <svg width="70" height="77" aria-hidden="true"><use href="#av-milo"/></svg>
             <h1 class="plan-name mb-1">{{ plan.name }}</h1>
             <span class="plan-type">MAKAN PLAN</span>
           </div>
@@ -250,10 +252,12 @@ onUnmounted(() => {
             <p class="preview-code mb-0">{{ plan.code }}</p>
           </div>
 
-          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h2>
+          <h1 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h1>
           <div class="members-list">
             <div class="member-card" v-for="(member, index) in plan.members" :key="member._id">
-              <span class="avatar">{{ member.name.charAt(0).toUpperCase() }}</span>
+              <svg class="avatar" width="32" height="35" aria-hidden="true">
+                <use v-bind:href="`#${AVATARS[index % AVATARS.length]}`"/>
+              </svg>
               <span class="fw-bold member-name">{{ member.name }}</span>
               <!-- the first person to join is the host -->
               <span v-if="index === 0" class="member-badge host">Host</span>
@@ -265,12 +269,12 @@ onUnmounted(() => {
         </div>
       </div>
         <div class="col-12 col-lg-7">
-        <form v-if="plan && !myId && plan.status === 'joining'" class="w-100" novalidate v-on:submit.prevent="submitPreferences()">
+        <form v-if="plan && !myId && plan.status === 'joining'" class="card w-100 p-4" novalidate v-on:submit.prevent="submitPreferences()">
           <h2 class="h4 mb-3">Your preferences</h2>
 
           <div class="mb-3">
             <label for="name" class="form-label fw-bold">Your name</label>
-            <input id="name" maxlength="30" v-model="name" class="form-control" placeholder="e.g. Aisha" />
+            <input id="name" maxlength="30" v-model="name" class="cute-input form-control" placeholder="e.g. Aisha" />
           </div>
 
           <div class="mb-3">
@@ -278,16 +282,16 @@ onUnmounted(() => {
             <p class="text-muted small mb-2">Enter a postal code, or tap the map to drop a pin.</p>
 
            <div class="input-group mb-2">
-               <input v-model="postal" class="form-control" placeholder="Postal code, e.g. 730707" inputmode="numeric" maxlength="6" />
-               <button type="button" class="btn btn-outline-dark" v-on:click="getPostal()">Find</button>
+               <input v-model="postal" class="cute-input form-control" placeholder="Postal code, e.g. 730707" inputmode="numeric" maxlength="6" />
+               <button type="button" class="btn sm" v-on:click="getPostal()">Find</button>
            </div>
             <div id="map"></div>
-            <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="small text-success mt-2 mb-0">Location set</p>
+            <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="location-set mt-2 mb-0">Location set</p>
           </div>
 
           <div class="mb-3">
             <label for="diet" class="form-label fw-bold">Dietary needs</label>
-            <select id="diet" v-model="diet" class="form-select">
+            <select id="diet" v-model="diet" class="cute-input form-select">
               <option v-for="option in DIET_OPTIONS" :key="option.value" :value="option.value" >
                  {{ option.label }} 
               </option>
@@ -304,7 +308,7 @@ onUnmounted(() => {
                 :min="MIN_BUDGET"
                 :max="MAX_BUDGET"
                 step="0.5"
-                class="form-control"
+                class="cute-input form-control"
                 :class="{ 'is-invalid': budgetError }"
                 placeholder="e.g. 8"
                 @keydown="blockBadKeys"
@@ -315,17 +319,17 @@ onUnmounted(() => {
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-          <button type="submit" class="btn btn-hh-red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
+          <button type="submit" class="btn red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
         </form>
 
         <!--arrived after swiping started -->
-        <div v-else-if="plan && !myId" class="waiting-card ">
+        <div v-else-if="plan && !myId" class="card waiting-card">
           <h2 class="h3 fw-bold">Too late!</h2>
           <p class="text-muted mb-0">This group has already started swiping.</p>
-          <RouterLink class="btn start-btn w-50 mt-4" to="/plan/new">Start your own plan</RouterLink>
+          <RouterLink class="btn mx-auto red w-50 mt-4" to="/plan/new">Start your own plan</RouterLink>
         </div>
 
-         <div v-else class="waiting-card">
+         <div v-else class="card waiting-card">
             <h2 class="h3 fw-bold">You're in!</h2>
             <div class="loading-dots">
               <span></span>
@@ -336,7 +340,7 @@ onUnmounted(() => {
               <span class="status-dot"></span>
               Waiting for everyone to join...
             </div>
-            <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn start-btn w-50 mt-4">Start swiping!</button>
+            <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn green w-50 mt-4 mx-auto">Start swiping!</button>
             <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0">{{ errorMessage }}</p>
         </div>
 
@@ -344,14 +348,14 @@ onUnmounted(() => {
           <div class="h3 fw-bold mb-3"> What's next?</div>
           <div class="row g-3">
             <div class="col-12 col-lg-4">
-              <div class="card h-100 p-3 step-card">
+              <div class="card h-100 p-3 step-card step-1">
                 <p class="step-number mb-2">1</p>
                 <h3 class="h5 fw-bold"> Everyone joins</h3>
                 <p class="text-muted mb-0"> Share the code with your friends</p>
               </div>
             </div>
             <div class="col-12 col-lg-4">
-              <div class="card h-100 p-3 step-card">
+              <div class="card h-100 p-3 step-card step-2">
                 <p class="step-number mb-2">2</p>
                 <h3 class="h5 fw-bold">Wait for everyone</h3>
                 <p class="text-muted mb-0">
@@ -360,7 +364,7 @@ onUnmounted(() => {
               </div>
             </div>
             <div class="col-12 col-lg-4">
-              <div class="card h-100 p-3 step-card">
+              <div class="card h-100 p-3 step-card step-3">
                   <p class="step-number mb-2">3</p>
                   <h3 class="h5 fw-bold">Find a match</h3>
                   <p class="text-muted mb-0">Swipe together and find a hawker centre everyone likes. 
@@ -379,25 +383,22 @@ onUnmounted(() => {
               </p>
               </div>
           </div>
-          <button type="button" class="btn btn-outline-dark" v-on:click="router.push(`/dish-search?plan=${code}`)"> Search dishes</button>
+          <button type="button" class="btn red" v-on:click="router.push(`/dish-search?plan=${code}`)"> Search dishes</button>
         </div>
       </div>
     </div>
   </div>
+  </main>
 </template>
 
 <style scoped>
 
-.plan-card {
-  background: white;
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: 0 10px 35px rgba(59, 42, 32, 0.12);
+main {
+  min-height: 100vh;
 }
 
-.food-icon {
-  font-size: 30px;
-  margin-bottom: 4px;
+.plan-card {
+  padding: 24px;
 }
 
 .plan-name {
@@ -407,16 +408,16 @@ onUnmounted(() => {
 }
 
 .plan-type {
-  font-size: 11px;
+  font-size: 20px;
   font-weight: bold;
   letter-spacing: 1px;
-  color: var(--hh-red);
+  color: var(--tomato);
 }
 
 .plan-details {
   margin-top: 24px;
   padding: 18px 20px;
-  background-color: var(--hh-steel);
+  background-color: var(--cream);
   border-radius: 12px;
 }
 
@@ -433,13 +434,13 @@ onUnmounted(() => {
 
 .plan-detail small {
   display: block;
-  color: #777;
+  color: var(--muted);
 }
 
 .code-label {
   display: block;
   margin-top: 0;
-  color: #777;
+  color: var(--muted);
   font-size: 13px;
   font-weight: bold;
   letter-spacing: 2px;
@@ -449,11 +450,32 @@ onUnmounted(() => {
   font-size: 28px;
   font-weight: bold;
   letter-spacing: 6px;
-  color: var(--hh-kopi);
+  color: var(--ink);
 }
 
 #map {
   height: 280px;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+#map {
+  position: relative;     /* needed so the label positions against the map */
+}
+
+#map::before {
+  content: "Tap to drop a pin 📍 ";    
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 500;                   
+  padding: 4px 10px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: bold;
 }
 
 @media (min-width: 992px) {
@@ -462,60 +484,12 @@ onUnmounted(() => {
   }
 }
 
-.code-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.code-label {
-  margin-top: 20px;
-  margin-bottom: 4px;
-  color: #777;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-.code {
-  display: inline-block;
-  letter-spacing: 3px;
-  font-size: 24px;
-  background: #fff4e3;
-  border-radius: 10px;
-  color: #c4521f;
-  font-weight: bold;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 12px;
-  padding-right: 12px;
-  margin-bottom: 0px;
-}
-
-.start-btn {
-  background-color: #c4521f;         
-  color: #fff4e3;
-  border-radius: 14px;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  font-size: 20px;
-  font-weight: bold;
-  box-shadow: 0 6px 0 #9e4018;        
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.start-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 0 #9e4018;        
-}
-
 .avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;           
-  background-color: #f48342;
-  color: #fff4e3;
+  background-color: var(--tomato);
+  color: var(--cream);
   font-weight: bold;
   display: flex;
   flex-shrink: 0;
@@ -523,24 +497,25 @@ onUnmounted(() => {
   justify-content: center;
 }
 
-.plan-card {
-  background: white;
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: 0 10px 35px rgba(59, 42, 32, 0.25);
-}
-
-.plan-date {
-  margin: 8px 0 0;
-  color: #777;
-  font-size: 15px;
+.location-set {
+  display: flex;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px 12px;
+  align-items: center;
+  background: var(--pandan);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
 }
 
 .members-title {
   margin-top: 20px;
   margin-bottom: 12px;
-  color: #3b2a20;
-  font-size: 14px;
+  color: var(--ink) ;
+  font-size: 20px;
   font-weight: bold;
 }
 
@@ -557,19 +532,19 @@ onUnmounted(() => {
   width: 100%;
   max-width: 300px;
   padding: 10px 12px;
-  background: #ffffff;
-  border: 1px solid #e9e9e9;
+  background: var(--paper);
+  border: 3px solid var(--ink);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(59, 42, 32, 0.1);
+  box-shadow: 3px 3px 0 var(--ink);;
 }
 
 .member-count {
   margin-left: 6px;
-  color: #ea351d;
+  color: var(--tomato);
 }
 
 .member-name {
-  color: #3b2a20;
+  color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -586,26 +561,23 @@ onUnmounted(() => {
 }
 
 .host {
-  background: #fff0d6;
-  color: #a85d00;
+  background: var(--sun);
+  color: var(--ink);
+  border: 2px solid var(--ink);
 }
 
 .you {
-  background: #e3f3e8;
-  color: #267344;
+  background: var(--pandan);
+  color: var(--ink);
+  border: 2px solid var(--ink);
 }
 
 .waiting-card {
-  width: 100%;
-  background: #fefefe;
-  border: 1px solid #e5e1dc;
-  border-radius: 18px;
   padding-top: 32px;
   padding-bottom: 32px;
   padding-left: 32px;
   padding-right: 32px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(59, 42, 32, 0.25);
 }
 
 .loading-dots {
@@ -619,7 +591,7 @@ onUnmounted(() => {
 .loading-dots span {
   width: 7px;
   height: 7px;
-  background: #ea351d;
+  background: var(--tomato);
   border-radius: 50%;
   animation: loading 1s infinite ease-in-out;
 }
@@ -671,16 +643,13 @@ onUnmounted(() => {
 }
 
 .step-card {
-  border: 1px solid #e5e1dc;
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 4px 15px rgba(59, 42, 32, 0.1);
+  background-color: var(--cream);
 }
 
 .step-number {
   font-size: 28px;
   font-weight: bold;
-  color: #c8372d;
+  color: var(--ink);
   line-height: 1;
 }
 
@@ -698,33 +667,23 @@ onUnmounted(() => {
   padding-bottom: 20px;
   padding-left: 24px;
   padding-right: 24px;  
-  background-color: #fff4e3;           
-  border: 2px dashed #c4521f;           
+  background-color: var(--cream);
+  border: 3px dashed var(--ink);           
   border-radius: 16px;
 }
 
 .dish-search-prompt h3 {
-  color: #3b2a20;                     
+  color: var(--ink);                     
   font-size: 20px;
 }
 
-.dish-search-prompt .btn {
-  background-color: #c4521f;           
-  border-color: #c4521f;
-  color: #fff4e3;
-  border-radius: 10px;
-  padding-top: 9px;
-  padding-bottom: 9px;
-  padding-left: 18px;
-  padding-right: 18px;
-  font-weight: bold;
-  box-shadow: 0 6px 0 #9e4018;   
-  transition: transform 0.15s ease, box-shadow 0.15s ease; 
-}
-
-.dish-search-prompt .btn:hover {
-  transform: translateY(-2px);
-  background-color: #c4521f;
-  box-shadow: 0 8px 0 #9e4018;  
-}
+.step-1 {
+   background: #FFF2C4; 
+}   
+.step-2 {
+   background: #DCF2FB; 
+}   
+.step-3 {
+   background: #D7F2E3; 
+}   
 </style>

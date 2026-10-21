@@ -197,7 +197,7 @@ function makeHttps(url) {
 function normalizeCentre(record) {
   // CKAN responses often contain _id.
   // serial_no is used as fallback.
-  const id = clean(record.serial_no ?? record._id)
+  const id = clean(record._id ?? record.serial_no)
 
   return {
     id,
