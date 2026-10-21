@@ -366,8 +366,9 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <main class="bg-tiles">
   <main class="container py-4">
-    <button class="btn btn-outline-secondary mb-4" v-on:click="goBack()">
+    <button class="btn mb-4" v-on:click="goBack()">
       ← Back to results
     </button>
 
@@ -384,14 +385,14 @@ onUnmounted(() => {
     <div v-else-if="errorMessage" class="alert alert-danger">
       {{ errorMessage }}
 
-      <button class="btn btn-outline-danger btn-sm ms-2" v-on:click="loadRoute()">
+      <button class="btn red btn-sm ms-2" v-on:click="loadRoute()">
         Try again
       </button>
     </div>
 
     <template v-else-if="myRoute">
       <!-- Journey summary -->
-      <section class="card shadow-sm border-0 rounded-4 p-4 mb-4">
+      <section class="card rounded-4 p-4 mb-4">
         <div class="row g-3">
           <div class="col-6">
             <p class="text-muted mb-1">Total travel time</p>
@@ -417,14 +418,14 @@ onUnmounted(() => {
       </section>
 
       <!-- Map -->
-      <section class="card shadow-sm border-0 rounded-4 p-4 mb-4">
+      <section class="card rounded-4 p-4 mb-4">
         <h2 class="hh-display h4 mb-3">Route map</h2>
         <div id="journey-map" class="journey-map rounded-3"></div>
         <p class="text-muted small mt-2 mb-0">Tap a step below to zoom in and see where it starts and ends.</p>
       </section>
 
       <!-- Step-by-step directions -->
-      <section class="card shadow-sm border-0 rounded-4 p-4 mb-4">
+      <section class="card rounded-4 p-4 mb-4">
         <h2 class="hh-display h4 mb-4">Step-by-step directions</h2>
         <div v-for="(leg, index) in routeLegs" v-bind:key="index" 
           class="d-flex gap-3 mb-4"
@@ -469,15 +470,16 @@ onUnmounted(() => {
       </section>
       <!-- Where to next -->
       <div v-if="myRoute.centre" class="text-center mt-4">
-        <RouterLink class="btn btn-outline-dark me-2" v-bind:to="`/centres/${myRoute.centre.serialNo}`">
+        <RouterLink class="btn me-2" v-bind:to="`/centres/${myRoute.centre.serialNo}`">
           See live seats at the centre
         </RouterLink>
-        <RouterLink class="btn" to="/plan/new">
+        <RouterLink class="btn red" to="/plan/new">
           Start a new Makan Plan
         </RouterLink>
       </div>
     </template>
   </main>
+</main>
 </template>
 
 <style scoped>
@@ -504,6 +506,15 @@ onUnmounted(() => {
   font-weight: 600;     /* bolder text */
 }
 
+.journey-map {
+  width: 100%;
+  height: 380px;  /* Leaflet map needs a set height to appear */
+  z-index: 0;     /* keeps map from floating over navbar when scrolling */
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .journey-step {
   cursor: pointer;
   padding: 12px;
@@ -512,20 +523,21 @@ onUnmounted(() => {
 }
 
 .journey-step:hover {
-  background: #f6f7f8;
+  background: var(--cream);
 }
 
 .step-active {
-  background: #eef0f1;
-  border-color: var(--hh-red);
+  background: var(--cream);
+  border-color: var(--tomato);
 }
 
 .journey-icon {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  background: #eef0f1;
+  background: var(--cream);
   font-size: 1.25rem;
+  border: 3px solid var(--ink);
 }
 
 .station-code-badge {

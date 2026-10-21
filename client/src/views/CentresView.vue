@@ -112,6 +112,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <main class="bg-tiles">
   <main class="container py-4 py-md-5">
     <section class="centre-heading mb-4">
       <div
@@ -359,6 +360,7 @@ onUnmounted(() => {
       </div>
     </template>
   </main>
+</main>
 </template>
 
 <style scoped>
