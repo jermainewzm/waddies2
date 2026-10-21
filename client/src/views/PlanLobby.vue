@@ -393,6 +393,10 @@ onUnmounted(() => {
 
 <style scoped>
 
+main {
+  min-height: 100vh;
+}
+
 .plan-card {
   padding: 24px;
 }
