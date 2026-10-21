@@ -51,6 +51,26 @@ const me = computed(() => {
     return plan.value.members.find(member => String(member._id) === String(memberId)) || null
 })
 
+
+// NEW: the middle point of everyone who has joined (average of their pins)
+// same idea as getMidPoint in shortlist-helper.js, which the server uses to pick the best 5
+const groupMidpoint = computed(() => {
+    if (!plan.value || plan.value.members.length === 0) {
+        return null
+    }
+    let totalLat = 0
+    let totalLng = 0
+    for (const member of plan.value.members) {
+        totalLat += member.lat
+        totalLng += member.lng
+    }
+    return {
+        lat: totalLat / plan.value.members.length,
+        lng: totalLng / plan.value.members.length
+    }
+})
+
+
 // centre _ids already on the plan's shortlist
 // (GET /plans/:code fills in shortlist.centre_id with the whole centre, so we take its _id)
 const addedCentres = computed(() => {
@@ -113,6 +133,7 @@ async function loadPlan() {
 async function searchDishes(search) {
     loading.value = true
     errorMessage.value = ''
+    menuError.value = ''   // NEW: clear an old "couldn't load menu" message
     selectedMenu.value = null
     // REMOVED: planCentreId.value = null
 
@@ -160,6 +181,7 @@ async function viewMenu(stall) {
 
 function closeMenu() {
     selectedMenu.value = null
+    menuError.value = ''   // NEW: clear an old "couldn't load menu" message
 }
 
 // REMOVED: openPlanForm() and cancelPlan() (no plan code form any more)
@@ -296,6 +318,7 @@ onUnmounted(() => {
                 :error-message="errorMessage"
                 :has-searched="hasSearched"
                 :date-label="friendlyDate"
+                :midpoint="groupMidpoint"
                 :added-centres="addedCentres"
                 :can-add="cannotAddReason === ''"
                 :cannot-add-reason="cannotAddReason"

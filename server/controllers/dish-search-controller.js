@@ -150,6 +150,8 @@ exports.searchDishes = async (req, res) => {
                     centre_id: centre._id,      //CHANGED: was stall.centre_id ("72")
                     centre_name: centre.name,   //NEW: so the page shows "Maxwell Food Centre", not "72"
                     address: centre.address || "", //NEW
+                    lat: centre.lat,            //NEW: so Dish Search can show how far it is from the group
+                    lng: centre.lng,            //NEW
                     stalls: []
                 }
                 results.push(centreGroup)
