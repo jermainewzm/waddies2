@@ -14,6 +14,7 @@ const router = useRouter()
 const code = route.params.code
 const plan = ref(null)
 const errorMessage = ref("")
+const mapError = ref("")
 const isLoading = ref(true)
 const isJoining = ref(false)
 
@@ -160,7 +161,7 @@ function movePin(position) {
 
 //sg's rough edges, so users dont click from johor, batam
 function pinInSingapore(position) {
-    return position.lat >= 1.22 && position.lat <= 1.47 && position.lng >= 103.62 && position.lng <= 104.08
+    return position.lat >= 1.24 && position.lat <= 1.47 && position.lng >= 103.63 && position.lng <= 104.01
 }
 
 async function getPostal() {
@@ -205,10 +206,10 @@ onMounted(async () => {
     //Leaflet gives the function an object that contains lat and lng values
     map.on("click", function(clickInfo) {
         if (!pinInSingapore(clickInfo.latlng)) {
-          errorMessage.value = "Please select a location within Singapore!"
+           mapError.value = "Please select a location within Singapore!"
           return
         }
-        errorMessage.value = ""
+         mapError.value = ""
         movePin(clickInfo.latlng)
     }
       )
@@ -286,6 +287,7 @@ onUnmounted(() => {
                <button type="button" class="btn sm" v-on:click="getPostal()">Find</button>
            </div>
             <div id="map"></div>
+            <p v-if="mapError" class="text-center text-danger small fw-bold mt-2 mb-0">{{ mapError }}</p>
             <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="location-set mt-2 mb-0">Location set</p>
           </div>
 
