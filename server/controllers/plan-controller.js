@@ -434,14 +434,15 @@ exports.submitSwipes = async (req, res) => {
 exports.getRouteToWinner = async (req,res) => {
     const code = req.params.code
     const memberId = req.query.memberId
+    let plan = null
+    let me = null
     try {
-        const plan = await Plan.findWinnerByCode(code)
+        plan = await Plan.findWinnerByCode(code)
 
         if (!plan) {
             return res.status(404).json({error: "Plan not found!"})
         }
     
-        let me = null
         for (const member of plan.members) {
             if (String(member._id) === String(memberId)) {
                 me = member
@@ -456,7 +457,13 @@ exports.getRouteToWinner = async (req,res) => {
         const routeToCentre = await getRoute(me, plan.winner, plan.date, plan.time, plan.winner.name)
 
         if (!routeToCentre) {
-            return res.status(502).json({error: "Could not find a route to this centre."})
+            return res.status(502).json({error: "Could not find a route to this centre.",
+                centre: { name: plan.winner.name, lat: plan.winner.lat, lng: plan.winner.lng },
+                member: {
+                    lat: me.lat,
+                    lng: me.lng
+                }
+            })
         }
 
         res.json({...routeToCentre, centre: {
@@ -466,6 +473,9 @@ exports.getRouteToWinner = async (req,res) => {
         }})
     } catch (error) {
         console.error(error)
-        res.status(500).json({error: "Could not load the route."})
+        res.status(500).json({error: "Could not load the route.",
+            centre: plan && plan.winner ? { name: plan.winner.name, lat: plan.winner.lat, lng: plan.winner.lng } : null,
+            member: {lat: me.lat, lng: me.lng}
+        })
     }
 }

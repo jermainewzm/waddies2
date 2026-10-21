@@ -45,6 +45,13 @@ async function loadRoute() {
     console.log("Route legs:", response.data.legs)
   } catch (error) {
     errorMessage.value = error.response ? error.response.data.error: "Can't reach the server."
+
+    if (error.response && error.response.data.centre) {
+      myRoute.value = {
+        centre: error.response.data.centre,
+        member: error.response.data.member
+      }
+    }
   }
   isLoading.value = false
 
@@ -382,12 +389,16 @@ onUnmounted(() => {
       <p class="text-muted mt-3">Finding your route...</p>
     </div>
 
-    <div v-else-if="errorMessage" class="alert alert-danger">
+    <div v-else-if="errorMessage" class="text-center alert alert-danger">
       {{ errorMessage }}
 
-      <button class="btn red btn-sm ms-2" v-on:click="loadRoute()">
-        Try again
-      </button>
+    <a v-if="myRoute && myRoute.centre && myRoute.member"
+    class="btn red btn-sm ms-2"
+    v-bind:href="`https://www.google.com/maps/dir/?api=1&origin=${myRoute.member.lat},${myRoute.member.lng}&destination=${myRoute.centre.lat},${myRoute.centre.lng}&travelmode=transit`"
+    target="_blank">
+    Open in Google Maps instead
+    </a>
+    <!-- target=_blank opens google maps in a new tab-->
     </div>
 
     <template v-else-if="myRoute">
@@ -483,6 +494,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
 .journey-map {
   width: 100%;
   height: 380px;  /* Leaflet map needs a set height to appear */
