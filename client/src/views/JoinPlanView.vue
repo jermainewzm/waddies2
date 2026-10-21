@@ -66,6 +66,11 @@ async function joinPlan() {
 </template>
 
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
+
 .heading-icon {
   font-size: 48px;
   margin-bottom: 5px;
