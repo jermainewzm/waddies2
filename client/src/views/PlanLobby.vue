@@ -252,7 +252,7 @@ onUnmounted(() => {
             <p class="preview-code mb-0">{{ plan.code }}</p>
           </div>
 
-          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h2>
+          <h1 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h1>
           <div class="members-list">
             <div class="member-card" v-for="(member, index) in plan.members" :key="member._id">
               <svg class="avatar" width="32" height="35" aria-hidden="true">
@@ -511,7 +511,7 @@ onUnmounted(() => {
   margin-top: 20px;
   margin-bottom: 12px;
   color: var(--ink) ;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: bold;
 }
 
