@@ -1,11 +1,13 @@
 <script setup>
+import { ref, computed } from 'vue' // NEW: for the sort choice + sorted list
 
-defineProps({
+const props = defineProps({ // CHANGED: saved as props so distanceFromGroup can read midpoint
     results: { type: Array, default: () => [] },
     loading: { type: Boolean, default: false },
     errorMessage: { type: String, default: '' },
     hasSearched: { type: Boolean, default: false },
     dateLabel: { type: String, default: '' },           // NEW (styling): eg. "Fri, 30 Oct", shown in the results bubble
+    midpoint: { type: Object, default: null },          // NEW: the group's middle point { lat, lng } (null = nobody joined yet)
 
     // CHANGED: add-to-shortlist state (REMOVED planCentreId + planCode, because there's no code form)
     addedCentres: { type: Array, default: () => [] },   // CHANGED: was an object { centre_id: code }, now a list of centre _ids
@@ -28,6 +30,53 @@ const TAG_INFO = {
     no_pork: { icon: '🚫🐷', label: 'No Pork' },
     no_beef: { icon: '🚫🐮', label: 'No Beef' }
 }
+
+// NEW: centres further than this from the group's middle point get a warning
+const FAR_KM = 6
+
+// NEW: straight-line distance (km) from the group's middle point to a centre
+// same formula as getDistance in shortlist-helper.js (1 degree is about 111 km in Singapore)
+function distanceFromGroup(centre) {
+    if (!props.midpoint || centre.lat == null || centre.lng == null) {
+        return null
+    }
+    const northToSouth = (centre.lat - props.midpoint.lat) * 111
+    const eastToWest = (centre.lng - props.midpoint.lng) * 111
+    const km = Math.sqrt(northToSouth ** 2 + eastToWest ** 2)
+    return Math.round(km * 10) / 10   // 1 decimal place, eg. 7.4
+}
+
+// NEW: how the results are ordered ('cheapest' | 'nearest' | 'farthest')
+const sortBy = ref('cheapest')
+
+// NEW: the cheapest dish price at a centre (used for "Cheapest first")
+function cheapestPrice(centre) {
+    let cheapest = Infinity
+    for (const stall of centre.stalls) {
+        for (const dish of stall.dishes) {
+            if (dish.price < cheapest) {
+                cheapest = dish.price
+            }
+        }
+    }
+    return cheapest
+}
+
+// NEW: the results in the order the user picked
+// [...props.results] makes a COPY first, because .sort() changes the array it's called on
+const sortedResults = computed(() => {
+    const list = [...props.results]
+
+    // ?? = "if there's no distance (no location saved), use this instead", so those centres go last
+    if (sortBy.value === 'nearest') {
+        list.sort((a, b) => (distanceFromGroup(a) ?? 9999) - (distanceFromGroup(b) ?? 9999))
+    } else if (sortBy.value === 'farthest') {
+        list.sort((a, b) => (distanceFromGroup(b) ?? -1) - (distanceFromGroup(a) ?? -1))
+    } else {
+        list.sort((a, b) => cheapestPrice(a) - cheapestPrice(b))
+    }
+    return list
+})
 
 // REMOVED: SEAT_LABELS (the search API doesn't send seat levels, so they never showed)
 
@@ -75,10 +124,48 @@ function getCentreDishes(centre) {
 
         <div v-else>
 
-            <!-- CHANGED (styling): results count is now a bubble -->
-            <p class="count-bubble">
-                🔎 <b>{{ results.length }}</b> centre(s) open on <b>{{ dateLabel }}</b> · cheapest first
-            </p>
+            <!-- CHANGED: results count + sort buttons on one row (wraps on phones) -->
+            <div class="results-bar">
+                <!-- CHANGED: removed "· cheapest first" (the sort buttons show the order now) -->
+                <p class="count-bubble">
+                    🔎 <b>{{ results.length }}</b> centre(s) open on <b>{{ dateLabel }}</b>
+                </p>
+
+                <!-- NEW: choose the order. aria-pressed tells screen readers which one is on -->
+                <div class="sort-group" role="group" aria-label="Sort results">
+                    <span class="sort-label">Sort:</span>
+                    <button
+                        type="button"
+                        class="sort-btn"
+                        :class="{ active: sortBy === 'cheapest' }"
+                        :aria-pressed="sortBy === 'cheapest'"
+                        @click="sortBy = 'cheapest'"
+                    >
+                        💰 Cheapest
+                    </button>
+                    <!-- distance buttons only work once someone has joined (we need their pins) -->
+                    <button
+                        type="button"
+                        class="sort-btn"
+                        :class="{ active: sortBy === 'nearest' }"
+                        :aria-pressed="sortBy === 'nearest'"
+                        :disabled="!midpoint"
+                        @click="sortBy = 'nearest'"
+                    >
+                        📍 Nearest
+                    </button>
+                    <button
+                        type="button"
+                        class="sort-btn"
+                        :class="{ active: sortBy === 'farthest' }"
+                        :aria-pressed="sortBy === 'farthest'"
+                        :disabled="!midpoint"
+                        @click="sortBy = 'farthest'"
+                    >
+                        🚌 Farthest
+                    </button>
+                </div>
+            </div>
 
             <!-- NEW: add-to-shortlist errors (eg. "already on the shortlist") show once, above the results -->
             <p v-if="planError" class="plan-error" role="alert">
@@ -86,8 +173,9 @@ function getCentreDishes(centre) {
             </p>
 
             <!-- CHANGED (styling): one "order chit" per hawker centre -->
+            <!-- CHANGED: loops over sortedResults (was results), so the sort buttons change the order -->
             <div
-                v-for="(centre, index) in results"
+                v-for="(centre, index) in sortedResults"
                 :key="centre.centre_id"
                 class="chit"
                 data-testid="centre-result"
@@ -99,6 +187,15 @@ function getCentreDishes(centre) {
                 <h3 class="centre-name">{{ centre.centre_name }}</h3>
                 <!-- NEW -->
                 <p v-if="centre.address" class="centre-address">📍 {{ centre.address }}</p>
+
+                <!-- NEW: how far this centre is from the middle of the group -->
+                <p
+                    v-if="distanceFromGroup(centre) !== null"
+                    class="distance"
+                    :class="{ far: distanceFromGroup(centre) > FAR_KM }"
+                >
+                    📏 {{ distanceFromGroup(centre) }} km from your group's middle point
+                </p>
 
                 <!-- one row per dish -->
                 <div
@@ -131,6 +228,11 @@ function getCentreDishes(centre) {
                         </span>
                     </div>
                 </div>
+
+                <!-- NEW: warning BEFORE adding, so people know why a far centre might not show up when swiping -->
+                <p v-if="distanceFromGroup(centre) > FAR_KM" class="far-warning" role="note">
+                    ⚠️ This centre is quite far from everyone. You can still add it, but it might not make the final 5 swipe cards.
+                </p>
 
                 <!-- NEW (styling): bottom of the chit -->
                 <div class="chit-foot">
@@ -173,6 +275,8 @@ function getCentreDishes(centre) {
 <!-- parent sends results and the shortlist state DOWN as props -->
 <!-- stall name emits 'view-menu' UP, "Add to shortlist" emits 'add-to-plan' UP with the centre -->
 <!-- CHANGED: no plan code form any more: DishSearch.vue already knows the plan from the URL (?plan=123456) -->
+<!-- NEW: distance from the group's middle point + far warning (midpoint comes DOWN from DishSearch.vue) -->
+<!-- NEW: sort buttons (cheapest / nearest / farthest) only change the ORDER on the page, no new API call -->
 <!-- NEW styling: each centre is a kopitiam "order chit"; colours are main.css variables + a few retro pastels -->
 
 
@@ -247,6 +351,78 @@ function getCentreDishes(centre) {
     font-weight: 700;
 }
 
+/* NEW: count bubble + sort buttons side by side, stacks on phones */
+.results-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.results-bar .count-bubble {
+    margin-bottom: 0;
+}
+
+/* NEW: sort buttons look like one joined "pill switch" */
+.sort-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.sort-label {
+    font-weight: 800;
+    margin-right: 2px;
+}
+
+.sort-btn {
+    padding: 6px 14px;
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 3px 3px 0 var(--ink);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+/* the chosen order: filled in + pushed down */
+.sort-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: 1px 1px 0 var(--ink);
+    transform: translate(2px, 2px);
+}
+
+.sort-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+/* NEW (phones): the 3 sort buttons share one row */
+@media (max-width: 576px) {
+    .sort-group {
+        width: 100%;
+        flex-wrap: nowrap;
+    }
+
+    .sort-label {
+        display: none;         /* hide "Sort:" on phones to save space (the group has aria-label="Sort results") */
+    }
+
+    .sort-btn {
+        flex: 1;               /* each button takes an equal share of the row */
+        padding: 6px 4px;
+        font-size: 14px;
+        white-space: nowrap;   /* keeps the emoji and word on one line */
+    }
+}
+
 /* the number + date inside it */
 .count-bubble b {
     background: var(--cream);
@@ -295,8 +471,36 @@ function getCentreDishes(centre) {
     font-size: 24px;
 }
 
+/* NEW: distance line (green-ish = near, red = far) */
+.distance {
+    display: inline-block;
+    margin: 0 0 12px;
+    padding: 2px 10px;
+    background: #DDF7E8;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.distance.far {
+    background: #FFE1DE;
+    color: var(--bad);
+}
+
+/* NEW: "might not make the final 5" warning */
+.far-warning {
+    margin: 14px 0 0;
+    padding: 10px 14px;
+    background: #FFF3CD;
+    border: 2px dashed var(--ink);
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
 .centre-address {
-    margin: 6px 0 14px;
+    margin: 6px 0 8px;   /* CHANGED: was 6px 0 14px (the distance line sits under it now) */
     font-size: 17px;
     font-weight: 700;
     color: var(--ink);
