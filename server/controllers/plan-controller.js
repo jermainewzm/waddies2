@@ -458,7 +458,11 @@ exports.getRouteToWinner = async (req,res) => {
 
         if (!routeToCentre) {
             return res.status(502).json({error: "Could not find a route to this centre.",
-                centre: { name: plan.winner.name, lat: plan.winner.lat, lng: plan.winner.lng },
+                centre: {
+                    serialNo: plan.winner.serialNo, 
+                    name: plan.winner.name, 
+                    lat: plan.winner.lat, 
+                    lng: plan.winner.lng },
                 member: {
                     lat: me.lat,
                     lng: me.lng
@@ -474,7 +478,7 @@ exports.getRouteToWinner = async (req,res) => {
     } catch (error) {
         console.error(error)
         res.status(500).json({error: "Could not load the route.",
-            centre: plan && plan.winner ? { name: plan.winner.name, lat: plan.winner.lat, lng: plan.winner.lng } : null,
+            centre: plan && plan.winner ? { serialNo: plan.winner.serialNo, name: plan.winner.name, lat: plan.winner.lat, lng: plan.winner.lng } : null,
             member: {lat: me.lat, lng: me.lng}
         })
     }

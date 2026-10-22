@@ -389,17 +389,31 @@ onUnmounted(() => {
       <p class="text-muted mt-3">Finding your route...</p>
     </div>
 
-    <div v-else-if="errorMessage" class="text-center alert alert-danger">
-      {{ errorMessage }}
-
-    <a v-if="myRoute && myRoute.centre && myRoute.member"
-    class="btn red btn-sm ms-2"
-    v-bind:href="`https://www.google.com/maps/dir/?api=1&origin=${myRoute.member.lat},${myRoute.member.lng}&destination=${myRoute.centre.lat},${myRoute.centre.lng}&travelmode=transit`"
-    target="_blank">
-    Open in Google Maps instead
+  <div v-else-if="errorMessage && myRoute && myRoute.centre" class="card text-center alert alert-danger">
+  {{ errorMessage }}
+    <a
+      class="btn w-50 mx-auto mb-3"
+      v-bind:href="`https://www.google.com/maps/dir/?api=1&destination=${myRoute.centre.lat},${myRoute.centre.lng}&travelmode=transit`"
+      target="_blank"
+      rel="noopener"
+    >
+      Try opening in Google Maps ↗
     </a>
-    <!-- target=_blank opens google maps in a new tab-->
+    <div class="card next-actions mt-4">
+      <h3 class="next-title">Where to next?</h3>
+      <p>Continue exploring Makan Plan.</p>
+
+      <div class="next-buttons">
+        <RouterLink class="btn red" to="/plan/new">
+          Start a new Makan Plan
+        </RouterLink>
+
+        <RouterLink class="btn" v-bind:to="`/centres/${myRoute.centre.serialNo}`">
+          See live seats at the centre 🪑
+        </RouterLink>
+      </div>
     </div>
+  </div>
 
     <template v-else-if="myRoute">
       <!-- Journey summary -->
@@ -563,5 +577,23 @@ main {
   color: white;
   font-size: 12px;
   font-weight: bold;
+}
+
+.next-actions {
+  padding: 24px;
+  text-align: center;
+  background: var(--cream);     /* sets it apart from the white panels above */
+}
+
+.next-title {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.next-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
 }
 </style>
