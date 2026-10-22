@@ -10,6 +10,7 @@ import "leaflet/dist/leaflet.css"     //styling for the map
 
 const route = useRoute()
 const router = useRouter()
+const routeMode = ref("pt")
 
 const code = route.params.code
 const myId = localStorage.getItem(`memberId-${code}`)
@@ -39,11 +40,14 @@ async function loadRoute() {
 
   try {
     const response = await axios.get(`${API_URL}/plans/${code}/route`, {
-      params: { memberId: myId }
+      params: { memberId: myId, mode: routeMode.value }
     })
     myRoute.value = response.data
     console.log("Route legs:", response.data.legs)
   } catch (error) {
+    console.log("Status:", error.response?.status)
+  console.log("Response:", error.response?.data)
+  console.log("Message:", error.message)
     errorMessage.value = error.response ? error.response.data.error: "Can't reach the server."
 
     if (error.response && error.response.data.centre) {
@@ -60,6 +64,11 @@ async function loadRoute() {
     await nextTick()
     drawMap()
   }
+}
+
+function changeRouteMode(mode) {
+  routeMode.value = mode
+  loadRoute()
 }
 
 function goBack() {
@@ -379,9 +388,9 @@ onUnmounted(() => {
       ← Back to results
     </button>
 
-    <h1 class="hh-display mb-2">Your journey</h1>
-    <p class="text-muted mb-4">
-      Here's how to get to your group's winning hawker centre.
+    <h1 class="hh-display mb-2 d-flex justify-content-center">Journey Summary</h1>
+    <p class="text-muted mb-4 d-flex justify-content-center">
+      Choose how to get to your group's winning hawker centre. 
     </p>
 
     <div v-if="isLoading" class="text-center py-5">
@@ -389,52 +398,59 @@ onUnmounted(() => {
       <p class="text-muted mt-3">Finding your route...</p>
     </div>
 
-  <div v-else-if="errorMessage && myRoute && myRoute.centre" class="card text-center alert alert-danger">
-  {{ errorMessage }}
-    <a
-      class="btn w-50 mx-auto mb-3"
-      v-bind:href="`https://www.google.com/maps/dir/?api=1&destination=${myRoute.centre.lat},${myRoute.centre.lng}&travelmode=transit`"
-      target="_blank"
-      rel="noopener"
-    >
-      Try opening in Google Maps ↗
-    </a>
-    <div class="card next-actions mt-4">
-      <h3 class="next-title">Where to next?</h3>
-      <p>Continue exploring Makan Plan.</p>
+    <!-- travel mode toggles-->
+    <div v-if="!isLoading" class="mb-4 d-flex justify-content-center">
+      <button class="btn me-2" 
+      v-on:click="changeRouteMode('pt')">Public Transport 🚌</button>
+      <button class="btn" v-on:click="changeRouteMode('drive')">Driving 🚗 
+      </button>
+    </div>
+    <div v-if="!isLoading && errorMessage && myRoute && myRoute.centre" class="card text-center alert alert-danger">
+       <h2 class="hh-display h4 mb-3">
+    {{ routeMode === 'pt' ? 'No public transport route found.' : 'Route unavailable' }}
+      </h2>
+      <a class="btn blue w-50 mx-auto mb-3" v-bind:href="`https://www.google.com/maps/dir/?api=1&destination=${myRoute.centre.lat},${myRoute.centre.lng}&travelmode=${routeMode === 'drive' ? 'driving' : 'transit'}`"
+        target="_blank"
+        rel="noopener"
+      >
+        Try opening in Google Maps ↗
+      </a>
+      <div class="card next-actions mt-4">
+        <h3 class="next-title">Where to next?</h3>
+        <p>Continue exploring Makan Plan.</p>
 
       <div class="next-buttons">
-        <RouterLink class="btn red" to="/plan/new">
-          Start a new Makan Plan
-        </RouterLink>
-
         <RouterLink class="btn" v-bind:to="`/centres/${myRoute.centre.serialNo}`">
           See live seats at the centre 🪑
+        </RouterLink>
+        <RouterLink class="btn red" to="/">
+          Back to Homepage 🏡
         </RouterLink>
       </div>
     </div>
   </div>
 
-    <template v-else-if="myRoute">
+    <template v-else-if="!isLoading && myRoute && !errorMessage">
+
       <!-- Journey summary -->
       <section class="card rounded-4 p-4 mb-4">
         <div class="row g-3">
           <div class="col-6">
             <p class="text-muted mb-1">Total travel time</p>
             <h2 class="hh-display h3 mb-0">
-              {{ myRoute.totalMinutes }} min
+              {{ myRoute.totalMinutes }} min (est)
             </h2>
           </div>
 
-          <div class="col-6">
+          <div class="col-6" v-if="routeMode === 'pt'">
             <p class="text-muted mb-1">Public transport fare</p>
             <h2 class="hh-display h3 mb-0">
-              Estimated fare: ${{ myRoute.fare }}
+              ${{ myRoute.fare }} (est)
             </h2>
           </div>
         </div>
         <hr/>
-        <p class="mb-0 text-muted">
+        <p class="mb-0 text-muted" v-if="routeMode === 'pt'">
           {{ myRoute.transfers }} transfer(s)
         </p>
         <p v-if="myRoute.totalMinutes > 120" class="alert alert-warning mt-3 mb-0">
@@ -451,7 +467,16 @@ onUnmounted(() => {
 
       <!-- Step-by-step directions -->
       <section class="card rounded-4 p-4 mb-4">
-        <h2 class="hh-display h4 mb-4">Step-by-step directions</h2>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h2 class="hh-display h4 mb-4">Directions</h2>
+         <a v-if="myRoute.member && myRoute.centre" class="btn blue sm"
+          v-bind:href="`https://www.google.com/maps/dir/?api=1&origin=${myRoute.member.lat},${myRoute.member.lng}&destination=${myRoute.centre.lat},${myRoute.centre.lng}&travelmode=driving`"
+          target="_blank"
+          rel="noopener"
+        >
+          Need additional help? Open in Google Maps ↗
+        </a>
+        </div>
         <div v-for="(leg, index) in routeLegs" v-bind:key="index" 
           class="d-flex gap-3 mb-4"
           v-bind:class="{'step-active' : selectedLeg === index }"
@@ -460,6 +485,7 @@ onUnmounted(() => {
             align-items-center justify-content-center">
             <span v-if="leg.mode === 'WALK'">🚶</span>
             <span v-else-if="leg.mode === 'BUS'">🚌</span>
+            <span v-else-if="leg.mode === 'DRIVE'">🚗</span>
             <span v-else>🚆</span>
           </div>
           <div class="flex-grow-1">
@@ -475,6 +501,9 @@ onUnmounted(() => {
               </template>
               <template v-else-if="leg.mode === 'TRAM'">
                 Take {{ getMRTLine(leg.service) }}
+            </template>
+            <template v-else-if="leg.mode === 'DRIVE'">
+              Drive to your destination
             </template>
             </h3>
 
@@ -494,9 +523,9 @@ onUnmounted(() => {
         </div>
       </section>
       <!-- Where to next -->
-      <div v-if="myRoute.centre" class="text-center mt-4">
+      <div v-if="myRoute.centre" class="text-center d-flex justify-content-center gap-2 mt-4">
         <RouterLink class="btn me-2" v-bind:to="`/centres/${myRoute.centre.serialNo}`">
-          See live seats at the centre
+          See live seats at the centre 🪑
         </RouterLink>
         <RouterLink class="btn red" to="/plan/new">
           Start a new Makan Plan

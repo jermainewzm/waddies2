@@ -434,6 +434,8 @@ exports.submitSwipes = async (req, res) => {
 exports.getRouteToWinner = async (req,res) => {
     const code = req.params.code
     const memberId = req.query.memberId
+    //anything that isn't "drive" falls back to public transport
+    const mode = req.query.mode === "drive" ? "drive" : "pt"
     let plan = null
     let me = null
     try {
@@ -454,7 +456,7 @@ exports.getRouteToWinner = async (req,res) => {
         if (plan.status !== "done" || !plan.winner) {
             return res.status(400).json({error: "The group hasn't picked a centre yet!"})
         }
-        const routeToCentre = await getRoute(me, plan.winner, plan.date, plan.time, plan.winner.name)
+        const routeToCentre = await getRoute(me, plan.winner, plan.date, plan.time, plan.winner.name, mode)
 
         if (!routeToCentre) {
             return res.status(502).json({error: "Could not find a route to this centre.",
@@ -473,8 +475,13 @@ exports.getRouteToWinner = async (req,res) => {
         res.json({...routeToCentre, centre: {
             serialNo: plan.winner.serialNo,
             name: plan.winner.name,
-            address: plan.winner.address
-        }})
+            lat: plan.winner.lat, 
+            lng: plan.winner.lng},
+            member: {
+                lat: me.lat,
+                lng: me.lng
+                }
+        })
     } catch (error) {
         console.error(error)
         res.status(500).json({error: "Could not load the route.",
