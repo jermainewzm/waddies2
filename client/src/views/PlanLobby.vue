@@ -156,9 +156,16 @@ function formatDate(date) {
   })
 }
 
+const pinIcon = L.divIcon({
+  className: "",         
+  html: `<div class="map-pin">📍</div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 36]   
+})
+
 function movePin(position) {
     if (pinnedOnce === null) {
-        pinnedOnce = L.marker(position).addTo(map)
+        pinnedOnce = L.marker(position, { icon: pinIcon }).addTo(map)
     } else {
         pinnedOnce.setLatLng(position)
     }
@@ -697,5 +704,5 @@ main {
 }   
 .step-3 {
    background: #D7F2E3; 
-}   
+}
 </style>
