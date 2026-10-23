@@ -238,10 +238,34 @@ async function verifyExistingHawker(req, res) {
     }
 }
 
+async function getHawkerRequestStatus(req, res) {
+    try {
+        const request = await HawkerRequest.findById(req.params.id)
+
+        if (!request) {
+            return res.status(404).json({
+                message: "Hawker request not found."
+            })
+        }
+
+        return res.status(200).json({
+            status: request.status,
+            assigned_owner_id: request.assigned_owner_id
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to retrieve hawker request status.",
+            error: error.message
+        })
+    }
+}
+
 module.exports = {
     createHawkerRequest,
     getPendingRequests,
     approveHawkerRequest,
     rejectHawkerRequest,
-    verifyExistingHawker
+    verifyExistingHawker,
+    getHawkerRequestStatus
 }
