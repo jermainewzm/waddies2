@@ -113,7 +113,7 @@ onUnmounted(() => {
 
 <template>
   <main class="bg-tiles">
-  <main class="container py-4 py-md-5">
+  <div class="container py-4 py-md-5">
     <section class="centre-heading mb-4">
       <div
         class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3"
@@ -359,11 +359,15 @@ onUnmounted(() => {
         </div>
       </div>
     </template>
-  </main>
+  </div>
 </main>
 </template>
 
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
 .centre-heading h1 {
   font-size: clamp(
     2rem,
@@ -373,28 +377,25 @@ onUnmounted(() => {
 }
 
 .section-kicker {
-  color: var(--hh-red);
+  color: var(--tomato);
   font-weight: 800;
   letter-spacing: 0.12em;
   font-size: 0.8rem;
 }
 
 .filter-panel {
-  background: white;
+  background: var(--paper);
+  border: 4px solid var(--ink);
   border-radius: 18px;
   padding: 1.25rem;
-  box-shadow:
-    0 6px 22px
-    rgba(59, 42, 32, 0.07);
+  box-shadow: 8px 8px 0 var(--ink);
 }
 
 .centre-card {
-  border: 0;
+  border: 4px solid var(--ink);
   border-radius: 18px;
   overflow: hidden;
-  box-shadow:
-    0 5px 18px
-    rgba(59, 42, 32, 0.08);
+  box-shadow: 6px 6px 0 var(--ink);
 
   transition:
     transform 0.2s ease,
@@ -402,11 +403,9 @@ onUnmounted(() => {
 }
 
 .centre-card:hover {
-  transform: translateY(-4px);
+  transform: translate(-3px, -3px);
 
-  box-shadow:
-    0 10px 28px
-    rgba(59, 42, 32, 0.13);
+  box-shadow: 9px 9px 0 var(--ink);
 }
 
 .centre-photo {
@@ -437,7 +436,7 @@ onUnmounted(() => {
 
 .info-pill {
   display: inline-block;
-  background: var(--hh-steel);
+  background: var(--cream);
   border-radius: 999px;
   padding:
     0.35rem 0.65rem;
@@ -480,13 +479,13 @@ onUnmounted(() => {
 }
 
 .view-link {
-  color: var(--hh-red);
+  color: var(--tomato);
   font-weight: 800;
 }
 
 .empty-state {
-  background: white;
-  border-radius: 18px;
+  background: var(--paper);
+  border: 4px solid var(--ink);
   padding: 4rem 1rem;
 }
 </style>

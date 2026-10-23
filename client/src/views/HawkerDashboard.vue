@@ -381,6 +381,9 @@ onMounted(async () => {
 
 
 <style scoped>
+main {
+    min-height: 100vh;
+}
 
 .hawker-title {
     color: var(--paper);
