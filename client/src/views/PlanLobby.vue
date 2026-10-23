@@ -302,7 +302,7 @@ onUnmounted(() => {
            </div>
             <div id="map"></div>
             <p v-if="mapError" class="text-center text-danger small fw-bold mt-2 mb-0">{{ mapError }}</p>
-            <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="location-set mt-2 mb-0">Location set</p>
+            <p v-else-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="location-set mt-2 mb-0">Location set</p>
           </div>
 
           <div class="mb-3">
