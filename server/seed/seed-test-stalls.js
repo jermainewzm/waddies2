@@ -195,9 +195,11 @@ async function seedExampleStalls() {
     const stalls = []
     const dishes = []
 
+    let ownerCounter = 1 
+
     for (let c = 0; c < centres.length; c++) {
       const centre = centres[c]
-      const centreId = String(centre.serialNo)          // link by NEA's ID, e.g. "72"
+      const serialNo = String(centre.serialNo)          // link by NEA's ID, e.g. "72"
 
       // Never more stalls than the centre really has (e.g. Kebun Baru has only 10)
       const stallsHere = Math.min(STALL_TYPES.length, centre.foodStalls)
@@ -219,8 +221,8 @@ async function seedExampleStalls() {
 
         stalls.push({
           _id: stallId,
-          centre_id: centreId,
-          owner_id: 'seed_owner',
+          serialNo: serialNo,
+          owner_id: `HAWKER_${String(ownerCounter++).padStart(3, '0')}`,
           name: `${prefix} ${type.label}`,
           unit_no: unitNo,
           status: 'open',

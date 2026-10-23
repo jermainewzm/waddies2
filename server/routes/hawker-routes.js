@@ -5,6 +5,7 @@ const {
     getPendingRequests,
     approveHawkerRequest,
     rejectHawkerRequest,
+    verifyExistingHawker
     
 
 } = require("../controllers/hawker-controller")
@@ -15,7 +16,7 @@ router.post("/apply", createHawkerRequest)
 router.get("/requests", getPendingRequests)
 router.patch("/requests/:id/approve", approveHawkerRequest)
 router.patch("/requests/:id/reject", rejectHawkerRequest)
-
+router.post("/verify", verifyExistingHawker)
 
 module.exports = router
 

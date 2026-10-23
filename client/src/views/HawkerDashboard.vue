@@ -26,7 +26,6 @@ const dishes = ref([])
 const shoutout = ref(null)
 const shoutoutMessage = ref('')
 
-
 // stalls
 
 async function loadStall() {
@@ -276,7 +275,7 @@ onMounted(async () => {
                     <div>
 
                         <p class="lbl">
-                            Centre {{ stall.centre_id }}
+                            Centre {{ stall.serialNo }}
                         </p>
 
                         <h2 class="stall-name">
