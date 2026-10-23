@@ -286,7 +286,6 @@ onUnmounted(() => {
                 {{ currentCard.crowd.label }}
               </span>
             </div>
-            <!-- (Dish Search): shows who added this centre from Dish Search -->
             <p v-if="currentCard.addedBy" class="small fw-bold mb-1">
                 Added by {{ currentCard.addedBy }} from Centre Search
             </p>

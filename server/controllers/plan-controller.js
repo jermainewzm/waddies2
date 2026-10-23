@@ -1,18 +1,17 @@
 const Plan = require("../models/plan-model")
 const Centre = require("../models/centre-model")
 const { getLatLng, getRoute } = require("../utils/onemap-helper")
-const { rankCentres, getDistance, getValidDishes, canMemberEat, pickBestCentres, isCentreOpen, canEveryoneEat } = require("../utils/shortlist-helper") //for Swiping Card //CHANGED: + pickBestCentres //CHANGED (Centre Search): + isCentreOpen, canEveryoneEat
+const { rankCentres, getDistance, getValidDishes, canMemberEat, pickBestCentres, isCentreOpen, canEveryoneEat } = require("../utils/shortlist-helper") //for Swiping Card + Centre Search checks
 const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Swiping Card
 const { summariseCrowd } = require("./centres-controller") //for Swiping Card
 const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
-const Stall = require("../models/stall-model") //ADDED for Dish Search
-const MAX_SHORTLIST = 5 //ADDED for Dish Search (CHANGED: now = how many swipe cards the best centres fill)
-const MAX_PICKS = 10 //NEW: each Makan Plan can pick up to 10 centres in Centre Search
+const Stall = require("../models/stall-model") //for swipe cards
+const MAX_SHORTLIST = 5 //how many swipe cards the best centres fill
+const MAX_PICKS = 10 //each Makan Plan can pick up to 10 centres in Centre Search
 
-//NEW (Centre Search): the shortlist, swipes and winner save serialNos (e.g. "72"), not centre _ids.
-//This looks up many centres in ONE query and returns { "72": centre document, "2": centre document, ... }
+//gets many centres in one query and returns a lookup (ie. { "72": centre, "2": centre })
 async function getCentresBySerial(serialNos) {
-    const centres = await Centre.findBySerials(serialNos)   //CHANGED: helper in centre-model.js (was CentreModel.find)
+    const centres = await Centre.findBySerials(serialNos)   //helper in centre-model.js
     const centresBySerial = {}
     for (const centre of centres) {
         centresBySerial[String(centre.serialNo)] = centre
@@ -20,7 +19,7 @@ async function getCentresBySerial(serialNos) {
     return centresBySerial
 }
 
-//NEW (Centre Search): the serialNos on a plan's shortlist, e.g. ["72", "2"]
+//serialNos on a plan's shortlist (ie. ["72", "2"])
 function getShortlistSerials(plan) {
     return plan.shortlist.map(item => String(item.serialNo))
 }
@@ -120,8 +119,8 @@ exports.getPlan = async(req,res) => {
         data.finishedIds = getFinishedIds(plan)     //members who finished swiping
 
         if (plan.status === "done") {
-            const centresBySerial = await getCentresBySerial(getShortlistSerials(plan)) //NEW (Centre Search)
-            data.results = getResults(plan, centresBySerial)     //revealing the results once all done //CHANGED: + centresBySerial
+            const centresBySerial = await getCentresBySerial(getShortlistSerials(plan)) //look up the shortlisted centres
+            data.results = getResults(plan, centresBySerial)     //revealing the results once all done
         } else {
             data.swipes = []    //keep swipes secret until everyone is done
         }
@@ -177,11 +176,10 @@ exports.startSwiping = async (req,res) => {
             return res.status(400).json({error: "Not enough people to start swiping! Wait for at least one friend to join."})
         }
 
-        //CHANGED: Dish Search adds are now "picks" (up to 10). Picks + nearby centres are scored
-        //together and the BEST 5 for the whole group become the swipe cards
+        //picks (up to 10) + nearby centres are scored together and
+        //the best 5 for the whole group become the swipe cards
 
         //centres members picked in Centre Search
-        //CHANGED (Centre Search): the shortlist saves serialNos, so look the centres up first
         const pickedBySerial = await getCentresBySerial(getShortlistSerials(plan))
         const pickedCentres = []
         for (const item of plan.shortlist) {
@@ -194,7 +192,7 @@ exports.startSwiping = async (req,res) => {
         const allCentres = await Centre.findAllCentres()
         const centresRanked = await rankCentres(plan, allCentres)
 
-        //NEW: score picks + nearby centres together, keep the best 5
+        //score picks + nearby centres together, keep the best 5
         const bestCentres = await pickBestCentres(plan, pickedCentres, centresRanked, MAX_SHORTLIST)
 
         const shortlist = []
@@ -202,12 +200,12 @@ exports.startSwiping = async (req,res) => {
             //if someone picked it, keep who added it (saved in the database)
             let pick = null
             for (const item of plan.shortlist) {
-                if (String(item.serialNo) === String(centre.serialNo)) {   //CHANGED: compare serialNos
+                if (String(item.serialNo) === String(centre.serialNo)) {   //same centre?
                     pick = item
                 }
             }
             shortlist.push({
-                serialNo: String(centre.serialNo),   //CHANGED: was centre_id: centre._id
+                serialNo: String(centre.serialNo),   //saves the serialNo
                 added_by: pick ? pick.added_by : "",
                 added_by_id: pick ? pick.added_by_id : null
             })
@@ -226,16 +224,14 @@ exports.startSwiping = async (req,res) => {
     }
 }
 
-//ADDED for Dish Search
-//CHANGED (Centre Search): the page sends the centre's serialNo (e.g. "72") instead of its _id
 //POST /api/plans/:code/shortlist   body: { serialNo, added_by, member_id }
-//adds a hawker centre to the plan's picks (Centre Search's "Add to group picks" button)
-//up to 10 picks per plan. The best 5 are chosen when swiping starts (startSwiping)
+//adds a centre to the plan's picks (Centre Search's add button)
+//up to 10 picks per plan, the best 5 are chosen when swiping starts
 exports.addToShortlist = async (req, res) => {
     const code = req.params.code
     const {serialNo, added_by, member_id} = req.body || {}
 
-    //CHANGED: was "is it a valid Mongo id?". A serialNo is plain text like "72"
+    //serialNo is plain text like "72"
     if (!serialNo || String(serialNo).trim() === "") {
         return res.status(400).json({error: "Please pick a centre."})
     }
@@ -263,26 +259,26 @@ exports.addToShortlist = async (req, res) => {
             return res.status(403).json({error: "Join the plan before adding centres."})
         }
 
-        //CHANGED: find the centre by its serialNo (helper in centre-model.js)
+        //find the centre by its serialNo
         const centre = await Centre.findBySerial(centreSerial)
 
         if (!centre) {
             return res.status(404).json({error: "Centre not found!"})
         }
 
-        //NEW (Centre Search): the centre must be open on the plan's date (not closed for NEA cleaning)
+        //centre must be open on the plan's date (not closed for NEA cleaning)
         if (!isCentreOpen(centre, plan.date)) {
             return res.status(400).json({error: "This centre is closed on your plan's date."})
         }
 
-        //NEW (Centre Search): every member needs at least one dish here within their diet AND budget
+        //every member needs at least one dish here within their diet and budget
         //(same rule the swipe shortlist uses, so a pick never gets thrown out for this later)
         const dishes = await getValidDishes(centre, plan.date)
         if (!canEveryoneEat(plan.members, dishes)) {
             return res.status(400).json({error: "Not everyone in your group can eat here within their diet and budget."})
         }
 
-        //CHANGED: compare serialNos (no more populated objects to dig into)
+        //no duplicates
         const alreadyAdded = getShortlistSerials(plan).includes(centreSerial)
 
         if (alreadyAdded) {
@@ -295,7 +291,7 @@ exports.addToShortlist = async (req, res) => {
         }
 
         const updatedPlan = await Plan.addToShortlist(code, {
-            serialNo: centreSerial,   //CHANGED: was centre_id
+            serialNo: centreSerial,   //saves the serialNo
             added_by: String(added_by || "").trim(),
             added_by_id: member_id
         })
@@ -336,10 +332,10 @@ exports.getSwipeCards = async (req, res) => {
 
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
         const cards = []
-        const centresBySerial = await getCentresBySerial(getShortlistSerials(plan)) //NEW (Centre Search)
+        const centresBySerial = await getCentresBySerial(getShortlistSerials(plan)) //look up the shortlisted centres
 
         for (const item of plan.shortlist) {
-            const centre = centresBySerial[String(item.serialNo)]   //CHANGED: was item.centre_id
+            const centre = centresBySerial[String(item.serialNo)]   //find the centre by its serialNo
             if (!centre) {
                 continue
             }
@@ -366,9 +362,9 @@ exports.getSwipeCards = async (req, res) => {
             }).sort({createdAt: -1}).lean()
 
             cards.push({
-                centreId: centre.serialNo,   //CHANGED (Centre Search): was centre._id
+                centreId: centre.serialNo,   //serialNo, swipes send it back
                 name: centre.name,
-                addedBy: item.added_by || "", //NEW (Dish Search): who added this centre ("" = suggested by HawkerHop)
+                addedBy: item.added_by || "", //who added this centre ("" = suggested by HawkerHop)
                 address: centre.address,
                 photoUrl: centre.photoUrl,
                 foodStalls: centre.foodStalls,
@@ -415,7 +411,7 @@ exports.submitSwipes = async (req, res) => {
         }
 
         // the swipes must cover every shortlisted centre exactly once
-        const centreIds = getShortlistSerials(plan)   //CHANGED (Centre Search): serialNos (was centre_id._id)
+        const centreIds = getShortlistSerials(plan)   //serialNos
         const swipedIds = swipes.map(swipe => String(swipe.centreId))
         const coversAll = swipedIds.length === centreIds.length && centreIds.every(id => swipedIds.includes(id))
 
@@ -425,7 +421,7 @@ exports.submitSwipes = async (req, res) => {
 
         const newSwipes = swipes.map(swipe => ({
             memberId: memberId,
-            centreId: String(swipe.centreId),   //CHANGED (Centre Search): a serialNo
+            centreId: String(swipe.centreId),   //serialNo
             liked: swipe.liked === true
         }))
         await Plan.addSwipes(code, newSwipes)
@@ -435,8 +431,8 @@ exports.submitSwipes = async (req, res) => {
         const finishedIds = getFinishedIds(freshPlan)
 
         if (finishedIds.length === freshPlan.members.length) {
-            const centresBySerial = await getCentresBySerial(getShortlistSerials(freshPlan)) //NEW (Centre Search)
-            const results = getResults(freshPlan, centresBySerial)   //CHANGED: + centresBySerial
+            const centresBySerial = await getCentresBySerial(getShortlistSerials(freshPlan)) //look up the shortlisted centres
+            const results = getResults(freshPlan, centresBySerial)   //most likes first
             // no winner if nobody liked anything (winnerId is now a serialNo)
             const winnerId = results.length > 0 && results[0].likes > 0 ? results[0].centreId : null
             await Plan.finishPlan(code, winnerId)
@@ -452,8 +448,7 @@ exports.submitSwipes = async (req, res) => {
 
 /* GET /api/plans/:code/route?memberId=...
    One member's public transport route to the winning centre. */
-//CHANGED (Centre Search): plan.winner is a serialNo now, so we look the centre up ourselves
-//(was Plan.findWinnerByCode with .populate). Every plan.winner.x below is now winner.x
+//plan.winner is a serialNo so we look the centre up ourselves
 exports.getRouteToWinner = async (req,res) => {
     const code = req.params.code
     const memberId = req.query.memberId
@@ -461,9 +456,9 @@ exports.getRouteToWinner = async (req,res) => {
     const mode = req.query.mode === "drive" ? "drive" : "pt"
     let plan = null
     let me = null
-    let winner = null   //NEW: the winning centre document
+    let winner = null   //the winning centre
     try {
-        plan = await Plan.findByCode(code)   //CHANGED: was Plan.findWinnerByCode(code)
+        plan = await Plan.findByCode(code)
 
         if (!plan) {
             return res.status(404).json({error: "Plan not found!"})
@@ -481,7 +476,7 @@ exports.getRouteToWinner = async (req,res) => {
             return res.status(400).json({error: "The group hasn't picked a centre yet!"})
         }
 
-        winner = await Centre.findBySerial(plan.winner)   //NEW: helper in centre-model.js
+        winner = await Centre.findBySerial(plan.winner)   //helper in centre-model.js
         if (!winner) {
             return res.status(404).json({error: "The winning centre could not be found."})
         }
@@ -516,7 +511,7 @@ exports.getRouteToWinner = async (req,res) => {
         console.error(error)
         res.status(500).json({error: "Could not load the route.",
             centre: winner ? { serialNo: winner.serialNo, name: winner.name, lat: winner.lat, lng: winner.lng } : null,
-            member: me ? {lat: me.lat, lng: me.lng} : null   //CHANGED: me can be null if the plan lookup failed
+            member: me ? {lat: me.lat, lng: me.lng} : null   //me can be null if the plan lookup failed
         })
     }
 }

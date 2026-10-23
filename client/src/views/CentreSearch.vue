@@ -1,7 +1,5 @@
 <script setup>
-// NEW FILE (Centre Search): replaces DishSearch.vue
-// Pick a centre (dropdown or a Suggested button), see its stalls + dishes, filter by dish / price / diet,
-// then add it to the group's picks (up to 10). When swiping starts, the best 5 picks become swipe cards.
+//pick a centre, look through its stalls, then add it to the group's picks (max 10)
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import axios from 'axios'
@@ -9,12 +7,12 @@ import { API_URL } from '@/utils/constants'
 
 import CentreMenu from '../components/CentreMenu.vue'
 
-const MAX_PICKS = 10        // same limit as plan-controller.js
-const SWIPE_CARDS = 5       // when swiping starts, the best 5 picks become swipe cards
-const SUGGESTED_COUNT = 5   // how many nearest centres to suggest
-const MAX_PRICE_LIMIT = 100 // same cap as a plan budget
+const MAX_PICKS = 10        //whole group can pick up to 10 centres (same as plan-controller)
+const SWIPE_CARDS = 5       //best 5 picks become the swipe cards
+const SUGGESTED_COUNT = 5   //how many nearest centres to suggest
+const MAX_PRICE_LIMIT = 100 //same cap as a plan budget
 
-// same diet rules as canMemberEat in shortlist-helper.js (e.g. "no pork" also accepts halal and vegetarian)
+//same diet rules as canMemberEat in shortlist-helper.js (ie. no pork also accepts halal + vegetarian)
 const DIET_TAGS = {
     any: null,
     halal: ['halal'],
@@ -31,42 +29,40 @@ const DIET_OPTIONS = [
     { value: 'no_beef', label: '🚫🐮 No beef' }
 ]
 
-// Centre Search belongs to ONE plan: PlanLobby opens it as /centre-search?plan=123456
+//PlanLobby opens this page as /centre-search?plan=123456
 const route = useRoute()
 const planCode = String(route.query.plan || '')
 
-// PlanLobby saves my member _id in localStorage after I join, e.g. "memberId-123456"
+//member _id PlanLobby saved when you joined (ie. "memberId-123456")
 const memberId = planCode ? localStorage.getItem(`memberId-${planCode}`) : null
 
-// ---------- state ----------
 const plan = ref(null)
-const planChecked = ref(false)   // true once we've tried to load the plan
+const planChecked = ref(false)   //true once we tried loading the plan
 const planLoadError = ref('')
 
-const allCentres = ref([])       // every centre: { serialNo, name, lat, lng, is_open }
+const allCentres = ref([])       //every centre: { serialNo, name, lat, lng, is_open }
 const centresError = ref('')
 
-const selectedSerialNo = ref('') // the centre chosen in the dropdown ('' = none yet)
-const menu = ref(null)           // that centre's menu from the server (null = not loaded)
+const selectedSerialNo = ref('') //centre chosen in the dropdown ('' = none yet)
+const menu = ref(null)           //that centre's stalls + dishes (null = not loaded)
 const menuLoading = ref(false)
 const menuError = ref('')
 
-// filters (diet + max price start from MY plan settings, see loadPlan)
+//filters (diet + max price start from your plan settings)
 const dishQuery = ref('')
 const maxPrice = ref('')
 const diet = ref('any')
-let filtersSet = false           // so the 5-second refresh doesn't undo the person's own changes
+let filtersSet = false           //so the 5 sec refresh doesn't undo the person's own filter changes
 
-const openStallIds = ref([])     // stalls whose dishes are showing (several can be open to compare)
+const openStallIds = ref([])     //stalls showing their dishes (can open a few to compare)
 
 const adding = ref(false)
 const addError = ref('')
 
-let refreshTimer = null          // reloads the plan every 5 seconds (same as PlanLobby)
+let refreshTimer = null          //reloads the plan every 5 sec (same as PlanLobby)
 
-// ---------- worked out from the data ----------
 
-// me = my member object in this plan (null if I haven't joined on this browser)
+//my member object in this plan (null if not joined on this browser)
 const me = computed(() => {
     if (!plan.value || !memberId) {
         return null
@@ -74,7 +70,7 @@ const me = computed(() => {
     return plan.value.members.find(member => String(member._id) === String(memberId)) || null
 })
 
-// the middle point of everyone's pins (same idea as getMidPoint in shortlist-helper.js)
+//middle point of everyone's pins (same idea as getMidPoint in shortlist-helper.js)
 const groupMidpoint = computed(() => {
     if (!plan.value || plan.value.members.length === 0) {
         return null
@@ -91,7 +87,7 @@ const groupMidpoint = computed(() => {
     }
 })
 
-// km from the group's middle point, 1 decimal place (same formula as getDistance on the server)
+//km from the group's middle point to 1dp (same formula as getDistance on the server)
 function distanceKm(centre) {
     if (!groupMidpoint.value) {
         return null
@@ -101,23 +97,23 @@ function distanceKm(centre) {
     return Math.round(Math.sqrt(northToSouth ** 2 + eastToWest ** 2) * 10) / 10
 }
 
-// only centres open on the plan's date go in the dropdown (already A-Z from the server)
+//only centres open on the plan's date go in the dropdown
 const openCentres = computed(() => allCentres.value.filter(centre => centre.is_open))
 
-// how many were hidden, for the small note under the dropdown
+//how many were hidden, for the note under the dropdown
 const closedCount = computed(() => allCentres.value.length - openCentres.value.length)
 
-// the 5 open centres nearest to the group's middle point
+//5 open centres nearest to the group's middle point
 const suggested = computed(() => {
     if (!groupMidpoint.value) {
         return []
     }
-    const copy = [...openCentres.value]   // copy first: .sort() changes the list it's called on
+    const copy = [...openCentres.value]   //copy first as .sort() changes the original list
     copy.sort((a, b) => distanceKm(a) - distanceKm(b))
     return copy.slice(0, SUGGESTED_COUNT)
 })
 
-// serialNos already in the group's picks, e.g. ["72", "2"]
+//serialNos already picked (ie. ["72", "2"])
 const pickedSerials = computed(() => {
     if (!plan.value) {
         return []
@@ -127,7 +123,7 @@ const pickedSerials = computed(() => {
 
 const picksLeft = computed(() => Math.max(MAX_PICKS - pickedSerials.value.length, 0))
 
-// "2026-10-30" -> "Fri, 30 Oct"
+//"2026-10-30" -> "Fri, 30 Oct"
 const friendlyDate = computed(() => {
     if (!plan.value) {
         return ''
@@ -140,7 +136,7 @@ const friendlyDate = computed(() => {
     })
 })
 
-// max price: '' (no limit) is fine, otherwise it must be more than $0 and at most $100
+//empty = no limit, otherwise must be more than $0 and at most $100
 const priceError = computed(() => {
     if (maxPrice.value === '' || maxPrice.value === null) {
         return ''
@@ -152,7 +148,7 @@ const priceError = computed(() => {
     return ''
 })
 
-// does this dish pass the dish name, max price and diet filters?
+//checks one dish against the dish name, max price and diet filters
 function dishMatches(dish) {
     const query = dishQuery.value.trim().toLowerCase()
     if (query !== '' && !dish.name.toLowerCase().includes(query)) {
@@ -168,7 +164,7 @@ function dishMatches(dish) {
     return true
 }
 
-// the menu after filtering: each stall keeps only matching dishes, stalls with none are hidden
+//each stall only keeps matching dishes, stalls with none are hidden
 const filteredStalls = computed(() => {
     if (!menu.value) {
         return []
@@ -177,16 +173,16 @@ const filteredStalls = computed(() => {
     for (const stall of menu.value.stalls) {
         const dishes = stall.dishes.filter(dishMatches)
         if (dishes.length > 0) {
-            result.push({ ...stall, dishes: dishes })   // copy the stall with the filtered dishes
+            result.push({ ...stall, dishes: dishes })   //copy of the stall with only the matching dishes
         }
     }
     return result
 })
 
-// while typing a dish name, show the matching stalls already opened
+//while typing a dish name, matching stalls open by themselves
 const showAllDishes = computed(() => dishQuery.value.trim() !== '')
 
-// why the Add button can't be used ('' = I can add this centre)
+//why the add button can't be used ('' = can add)
 const cannotAddReason = computed(() => {
     if (!me.value) {
         return 'Join the plan to add centres'
@@ -211,7 +207,7 @@ const cannotAddReason = computed(() => {
 
 const alreadyPicked = computed(() => menu.value !== null && pickedSerials.value.includes(menu.value.centre.serialNo))
 
-// NEW: text on the big Add button (laptops). Plain ifs instead of 3 ternaries in a row
+//text on the big add button (laptops)
 const addButtonText = computed(() => {
     if (adding.value) {
         return 'Adding…'
@@ -225,7 +221,7 @@ const addButtonText = computed(() => {
     return "Can't add"
 })
 
-// NEW: shorter text for the Add bar at the bottom of phones
+//shorter text for the add bar on phones
 const addBarText = computed(() => {
     if (adding.value) {
         return 'Adding…'
@@ -239,14 +235,14 @@ const addBarText = computed(() => {
     return "Can't add"
 })
 
-// e.g. "Wei Jie (🌙 Halal, $5 budget)"
+//ie. "Wei Jie (🌙 Halal, $5 budget)"
 function describeMember(member) {
     const option = DIET_OPTIONS.find(item => item.value === member.diet)
     const dietText = member.diet === 'any' ? 'no diet' : option.label
     return `${member.name} (${dietText}, $${member.budget} budget)`
 }
 
-// NEW: everyone who can't eat here, as one line, e.g. "Wei Jie (🌙 Halal, $5 budget), Bob (...)"
+//everyone who can't eat here in one line
 const cannotEatNames = computed(() => {
     if (!menu.value) {
         return ''
@@ -254,22 +250,21 @@ const cannotEatNames = computed(() => {
     return menu.value.cannotEat.map(describeMember).join(', ')
 })
 
-// ---------- API calls ----------
 
-// the plan (name, date, status, members, shortlist)
+//gets the plan (name, date, status, members, shortlist)
 async function loadPlan() {
     try {
         const response = await axios.get(`${API_URL}/plans/${planCode}`)
         plan.value = response.data
 
-        // first time only: start the filters on MY plan diet and budget
+        //first time only: start the filters on my plan diet + budget
         if (!filtersSet && me.value) {
             diet.value = me.value.diet
             maxPrice.value = me.value.budget
             filtersSet = true
         }
     } catch (error) {
-        // only show the error page if the plan never loaded (keep the page if a refresh fails)
+        //only show the error page if the plan never loaded (keeps the page if a refresh fails)
         if (!plan.value) {
             planLoadError.value = error.response ? error.response.data.error : "Can't reach the server."
         }
@@ -278,7 +273,7 @@ async function loadPlan() {
     }
 }
 
-// every centre + whether it's open on the plan's date
+//every centre + if it's open on the plan's date
 async function loadCentres() {
     centresError.value = ''
     try {
@@ -287,7 +282,7 @@ async function loadCentres() {
         })
         allCentres.value = response.data.centres
 
-        // nothing chosen yet: start with the nearest suggested centre
+        //nothing chosen yet so start with the nearest suggested centre
         if (selectedSerialNo.value === '' && suggested.value.length > 0) {
             chooseCentre(suggested.value[0].serialNo)
         }
@@ -296,7 +291,7 @@ async function loadCentres() {
     }
 }
 
-// the chosen centre's stalls + dishes (runs when the dropdown changes)
+//chosen centre's stalls + dishes (runs when the dropdown changes)
 async function loadMenu() {
     if (selectedSerialNo.value === '') {
         menu.value = null
@@ -305,7 +300,7 @@ async function loadMenu() {
     menuLoading.value = true
     menuError.value = ''
     addError.value = ''
-    openStallIds.value = []   // new centre: start with every stall closed
+    openStallIds.value = []   //new centre so all stalls start closed
     try {
         const response = await axios.get(`${API_URL}/centre-search/plans/${planCode}/centres/${selectedSerialNo.value}`)
         menu.value = response.data
@@ -317,13 +312,13 @@ async function loadMenu() {
     }
 }
 
-// a Suggested button sets the dropdown to that centre, then loads its menu
+//suggested button = choosing that centre in the dropdown
 function chooseCentre(serialNo) {
     selectedSerialNo.value = serialNo
     loadMenu()
 }
 
-// tap a stall: open it if closed, close it if open (several can stay open)
+//tap a stall to open it, tap again to close it
 function toggleStall(stallId) {
     if (openStallIds.value.includes(stallId)) {
         openStallIds.value = openStallIds.value.filter(id => id !== stallId)
@@ -332,7 +327,7 @@ function toggleStall(stallId) {
     }
 }
 
-// add the chosen centre to the group's picks
+//adds the chosen centre to the group's picks
 async function addToPicks() {
     if (cannotAddReason.value !== '') {
         return
@@ -345,7 +340,7 @@ async function addToPicks() {
             added_by: me.value.name,
             member_id: memberId
         })
-        await loadPlan()   // so the dots and "Added" update straight away
+        await loadPlan()   //refresh so the dots update straight away
     } catch (error) {
         addError.value = error.response ? error.response.data.error : "Can't reach the server."
     } finally {
@@ -353,7 +348,7 @@ async function addToPicks() {
     }
 }
 
-// stop "-", "+", "e" and "E" being typed in the price box (e.g. "-5" or "1e9")
+//blocks "-", "+", "e", "E" in the price box (ie. "-5" or "1e9")
 function blockBadKeys(event) {
     if (['-', '+', 'e', 'E'].includes(event.key)) {
         event.preventDefault()
@@ -368,7 +363,7 @@ onMounted(async () => {
     await loadPlan()
     if (plan.value) {
         loadCentres()
-        refreshTimer = setInterval(loadPlan, 5000)   // picks other people add show up within 5 seconds
+        refreshTimer = setInterval(loadPlan, 5000)   //new picks from others show up within 5 sec
     }
 })
 
@@ -380,7 +375,7 @@ onUnmounted(() => {
 <template>
     <div class="container centre-search">
 
-        <!-- 1. no plan code in the URL: Centre Search only works inside a plan -->
+        <!-- no plan code in the url -->
         <div v-if="planChecked && !planCode" class="card p-4 my-4">
             <h1 class="h3">Centre Search is part of your Makan Plan</h1>
             <p>Open your plan's lobby and click "Find a centre", so the centres you pick go onto that plan.</p>
@@ -388,13 +383,13 @@ onUnmounted(() => {
             <RouterLink to="/plan/new">Start a plan</RouterLink>
         </div>
 
-        <!-- 2. the plan couldn't be loaded -->
+        <!-- plan couldn't load -->
         <div v-else-if="planChecked && planLoadError" class="card p-4 my-4">
             <p>{{ planLoadError }}</p>
             <RouterLink to="/plan/join">Join a plan</RouterLink>
         </div>
 
-        <!-- 3. the real page -->
+        <!-- the actual page -->
         <template v-else-if="plan">
 
             <div class="top-row">
@@ -402,7 +397,7 @@ onUnmounted(() => {
                 <h1 class="outline find-title">Find a centre</h1>
             </div>
 
-            <!-- group picks: always at the top, never needs sideways scrolling -->
+            <!-- group picks (always visible at the top) -->
             <div class="picks-bar" :class="{ warn: picksLeft <= 2 }">
                 <span class="picks-label">📝 Group picks</span>
                 <strong class="picks-count">{{ pickedSerials.length }}/{{ MAX_PICKS }}</strong>
@@ -414,7 +409,7 @@ onUnmounted(() => {
                 </span>
             </div>
 
-            <!-- plan name, date, code (these can scroll sideways on phones) -->
+            <!-- plan name, date, code -->
             <div class="plan-strip">
                 <span class="plan-chip">🍽 {{ plan.name }}</span>
                 <span class="plan-chip">📅 {{ friendlyDate }}, {{ plan.time }}</span>
@@ -423,7 +418,7 @@ onUnmounted(() => {
 
             <div class="layout">
 
-                <!-- LEFT (stays in place on laptops): choose a centre + filters -->
+                <!-- left: choose a centre + filters (stays in place on laptops) -->
                 <section class="search-box">
                     <label for="centre-select" class="visually-hidden">Which centre?</label>
                     <select
@@ -476,7 +471,7 @@ onUnmounted(() => {
                     </div>
                     <p v-if="priceError" class="text-danger small fw-bold mb-0" role="alert">{{ priceError }}</p>
 
-                    <!-- Suggested: the 5 nearest open centres. Clicking one = choosing it in the dropdown -->
+                    <!-- 5 nearest open centres, clicking one = choosing it in the dropdown -->
                     <div v-if="suggested.length > 0" class="chip-row">
                         <b>⭐ Suggested:</b>
                         <button
@@ -491,8 +486,7 @@ onUnmounted(() => {
                         </button>
                     </div>
 
-                    <!-- Diet: radio buttons styled as chips (main.css .chip-input + .chip, same as DishForm.vue) -->
-                    <!-- CHANGED: each input + label pair sits in a span.chip-wrap (was <template v-for>) -->
+                    <!-- diet: radio buttons styled as chips (same as DishForm.vue) -->
                     <div class="chip-row">
                         <b>Diet:</b>
                         <span v-for="option in DIET_OPTIONS" :key="option.value" class="chip-wrap">
@@ -509,7 +503,7 @@ onUnmounted(() => {
                     </div>
                 </section>
 
-                <!-- RIGHT: the chosen centre -->
+                <!-- right: the chosen centre -->
                 <section class="centre-panel">
                     <p v-if="menuLoading" class="m-0">Loading the menu…</p>
                     <p v-else-if="menuError" class="text-danger fw-bold m-0">{{ menuError }}</p>
@@ -530,7 +524,6 @@ onUnmounted(() => {
                                 <p v-if="menu.cannotEat.length === 0" class="fit-ok">✓ Everyone can eat here within budget</p>
                                 <template v-else>
                                     <p class="fit-bad">✕ Not everyone can eat here</p>
-                                    <!-- CHANGED: names come from the cannotEatNames computed (was a <template v-for>) -->
                                     <p class="blocked-box">
                                         <b>{{ cannotEatNames }}</b>
                                         {{ menu.cannotEat.length === 1 ? 'has' : 'have' }} nothing to eat here. Try a Suggested centre.
@@ -538,7 +531,7 @@ onUnmounted(() => {
                                 </template>
                             </div>
 
-                            <!-- laptops: the Add button sits here (phones use the bar at the bottom) -->
+                            <!-- add button for laptops (phones use the bar at the bottom) -->
                             <button
                                 type="button"
                                 class="btn green add-big"
@@ -564,7 +557,7 @@ onUnmounted(() => {
                 </section>
             </div>
 
-            <!-- phones + tablets: Add bar stuck to the bottom of the screen -->
+            <!-- add bar stuck to the bottom of the screen (phones + tablets) -->
             <div v-if="menu" class="add-bar">
                 <span class="add-bar-name" :class="{ bad: menu.cannotEat.length > 0 }">
                     {{ menu.cannotEat.length > 0 ? 'Not everyone can eat here' : menu.centre.name }}
@@ -585,10 +578,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ---------- base = phone ---------- */
+/* phone (base) */
 .centre-search {
     padding-top: 12px;
-    padding-bottom: 90px;   /* room for the Add bar at the bottom */
+    padding-bottom: 90px;   /* room for the add bar */
 }
 
 .top-row {
@@ -648,13 +641,13 @@ onUnmounted(() => {
 }
 
 .picks-note {
-    flex-basis: 100%;   /* phones: the note gets its own line */
+    flex-basis: 100%;   /* note gets its own line on phones */
     font-size: 14px;
     font-weight: 700;
     color: var(--ink);
 }
 
-/* plan name, date, code: one row that scrolls sideways on phones */
+/* plan name, date, code: scrolls sideways on phones */
 .plan-strip {
     display: flex;
     gap: 8px;
@@ -708,7 +701,7 @@ onUnmounted(() => {
     margin-top: 10px;
 }
 
-/* suggested + diet rows: scroll sideways on phones instead of taking 4 lines */
+/* suggested + diet rows: scroll sideways on phones */
 .chip-row {
     display: flex;
     align-items: center;
@@ -740,7 +733,7 @@ onUnmounted(() => {
     background: var(--sun);
 }
 
-/* NEW: holds one radio + its label (main.css hides the radio with position: absolute) */
+/* holds one radio + its label (main.css hides the radio with position: absolute) */
 .chip-wrap {
     position: relative;
     flex: none;
@@ -753,7 +746,7 @@ onUnmounted(() => {
     white-space: nowrap;
 }
 
-/* chosen diet: black (main.css makes it pink by default) */
+/* chosen diet is black (main.css makes it pink) */
 .chip-input:checked + .diet-chip {
     background: var(--ink);
     color: var(--paper);
@@ -839,7 +832,7 @@ onUnmounted(() => {
     display: none;   /* phones use the bottom bar instead */
 }
 
-/* Add bar stuck to the bottom of the screen */
+/* add bar stuck to the bottom of the screen */
 .add-bar {
     position: fixed;
     left: 0;
@@ -868,28 +861,28 @@ onUnmounted(() => {
 
 .add-bar .btn {
     flex: none;
-    white-space: nowrap;   /* keep "+ Add to picks" on one line */
+    white-space: nowrap;   /* keeps "+ Add to picks" on one line */
 }
 
-/* can't add: grey instead of a faded green */
+/* can't add = grey */
 .add-bar .btn:disabled,
 .add-big:disabled {
     background: #E8E2D8;
     color: var(--muted);
 }
 
-/* ---------- tablet (768px+) ---------- */
+/* tablet (768px+) */
 @media (min-width: 768px) {
     .picks-bar {
         width: fit-content;
     }
 
     .picks-note {
-        flex-basis: auto;   /* the note fits on the same line now */
+        flex-basis: auto;   /* note fits on the same line now */
         margin-left: 6px;
     }
 
-    /* enough room: wrap onto more lines instead of scrolling sideways */
+    /* enough room so wrap instead of scrolling sideways */
     .plan-strip,
     .chip-row,
     .pill-row {
@@ -902,14 +895,14 @@ onUnmounted(() => {
     }
 }
 
-/* ---------- laptop (992px+) ---------- */
+/* laptop (992px+) */
 @media (min-width: 992px) {
     .centre-search {
         padding-bottom: 40px;
     }
 
     .add-bar {
-        display: none;   /* the Add button sits in the centre panel instead */
+        display: none;   /* add button sits in the centre panel instead */
     }
 
     .add-big {
@@ -917,7 +910,7 @@ onUnmounted(() => {
         flex: none;
     }
 
-    /* two panels: search on the left (stays in place), centre on the right */
+    /* two panels: search on the left, centre on the right */
     .layout {
         grid-template-columns: minmax(0, 330px) minmax(0, 1fr);
         align-items: start;
@@ -930,7 +923,7 @@ onUnmounted(() => {
     }
 }
 
-/* ---------- desktop (1200px+) ---------- */
+/* desktop (1200px+) */
 @media (min-width: 1200px) {
     .layout {
         grid-template-columns: minmax(0, 380px) minmax(0, 1fr);

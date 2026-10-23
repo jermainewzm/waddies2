@@ -1,10 +1,9 @@
-// NEW FILE (Centre Search): replaces dish-search-controller.js
-// Two routes:
-//   GET /api/centre-search/centres?date=2026-10-30           -> every centre + is it open that day (for the dropdown)
-//   GET /api/centre-search/plans/:code/centres/:serialNo     -> one centre's stalls + dishes, and who in the group can't eat there
+//handles the Centre Search routes:
+//  GET /api/centre-search/centres?date=2026-10-30 -> every centre + if it's open that day (dropdown)
+//  GET /api/centre-search/plans/:code/centres/:serialNo -> one centre's menu + who can't eat there
 
 const Plan = require("../models/plan-model")
-const Centre = require("../models/centre-model")   // CHANGED: use the helpers in centre-model.js (like Plan.findByCode)
+const Centre = require("../models/centre-model")   //helpers in centre-model.js (like Plan.findByCode)
 const Stall = require("../models/stall-model")
 const Dish = require("../models/dish-model")
 const CrowdReport = require("../models/crowd-report-model")
@@ -13,18 +12,18 @@ const { summariseCrowd } = require("./centres-controller")
 
 const ONE_HOUR_MS = 60 * 60 * 1000
 
-// today's date in Singapore as "YYYY-MM-DD" ("en-CA" gives that format, same as plan.date)
+//today in Singapore as "YYYY-MM-DD" ("en-CA" gives that format, same as plan.date)
 function getSingaporeToday() {
     return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" })
 }
 
-// "2026-10-30" -> "Friday"
+//"2026-10-30" -> "Friday"
 function getWeekday(date) {
     return new Date(`${date}T00:00:00+08:00`).toLocaleDateString("en-SG", { weekday: "long", timeZone: "Asia/Singapore" })
 }
 
-// why a stall is NOT open on the plan's date. "" means it is open.
-// Same rules as getValidDishes in shortlist-helper.js, but it also says WHY
+//why a stall isn't open on the plan's date ("" = open)
+//same rules as getValidDishes in shortlist-helper.js but also says why
 function getClosedReason(stall, date) {
     const today = getSingaporeToday()
     const weekday = getWeekday(date)
@@ -36,7 +35,7 @@ function getClosedReason(stall, date) {
         return `Rest day on ${weekday}s`
     }
 
-    // "sold out" and "closed early" only count if the plan is today AND the hawker set it today
+    //sold out / closed early only count if the plan is today and it was set today
     const updatedToday = stall.status_updated_at &&
         new Date(stall.status_updated_at).toLocaleDateString("en-CA", { timeZone: "Asia/Singapore" }) === today
 
@@ -49,26 +48,26 @@ function getClosedReason(stall, date) {
     return ""
 }
 
-// GET /api/centre-search/centres?date=2026-10-30
-// every centre (A-Z) with its location and whether it's open on that date.
-// The page works out the distances, the 5 suggested centres and hides the closed ones
+//GET /api/centre-search/centres?date=2026-10-30
+//every centre (A-Z) with its location and if it's open that day
+//the page works out distances, the 5 suggested and hides closed ones
 exports.getCentreList = async (req, res) => {
     const date = String(req.query.date || getSingaporeToday()).trim()
 
-    // CHANGED: was a regex. Same check as createPlan: an impossible date gives NaN
+    //impossible date gives NaN (same check as createPlan)
     if (isNaN(new Date(`${date}T00:00:00+08:00`).getTime())) {
         return res.status(400).json({ error: "Please use a date like 2026-10-30." })
     }
 
     try {
-        const centres = await Centre.findAllCentresSorted()   // CHANGED: helper in centre-model.js (A to Z)
+        const centres = await Centre.findAllCentresSorted()   //A to Z
 
         const list = centres.map(centre => ({
             serialNo: String(centre.serialNo),
             name: centre.name,
             lat: centre.lat,
             lng: centre.lng,
-            is_open: isCentreOpen(centre, date)   // false = NEA cleaning / repairs that day
+            is_open: isCentreOpen(centre, date)   //false = NEA cleaning / repairs that day
         }))
 
         res.json({ centres: list })
@@ -78,11 +77,11 @@ exports.getCentreList = async (req, res) => {
     }
 }
 
-// GET /api/centre-search/plans/:code/centres/:serialNo
-// one centre's menu for THIS plan's date:
-//   stalls       = open stalls with their dishes
-//   closedStalls = stalls not open that day, with the reason
-//   cannotEat    = members who have NOTHING here within their diet + budget (empty = everyone can eat)
+//GET /api/centre-search/plans/:code/centres/:serialNo
+//one centre's menu for this plan's date:
+//  stalls = open stalls with their dishes
+//  closedStalls = stalls not open that day + why
+//  cannotEat = members with nothing here within their diet + budget (empty = everyone can eat)
 exports.getCentreMenu = async (req, res) => {
     const code = req.params.code
     const serialNo = String(req.params.serialNo)
@@ -93,7 +92,7 @@ exports.getCentreMenu = async (req, res) => {
             return res.status(404).json({ error: "Plan not found!" })
         }
 
-        const centre = await Centre.findBySerial(serialNo)   // CHANGED: helper in centre-model.js
+        const centre = await Centre.findBySerial(serialNo)   //by NEA serial number
         if (!centre) {
             return res.status(404).json({ error: "Centre not found!" })
         }
@@ -101,7 +100,7 @@ exports.getCentreMenu = async (req, res) => {
         const date = plan.date
         const isToday = date === getSingaporeToday()
 
-        // 1. split the centre's stalls into open and not open (stalls link to centres by serialNo)
+        //1. split the stalls into open / not open (stalls link to centres by serialNo)
         const stalls = await Stall.find({ centre_id: serialNo }).sort({ name: 1 })
         const openStalls = []
         const closedStalls = []
@@ -115,7 +114,7 @@ exports.getCentreMenu = async (req, res) => {
             }
         }
 
-        // 2. dishes of the open stalls, in ONE query ($in = any of these ids), cheapest first
+        //2. dishes of all open stalls in one query ($in = any of these ids), cheapest first
         const openIds = openStalls.map(stall => stall._id)
         const dishes = await Dish.find({ stall_id: { $in: openIds } }).sort({ price: 1 })
 
@@ -123,7 +122,7 @@ exports.getCentreMenu = async (req, res) => {
         for (const stall of openStalls) {
             const stallDishes = dishes
                 .filter(dish => String(dish.stall_id) === String(stall._id))
-                .filter(dish => !isToday || dish.is_available)   // "not available" only matters for today's plans
+                .filter(dish => !isToday || dish.is_available)   //"not available" only matters for today's plans
                 .map(dish => ({ dish_id: dish._id, name: dish.name, price: dish.price, tags: dish.tags }))
 
             if (stallDishes.length === 0) {
@@ -133,7 +132,7 @@ exports.getCentreMenu = async (req, res) => {
             }
         }
 
-        // 3. who can't eat here? Uses getValidDishes + canMemberEat, the SAME rules addToShortlist checks
+        //3. who can't eat here (same rules addToShortlist checks)
         const validDishes = await getValidDishes(centre, date)
         const cannotEat = []
         for (const member of plan.members) {
@@ -143,7 +142,7 @@ exports.getCentreMenu = async (req, res) => {
             }
         }
 
-        // 4. crowd level only makes sense for a plan that's today (reports from the last hour)
+        //4. crowd level only matters for a plan that's today
         let crowd = null
         if (isToday) {
             const reports = await CrowdReport.find({

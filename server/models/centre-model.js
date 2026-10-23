@@ -36,17 +36,17 @@ exports.findAllCentres = function() {
     return Centre.find()
 }
 
-//NEW (Centre Search): every centre, A to Z by name (for the dropdown)
+//every centre A to Z by name (for the Centre Search dropdown)
 exports.findAllCentresSorted = function() {
     return Centre.find().sort({name: 1})
 }
 
-//NEW (Centre Search): one centre by its NEA serialNo, e.g. "72"
+//one centre by its NEA serialNo (ie. "72")
 exports.findBySerial = function(serialNo) {
     return Centre.findOne({serialNo: String(serialNo)})
 }
 
-//NEW (Centre Search): many centres at once by serialNo ($in = "any of these")
+//many centres at once by serialNo ($in = "any of these")
 exports.findBySerials = function(serialNos) {
     return Centre.find({serialNo: {$in: serialNos}})
 }

@@ -1,15 +1,14 @@
 <script setup>
-// NEW FILE (Centre Search): replaces DishSearchResults.vue, StallMenu.vue and DishSearchForm.vue
-// Shows ONE centre's stalls. Tap a stall to show/hide its dishes (several can be open to compare).
-// Display only: CentreSearch.vue sends the data DOWN as props, this sends 'toggle-stall' UP.
+//shows one centre's stalls, tap a stall to show/hide its dishes
+//display only: CentreSearch.vue sends the data down as props, this sends 'toggle-stall' up
 
 const props = defineProps({
-    stalls: { type: Array, required: true },        // open stalls (already filtered): [{ stall_id, name, unit_no, dishes }]
-    closedStalls: { type: Array, required: true },  // [{ stall_id, name, unit_no, reason }]
-    openStallIds: { type: Array, required: true },  // which stalls are showing their dishes
-    showAll: { type: Boolean, default: false },     // true while typing a dish name: every matching stall shows its dishes
-    dateLabel: { type: String, default: '' },       // e.g. "Fri, 30 Oct"
-    hasAnyStalls: { type: Boolean, default: false } // false = this centre has no open stalls at all (before filtering)
+    stalls: { type: Array, required: true },        //open stalls (already filtered by the page)
+    closedStalls: { type: Array, required: true },  //stalls not open on the plan date + why
+    openStallIds: { type: Array, required: true },  //which stalls are showing their dishes
+    showAll: { type: Boolean, default: false },     //true while typing a dish name
+    dateLabel: { type: String, default: '' },       //ie. "Fri, 30 Oct"
+    hasAnyStalls: { type: Boolean, default: false } //false = no open stalls at all here
 })
 
 const emit = defineEmits(['toggle-stall'])
@@ -28,13 +27,12 @@ const TAG_NAMES = {
     no_beef: 'No beef'
 }
 
-// is this stall showing its dishes?
+//is this stall showing its dishes?
 function isOpen(stall) {
     return props.showAll || props.openStallIds.includes(stall.stall_id)
 }
 
-// cheapest dish price at a stall
-// CHANGED: starts from the first dish's price (was Infinity). Every stall here has at least 1 dish
+//cheapest dish price at a stall (every stall here has at least 1 dish)
 function cheapest(stall) {
     let lowest = stall.dishes[0].price
     for (const dish of stall.dishes) {
@@ -45,7 +43,7 @@ function cheapest(stall) {
     return lowest
 }
 
-// every diet tag used at a stall, once each (new Set removes repeats)
+//every diet tag at a stall once each (new Set removes repeats)
 function stallTags(stall) {
     const tags = []
     for (const dish of stall.dishes) {
@@ -56,9 +54,9 @@ function stallTags(stall) {
     return [...new Set(tags)]
 }
 
-// emoji per closed reason
+//emoji for each closed reason
 function reasonIcon(reason) {
-    if (reason.includes('Rest day')) {   // CHANGED: was .startsWith
+    if (reason.includes('Rest day')) {
         return '😴'
     }
     if (reason === 'Closed by hawker') {
@@ -105,7 +103,7 @@ function reasonIcon(reason) {
                     <span class="arrow">{{ isOpen(stall) ? '▴' : '▾' }}</span>
                 </button>
 
-                <!-- the dishes, only while the stall is open -->
+                <!-- dishes only show while the stall is open -->
                 <div v-if="isOpen(stall)" class="dishes">
                     <div v-for="dish in stall.dishes" :key="dish.dish_id" class="dish">
                         <span>{{ dish.name }}</span>
@@ -123,7 +121,7 @@ function reasonIcon(reason) {
             </div>
         </div>
 
-        <!-- stalls that aren't open on the plan's date -->
+        <!-- stalls not open on the plan's date -->
         <div v-if="closedStalls.length > 0" class="closed-box">
             <p class="closed-title">Not open on {{ dateLabel }} · {{ closedStalls.length }} {{ closedStalls.length === 1 ? 'stall' : 'stalls' }}</p>
             <div v-for="stall in closedStalls" :key="stall.stall_id" class="closed-row">
@@ -172,7 +170,7 @@ function reasonIcon(reason) {
     border-top: 2px dashed var(--line);
 }
 
-/* the row is a real <button>, so reset the browser's button look */
+/* row is a real <button> so remove the browser's button look */
 .stall-row {
     display: flex;
     justify-content: space-between;
@@ -225,7 +223,7 @@ function reasonIcon(reason) {
     padding-bottom: 10px;
 }
 
-/* "Chicken rice ........ $5.00" */
+/* ie. "Chicken rice ........ $5.00" */
 .dish {
     display: flex;
     align-items: baseline;
@@ -245,11 +243,11 @@ function reasonIcon(reason) {
     white-space: nowrap;
 }
 
-/* small diet icon box (dish rows + stall rows) */
+/* diet icon box (dish rows + stall rows) */
 .tag {
-    display: inline-block;   /* CHANGED: one box that moves as a whole */
-    white-space: nowrap;     /* CHANGED: never split 🚫 and 🐷 onto two lines */
-    margin-left: 2px;        /* CHANGED: small gap between boxes */
+    display: inline-block;   /* moves as one box */
+    white-space: nowrap;     /* never splits 🚫 and 🐷 onto two lines */
+    margin-left: 2px;
     padding: 0 4px;
     border: 1.5px solid var(--ink);
     border-radius: 6px;

@@ -1,5 +1,5 @@
 // EXAMPLE STALL SEED: adds example stalls (with dishes) to every hawker centre that sells food,
-// so the shortlist and Dish Search have data wherever a group is.
+// so the shortlist and Centre Search have data wherever a group is.
 //
 // The CENTRES are real (from NEA's dataset). The STALLS are fictional examples:
 // real stall names, menus, prices and halal status aren't publicly available.

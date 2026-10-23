@@ -25,7 +25,6 @@ const menuOpen = ref(false)
 
       <nav class="nav" v-bind:class="{ open: menuOpen }">
         <RouterLink class="link" to="/centres" v-on:click="menuOpen = false">Centres</RouterLink>
-        <!-- REMOVED: Dish Search link. It only works inside a plan, so it opens from the plan lobby (/dish-search?plan=CODE) -->
         <RouterLink class="link" to="/hawker/dashboard" v-on:click="menuOpen = false">For hawkers</RouterLink>
         <RouterLink class="btn sm" to="/plan/join" v-on:click="menuOpen = false">Join with a code</RouterLink>
         <RouterLink class="btn sm red" to="/plan/new" v-on:click="menuOpen = false">Start a plan</RouterLink>

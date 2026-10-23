@@ -9,7 +9,7 @@ router.get("/:code", plansController.getPlan)
 router.post("/:code/members", plansController.joinPlan)
 router.post("/:code/start", plansController.startSwiping)
 
-router.post("/:code/shortlist", plansController.addToShortlist) //ADDED for Dish Search
+router.post("/:code/shortlist", plansController.addToShortlist) 
 
 router.get("/:code/cards", plansController.getSwipeCards)   //for swiping
 router.post("/:code/swipes", plansController.submitSwipes)

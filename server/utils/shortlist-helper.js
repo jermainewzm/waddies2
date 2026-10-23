@@ -249,14 +249,14 @@ exports.rankCentres = async function (plan,centres) {
     return goodCentres
 }
 
-//NEW (Dish Search picks): choose the BEST few centres for the whole group
-// pickedCentres = centres members added from Dish Search (up to 10)
+//chooses the best few centres for the whole group
+// pickedCentres = centres members picked in Centre Search (up to 10)
 // rankedCentres = nearby centres from rankCentres (everyone can eat there)
 // LOWER score = better. Score is in "km" so everything can be added together:
 //   distance from the group's midpoint
 // + price  (0 = very cheap for everyone, up to PRICE_WEIGHT_KM = right at everyone's budget)
 // + crowd  (only if the plan starts within 2 hours, same as rankCentres)
-// - bonus  (someone in the group picked it in Dish Search)
+// - bonus  (someone in the group picked it in Centre Search)
 const PICK_BONUS_KM = 2
 const PRICE_WEIGHT_KM = 2
 

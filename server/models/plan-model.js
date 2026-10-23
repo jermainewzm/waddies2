@@ -23,9 +23,7 @@ const memberSchema = new mongoose.Schema({
     required: true }
 })
 
-//ADDED for Dish Search: one centre on the plan's shortlist
-//CHANGED (Centre Search): saves the centre's NEA serialNo (e.g. "72") instead of its Mongo _id,
-//so the plan, stalls, crowd reports and the centre page all use the SAME id for a centre
+
 const shortlistSchema = new mongoose.Schema({
   serialNo: {
     type: String,
@@ -65,24 +63,23 @@ const planSchema = new mongoose.Schema({
       enum: ["joining", "swiping", "done"],
       default: "joining"
     },
-    shortlist: [shortlistSchema], //ADDED for Dish Search
+    shortlist: [shortlistSchema], //Centre Search
 
     swipes : [
       {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
-       centreId: {type: String, required: true}, //CHANGED (Centre Search): the centre's serialNo (was a Centre _id)
+       centreId: {type: String, required: true}, // (Centre Search): the centre's serialNo 
        liked: {type: Boolean, required: true}
     }
     ],
 
-    winner: {type: String, default: null} //CHANGED (Centre Search): the winning centre's serialNo (was a Centre _id)
+    winner: {type: String, default: null} //Centre Search: the winning centre's serialNo
     },
     { timestamps: true }
 )
 
 const Plan = mongoose.model("Plan", planSchema, "plan")
 
-//CHANGED (Centre Search): no more .populate(). The shortlist now saves serialNos,
-//so the controller looks the centres up itself (see getCentresBySerial in plan-controller.js)
+
 exports.findByCode = function (code) {
   return Plan.findOne({ code: code })
 }
