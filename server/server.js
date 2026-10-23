@@ -18,7 +18,7 @@ const dishRoutes = require("./routes/dish-routes")
 const shoutoutRoutes = require("./routes/shoutout-routes")
 
 const planRoutes = require("./routes/plans-routes")
-const dishSearchRoutes = require("./routes/dish-search-routes")
+const centreSearchRoutes = require("./routes/centre-search-routes")
 const centreRoutes = require("./routes/centres-routes")
 
 const errorHandler = require("./middleware/errors-middleware")
@@ -47,8 +47,7 @@ server.use(async (req, res, next) => {
 
 server.use("/api/plans", planRoutes)
 server.use("/api/centres", centreRoutes)
-server.use("/api/dishes", dishSearchRoutes)
-
+server.use("/api/centre-search", centreSearchRoutes)
 server.use("/api/hawker", hawkerRoutes)
 server.use("/api/hawker", stallRoutes)
 server.use("/api/hawker", dishRoutes)

@@ -24,10 +24,11 @@ const memberSchema = new mongoose.Schema({
 })
 
 //ADDED for Dish Search: one centre on the plan's shortlist
+//CHANGED (Centre Search): saves the centre's NEA serialNo (e.g. "72") instead of its Mongo _id,
+//so the plan, stalls, crowd reports and the centre page all use the SAME id for a centre
 const shortlistSchema = new mongoose.Schema({
-  centre_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Centre",
+  serialNo: {
+    type: String,
     required: true
   },
   added_by: {
@@ -68,20 +69,22 @@ const planSchema = new mongoose.Schema({
 
     swipes : [
       {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
-       centreId: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", required: true},
+       centreId: {type: String, required: true}, //CHANGED (Centre Search): the centre's serialNo (was a Centre _id)
        liked: {type: Boolean, required: true}
     }
     ],
 
-    winner: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", default: null}
+    winner: {type: String, default: null} //CHANGED (Centre Search): the winning centre's serialNo (was a Centre _id)
     },
     { timestamps: true }
 )
 
 const Plan = mongoose.model("Plan", planSchema, "plan")
 
+//CHANGED (Centre Search): no more .populate(). The shortlist now saves serialNos,
+//so the controller looks the centres up itself (see getCentresBySerial in plan-controller.js)
 exports.findByCode = function (code) {
-  return Plan.findOne({ code: code }).populate('shortlist.centre_id')
+  return Plan.findOne({ code: code })
 }
 
 exports.addPlan = function (code, name, date, time) {
@@ -139,6 +142,5 @@ exports.finishPlan = function(code, winnerId) {
   )
 }
 
-exports.findWinnerByCode = function(code) {
-  return Plan.findOne({code:code}).populate('winner')
-}
+//REMOVED (Centre Search): findWinnerByCode. winner is a serialNo now, so getRouteToWinner
+//uses findByCode and looks the centre up by serialNo

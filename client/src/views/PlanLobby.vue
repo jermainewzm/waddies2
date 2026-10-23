@@ -396,13 +396,13 @@ onUnmounted(() => {
           <div class="dish-search-content">
             <div class="dish-search-icon">🔎</div>
             <div>
-              <h3 class="h5 fw-bold mb-1">Got specific cravings? </h3>
+              <h3 class="h5 fw-bold mb-1">Got a centre in mind? </h3>
               <p class="text-muted mb-0">
-                Search dishes and add your desired hawker centre to swipe!
+                Look through a centre's stalls and add it to your group's picks!
               </p>
               </div>
           </div>
-          <button type="button" class="btn red" v-on:click="router.push(`/dish-search?plan=${code}`)"> Search dishes</button>
+            <button type="button" class="btn red" v-on:click="router.push(`/centre-search?plan=${code}`)"> Find a centre</button>
         </div>
       </div>
     </div>
