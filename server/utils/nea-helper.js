@@ -195,9 +195,9 @@ function makeHttps(url) {
 }
 
 function normalizeCentre(record) {
-  // CKAN responses often contain _id.
-  // serial_no is used as fallback.
-  const id = clean(record._id ?? record.serial_no)
+  // CKAN responses often contain _id but this _id is just a row number and can change.
+  // so, use NEA's serial_no as the id.
+  const id = clean(record.serial_no)
 
   return {
     id,

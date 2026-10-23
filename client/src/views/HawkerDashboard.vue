@@ -240,7 +240,7 @@ onMounted(async () => {
 
 
 <template>
-
+    <main class="bg-tiles">
     <div class="container py-4">
 
         <h1 class="outline hawker-title">
@@ -375,11 +375,14 @@ onMounted(async () => {
         </div>
 
     </div>
-
+</main>
 </template>
 
 
 <style scoped>
+main {
+    min-height: 100vh;
+}
 
 .hawker-title {
     color: var(--paper);

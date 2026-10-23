@@ -152,7 +152,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main
+  <main class="bg-tiles">
+  <div
     class="container py-4 py-md-5"
   >
     <RouterLink
@@ -493,11 +494,12 @@ onUnmounted(() => {
 
                 <span
                   class="stall-status"
+                   v-bind:class="centre.isOpen ? `stall-${stall.status}` : 'stall-centre-closed'"
                 >
                   {{
-                    stallStatusLabel(
-                      stall.status
-                    )
+                    centre.isOpen
+                      ? stallStatusLabel(stall.status)
+                      : "Closed"
                   }}
                 </span>
               </div>
@@ -636,28 +638,33 @@ onUnmounted(() => {
         </div>
       </div>
     </template>
-  </main>
+  </div>
+</main>
 </template>
 
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
+
 .back-link {
-  color: var(--hh-kopi);
+  color: var(--ink);
   text-decoration: none;
   font-weight: 700;
 }
 
 .back-link:hover {
-  color: var(--hh-red);
+  color: var(--tomato);
 }
 
 .hero-card,
 .content-card {
-  background: white;
+  background:var(--paper);
+  border: 4px solid var(--ink);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow:
-    0 6px 24px
-    rgba(59, 42, 32, 0.08);
+  box-shadow: 8px 8px 0 var(--ink);
 }
 
 .hero-photo {
@@ -672,13 +679,14 @@ onUnmounted(() => {
 }
 
 .section-kicker {
-  color: var(--hh-red);
+  color: var(--tomato);
   font-weight: 800;
   letter-spacing: 0.12em;
   font-size: 0.8rem;
 }
 
 .status-badge {
+  border: 2px solid var(--ink);
   border-radius: 999px;
   padding: 0.5rem 0.8rem;
   font-size: 0.8rem;
@@ -686,13 +694,13 @@ onUnmounted(() => {
 }
 
 .status-open {
-  background: #ccebd8;
-  color: #17603a;
+  background: var(--pandan);
+  color: var(--ink);
 }
 
 .status-closed {
-  background: #f7ceca;
-  color: #8f211c;
+  background: var(--tomato);
+  color: var(--ink);
 }
 
 .centre-stats {
@@ -703,14 +711,15 @@ onUnmounted(() => {
 }
 
 .centre-stats div {
-  background: var(--hh-steel);
+  background: var(--cream);
   border-radius: 12px;
   padding: 0.85rem;
+  border: 3px solid var(--ink);
 }
 
 .centre-stats small {
   display: block;
-  color: #777;
+  color: var(--muted);
   margin-bottom: 0.2rem;
 }
 
@@ -723,12 +732,15 @@ onUnmounted(() => {
 }
 
 .closure-alert {
-  background: #fff0ee;
-  color: #8f211c;
-  border: 0;
+  background: var(--cream);
+  color: var(--bad);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  font-weight: 700;
 }
 
 .current-crowd {
+  border: 3px solid var(--ink);
   border-radius: 14px;
   padding: 1rem;
   display: flex;
@@ -783,14 +795,25 @@ onUnmounted(() => {
   color: #8f211c;
 }
 
+.crowd-button-plenty:hover {
+   background: var(--pandan); 
+}
+
+.crowd-button-few:hover {
+   background: var(--sun); 
+}
+
+.crowd-button-full:hover {
+   background: var(--tomato); 
+}
+
 .stall-row {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
   padding: 0.85rem 0;
-  border-bottom:
-    1px solid #eeeeee;
+  border-bottom: 2px dashed var(--line);
 }
 
 .stall-row:last-child {
@@ -798,19 +821,39 @@ onUnmounted(() => {
 }
 
 .stall-status {
-  background: var(--hh-steel);
+  background: var(--cream);
+  border: 2px solid var(--ink);
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
+.stall-open { 
+  background: var(--pandan); 
+}
+
+.stall-sold_out {
+  background: var(--warn); 
+}
+
+.stall-closed_early {
+  background: var(--sun); 
+}
+
+.stall-closed {
+  background: var(--tomato); 
+  }
+
+.stall-centre-closed { 
+  background: var(--tomato); 
+}
+
 .closure-row {
   display: flex;
   flex-direction: column;
   padding: 0.8rem 0;
-  border-bottom:
-    1px solid #eeeeee;
+  border-bottom: 2px dashed var(--line);
 }
 
 .closure-row:last-child {
@@ -818,9 +861,9 @@ onUnmounted(() => {
 }
 
 .shoutout {
-  background: #fff4e3;
-  border-left:
-    4px solid var(--hh-red);
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-left: 8px solid var(--tomato);
   padding: 0.8rem;
   border-radius: 8px;
   margin-bottom: 0.75rem;
