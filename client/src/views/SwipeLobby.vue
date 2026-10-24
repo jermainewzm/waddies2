@@ -277,6 +277,7 @@ onUnmounted(() => {
 
           <span v-if="dragX > 40" class="stamp stamp-yes">I'M IN</span>
           <span v-if="dragX < -40" class="stamp stamp-no">SKIP</span>
+          <span v-if="currentCard.addedBy" class="recommend-stamp">⭐ Recommended!</span>
           <img v-if="currentCard.photoUrl" :src="currentCard.photoUrl" :alt="currentCard.name" class="card-photo" draggable="false"/>
 
           <div class="p-4">
@@ -286,16 +287,13 @@ onUnmounted(() => {
                 {{ currentCard.crowd.label }}
               </span>
             </div>
-            <p v-if="currentCard.addedBy" class="small fw-bold mb-1">
-                Added by {{ currentCard.addedBy }} from Centre Search
-            </p>
 
             <p class="text-muted small">{{ currentCard.address }}</p>
             <p><strong>{{ currentCard.distanceKm }} km</strong> from your pin 📍</p>
 
             <h3 class="h6 fw-bold">Stalls that suit you</h3>
-            <p v-if="currentCard.stalls.length === 0" class="small text-muted mb-0">
-              No stalls here match your diet and budget.
+            <p v-if="currentCard.stalls.length === 0" class="no-stalls">
+              ⚠ No stalls here match your diet and budget.
             </p>
             <div v-for="(stall, index) in currentCard.stalls.slice(0, 3)" :key="index" class="small mb-1">
               <strong>{{ stall.name }}</strong>
@@ -306,7 +304,7 @@ onUnmounted(() => {
 
         <div class="d-flex gap-3 mt-4">
           <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">Next!</button>
-          <button type="button" class="btn red w-50 fw-bold" v-on:click="answer(true)">I'm in!</button>
+          <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">I'm in!</button>
         </div>
       </div>
 
@@ -336,14 +334,11 @@ main {
   font-size: 0.8rem;
 }
 
-.swipe-card {
-  overflow: hidden;
-}
-
 .card-photo {
   width: 100%;
   height: 200px;
   object-fit: cover;
+  border-radius: 22px 22px 0 0;
 }
 
 .info-pill {
@@ -377,7 +372,7 @@ main {
 
 .stamp {
   position: absolute;
-  top: 16px;
+  top: 23px;
   z-index: 1;
   background: var(--paper);
   border: 3px solid;
@@ -452,6 +447,33 @@ main {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
+}
+
+.no-stalls {
+  padding: 8px 12px;
+  border: 3px solid var(--bad);
+  border-radius: 12px;
+  background: #f7ceca;    
+  color: #8f211c;
+  font-weight: 800;
+}
+
+.recommend-stamp {
+  position: absolute;
+  top: -19px;
+  right: -34px;
+  z-index: 2;                 /* above the SKIP / I'M IN stamps, which use z-index 1 */
+  background: var(--tomato);
+  color: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 6px 16px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: rotate(13deg);    /* the slant */
 }
 
 @keyframes spin {

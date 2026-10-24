@@ -8,7 +8,6 @@ import { API_URL } from '@/utils/constants'
 import CentreMenu from '../components/CentreMenu.vue'
 
 const MAX_PICKS = 10        //whole group can pick up to 10 centres (same as plan-controller)
-const SWIPE_CARDS = 5       //best 5 picks become the swipe cards
 const SUGGESTED_COUNT = 5   //how many nearest centres to suggest
 const MAX_PRICE_LIMIT = 100 //same cap as a plan budget
 
@@ -198,9 +197,6 @@ const cannotAddReason = computed(() => {
     }
     if (pickedSerials.value.length >= MAX_PICKS) {
         return `Your group has picked ${MAX_PICKS} centres (max)`
-    }
-    if (menu.value.cannotEat.length > 0) {
-        return 'Not everyone can eat here'
     }
     return ''
 })
@@ -405,7 +401,7 @@ onUnmounted(() => {
                     <i v-for="n in MAX_PICKS" :key="n" :class="{ filled: n <= pickedSerials.length }"></i>
                 </span>
                 <span class="picks-note">
-                    Your group can pick {{ MAX_PICKS }} centres · the best {{ SWIPE_CARDS }} are kept for swiping
+                    Your group can pick up to {{ MAX_PICKS }} centres · your picks are swiped first, followed by nearby suggestions!
                 </span>
             </div>
 
@@ -523,10 +519,10 @@ onUnmounted(() => {
 
                                 <p v-if="menu.cannotEat.length === 0" class="fit-ok">✓ Everyone can eat here within budget</p>
                                 <template v-else>
-                                    <p class="fit-bad">✕ Not everyone can eat here</p>
+                                    <p class="fit-bad">⚠ Not everyone can eat here</p>
                                     <p class="blocked-box">
                                         <b>{{ cannotEatNames }}</b>
-                                        {{ menu.cannotEat.length === 1 ? 'has' : 'have' }} nothing to eat here. Try a Suggested centre.
+                                        {{ menu.cannotEat.length === 1 ? 'has' : 'have' }} nothing to eat here. You can still add it, but they won't have dishes to choose from 😭.
                                     </p>
                                 </template>
                             </div>
@@ -541,7 +537,7 @@ onUnmounted(() => {
                                 {{ addButtonText }}
                             </button>
                         </div>
-                        <p v-if="cannotAddReason !== '' && !alreadyPicked && menu.cannotEat.length === 0" class="small fw-bold mt-2 mb-0">{{ cannotAddReason }}</p>
+                        <p v-if="cannotAddReason !== '' && !alreadyPicked" class="small fw-bold mt-2 mb-0">{{ cannotAddReason }}</p>
                         <p v-if="addError" class="text-danger fw-bold mt-2 mb-0" role="alert">{{ addError }}</p>
 
                         <CentreMenu

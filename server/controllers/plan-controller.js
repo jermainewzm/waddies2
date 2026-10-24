@@ -1,7 +1,7 @@
 const Plan = require("../models/plan-model")
 const Centre = require("../models/centre-model")
 const { getLatLng, getRoute } = require("../utils/onemap-helper")
-const { rankCentres, getDistance, getValidDishes, canMemberEat, pickBestCentres, isCentreOpen, canEveryoneEat } = require("../utils/shortlist-helper") //for Swiping Card + Centre Search checks
+const { rankCentres, getDistance, getValidDishes, canMemberEat, pickBestCentres, isCentreOpen } = require("../utils/shortlist-helper") //for Swiping Card + Centre Search checks
 const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Swiping Card
 const { summariseCrowd } = require("./centres-controller") //for Swiping Card
 const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
@@ -173,7 +173,7 @@ exports.startSwiping = async (req,res) => {
             return res.status(403).json({error: "Only the host can start swiping!"})
         }
         if (plan.members.length < 2) {
-            return res.status(400).json({error: "Not enough people to start swiping! Wait for at least one friend to join."})
+            return res.status(400).json({error: "Not enough people to start swiping!\nWait for at least one friend to join."})
         }
 
         //picks (up to 10) + nearby centres are scored together and
@@ -212,7 +212,7 @@ exports.startSwiping = async (req,res) => {
         }
 
         if (shortlist.length === 0) {
-            return res.status(400).json({error: "No nearby centre fits everyone's diets. Try raising budgets or add a centre from Centre Search!"})
+            return res.status(400).json({error: "Nothing nearby fits everyone's diets and budgets.\nTry manually adding a hawker centre you want to try!"})
         }
 
         await Plan.setShortlist(code, shortlist)
@@ -269,13 +269,6 @@ exports.addToShortlist = async (req, res) => {
         //centre must be open on the plan's date (not closed for NEA cleaning)
         if (!isCentreOpen(centre, plan.date)) {
             return res.status(400).json({error: "This centre is closed on your plan's date."})
-        }
-
-        //every member needs at least one dish here within their diet and budget
-        //(same rule the swipe shortlist uses, so a pick never gets thrown out for this later)
-        const dishes = await getValidDishes(centre, plan.date)
-        if (!canEveryoneEat(plan.members, dishes)) {
-            return res.status(400).json({error: "Not everyone in your group can eat here within their diet and budget."})
         }
 
         //no duplicates

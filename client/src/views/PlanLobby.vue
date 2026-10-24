@@ -360,7 +360,8 @@ onUnmounted(() => {
             <span v-if="isStartingSwiping" class="spinner-border spinner-border-sm me-2" role="status"></span>
             {{ isStartingSwiping ? 'Starting...' : 'Start Swiping!' }}
             </button>
-            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0">{{ errorMessage }}</p>
+            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0 start-error">{{ errorMessage }}</p>
+            <button v-if="isHost && errorMessage.includes('Nothing nearby')" type="button" class="btn red mt-2 mx-auto" v-on:click="router.push(`/centre-search?plan=${code}`)">Add a centre</button>
         </div>
 
         <div v-if="myId" class="next-section">
@@ -705,4 +706,9 @@ main {
 .step-3 {
    background: #D7F2E3; 
 }
+
+.start-error {
+  white-space: pre-line;
+}
+
 </style>

@@ -256,8 +256,6 @@ exports.rankCentres = async function (plan,centres) {
 //   distance from the group's midpoint
 // + price  (0 = very cheap for everyone, up to PRICE_WEIGHT_KM = right at everyone's budget)
 // + crowd  (only if the plan starts within 2 hours, same as rankCentres)
-// - bonus  (someone in the group picked it in Centre Search)
-const PICK_BONUS_KM = 2
 const PRICE_WEIGHT_KM = 2
 
 exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, count) {
@@ -294,12 +292,13 @@ exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, co
     // 3. score every centre
     const scored = []
     for (const centre of allCentres) {
-        // a picked centre still has to work for EVERYONE (open, diet + budget)
+        // every centre must be open on the plan's date
         if (!exports.isCentreOpen(centre, plan.date)) {
             continue
         }
         const dishes = await exports.getValidDishes(centre, plan.date)
-        if (!exports.canEveryoneEat(plan.members, dishes)) {
+        // nearby centres must suit everyone, but centre that is manually added is always kept
+        if (!pickedIds.includes(String(centre._id)) && !exports.canEveryoneEat(plan.members, dishes)) {
             continue
         }
 
@@ -330,22 +329,32 @@ exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, co
             crowdPenalty = CROWD_PENALTY_KM[summariseCrowd(centreReports).level]
         }
 
-        let bonus = 0
-        if (pickedIds.includes(String(centre._id))) {
-            bonus = PICK_BONUS_KM
-        }
-
         scored.push({
             centre: centre,
-            score: distance + pricePenalty + crowdPenalty - bonus
+            score: distance + pricePenalty + crowdPenalty
         })
     }
 
-    // 4. best (lowest score) first, keep the top few
-    scored.sort((a, b) => a.score - b.score)
+    // 4. picked centres goes first, then the nearby ones. 
+    // Each group is sorted best (lowest score) first
+    const pickedScored = []
+    const otherScored = []
+    for (const item of scored) {
+        if (pickedIds.includes(String(item.centre._id))) {
+            pickedScored.push(item)
+        } else {
+            otherScored.push(item)
+        }
+    }
+
+    pickedScored.sort((a,b) => a.score - b.score)
+    otherScored.sort((a,b) => a.score - b.score)
+
+    // Every manually selected "pick" first, then the best nearby centres after
+    const total = pickedScored.length + count
 
     const best = []
-    for (const item of scored.slice(0, count)) {
+    for (const item of [...pickedScored, ...otherScored].slice(0, total)) {
         best.push(item.centre)
     }
     return best
