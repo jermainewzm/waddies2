@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest"
-import { getMidPoint, getDistance, canMemberEat, canEveryoneEat, isCentreOpen } from "../utils/shortlist-helper"
+import { getMidPoint, getDistance, canMemberEat, canEveryoneEat, isCentreOpen, findCentreCandidates } from "../utils/shortlist-helper"
 
 describe("getMidPoint", () => {
   test("two members gives the point halfway between them", () => {
@@ -114,5 +114,85 @@ describe("isCentreOpen", () => {
       closures: [{ start: new Date("2026-11-10"), end: new Date("2026-11-20") }]
     }
     expect(isCentreOpen(centre, "2026-11-25")).toBe(true)
+  })
+})
+
+describe("getDistance", () => {
+  test("the same point is zero km away from each other", () => {
+    const point = { lat: 1.3, lng: 103.8 }
+    expect(getDistance(point, point)).toBe(0)
+  })
+
+  test("0.1 degrees of latitude is about 11 km", () => {
+    const a = { lat: 1.3, lng: 103.8 }
+    const b = { lat: 1.4, lng: 103.8 }
+    expect(getDistance(a, b)).toBeCloseTo(11.1, 1)
+  })
+
+  test("0.1 degrees of longitude is about 11 km", () => {
+    const a = { lat: 1.3, lng: 103.8 }
+    const b = { lat: 1.3, lng: 103.9 }
+    expect(getDistance(a, b)).toBeCloseTo(11.1, 1)
+  })
+
+})
+
+describe("findCentreCandidates", () => {
+  //one member in Woodlands, one in Bedok: the midpoint lands around the centre of the island
+  const plan = {
+    date: "2026-11-15",
+    members: [
+      { lat: 1.4360, lng: 103.7860 },   // Woodlands
+      { lat: 1.3240, lng: 103.9300 }    // Bedok
+    ]
+  }
+  //midpoint is roughly 1.3800, 103.8580 (Upper Thomson / Bishan area)
+
+  test("returns candidates sorted nearest to the group's midpoint", () => {
+    const centres = [
+        { name: "Taman Jurong Market and Food Centre", lat: 1.3340, lng: 103.7200, closures: [] },
+        { name: "Bishan Market and Food Centre", lat: 1.3508, lng: 103.8485, closures: [] },
+        { name: "Chomp Chomp Food Centre", lat: 1.3640, lng: 103.8680, closures: [] }
+      ]
+    const result = findCentreCandidates(centres, plan, 10)
+    expect(result[0].centre.name).toBe("Chomp Chomp Food Centre")
+    expect(result[1].centre.name).toBe("Bishan Market and Food Centre")
+    expect(result[2].centre.name).toBe("Taman Jurong Market and Food Centre")
+  })
+
+  test("leaves out a centre closed on the plan's date", () => {
+    const centres = [
+      { name: "Chomp Chomp Food Centre", lat: 1.3640, lng: 103.8680,
+        closures: [{ start: new Date("2026-11-10"), end: new Date("2026-11-20") }] },
+      { name: "Bishan Market and Food Centre", lat: 1.3508, lng: 103.8485, closures: [] }
+    ]
+    const result = findCentreCandidates(centres, plan, 10)
+    expect(result.length).toBe(1)
+    expect(result[0].centre.name).toBe("Bishan Market and Food Centre")
+  })
+
+  test("works with three members spread across the island", () => {
+    const threePersonPlan = {
+      date: "2026-11-15",
+      members: [
+        { lat: 1.4360, lng: 103.7860 },   // Woodlands
+        { lat: 1.3240, lng: 103.9300 },   // Bedok
+        { lat: 1.2900, lng: 103.8500 }    // Tanjong Pagar
+      ]
+    }
+    //midpoint is roughly 1.3500, 103.8553 (Bishan area)
+     const centres = [
+      { name: "Taman Jurong Market and Food Centre", lat: 1.3340, lng: 103.7200, closures: [] },
+      { name: "Bishan Market and Food Centre", lat: 1.3508, lng: 103.8485, closures: [] },
+      { name: "Chomp Chomp Food Centre", lat: 1.3640, lng: 103.8680, closures: [] },
+      { name: "Maxwell Food Centre", lat: 1.2805, lng: 103.8444, closures: [] },
+      { name: "Yishun Park Hawker Centre", lat: 1.4290, lng: 103.8350, closures: [] }
+    ]
+    const result = findCentreCandidates(centres, threePersonPlan, 10)
+    expect(result[0].centre.name).toBe("Bishan Market and Food Centre")
+    expect(result[1].centre.name).toBe("Chomp Chomp Food Centre")
+    expect(result[2].centre.name).toBe("Maxwell Food Centre")
+    expect(result[3].centre.name).toBe("Yishun Park Hawker Centre")
+    expect(result[4].centre.name).toBe("Taman Jurong Market and Food Centre")
   })
 })
