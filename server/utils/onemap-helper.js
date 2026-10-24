@@ -123,9 +123,11 @@ exports.getRoute = async function (start, end, planDate, planTime, centreName, m
         })
     }
 
+    const fare = isNaN(Number(bestRoute.fare)) ? null : bestRoute.fare
+
     return {
         totalMinutes: Math.round(bestRoute.duration /60 ),
-        fare: bestRoute.fare,
+        fare: fare,
         transfers: bestRoute.transfers,
         legs: legs
     }

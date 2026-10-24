@@ -383,7 +383,7 @@ onUnmounted(() => {
 
 <template>
   <main class="bg-tiles">
-  <main class="container py-4">
+  <div class="container py-4">
     <button class="btn mb-4" v-on:click="goBack()">
       ← Back to results
     </button>
@@ -442,7 +442,7 @@ onUnmounted(() => {
             </h2>
           </div>
 
-          <div class="col-6" v-if="routeMode === 'pt'">
+          <div class="col-6" v-if="routeMode === 'pt' && myRoute.fare">
             <p class="text-muted mb-1">Public transport fare</p>
             <h2 class="hh-display h3 mb-0">
               ${{ myRoute.fare }} (est)
@@ -532,7 +532,7 @@ onUnmounted(() => {
         </RouterLink>
       </div>
     </template>
-  </main>
+  </div>
 </main>
 </template>
 
