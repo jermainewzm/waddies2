@@ -11,7 +11,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') })
 
 const { fetchAllCentres, formatCentre } = require('../utils/centres-helper')
 const centreModel = require('../models/centre-model')
-// const User = require("../models/user-model") 
+const Admin = require("../models/admin-model")
 
 
 async function seed() {
@@ -30,7 +30,23 @@ async function seed() {
             await centreModel.addCentre(formatCentre(record))
         }
          console.log(`Imported ${records.length} centres from NEA`)
-         // ── 3. Demo users: added later ──
+         
+         // ── 3. Seed demo admins
+        await Admin.deleteMany({})
+
+        await Admin.insertMany([
+            {
+                admin_id: "admin_001",
+                name: "Admin 1"
+            },
+            {
+                admin_id: "admin_002",
+                name: "Admin 2"
+            }
+        ])
+
+        console.log("Created demo admins")
+
          // ── 4. Stalls for pilot centres: added later ──
          console.log('\n✅ Seed complete!')
          await mongoose.disconnect()

@@ -20,6 +20,7 @@ const shoutoutRoutes = require("./routes/shoutout-routes")
 const planRoutes = require("./routes/plans-routes")
 const centreSearchRoutes = require("./routes/centre-search-routes")
 const centreRoutes = require("./routes/centres-routes")
+const adminRoutes = require("./routes/admin-routes")
 
 const errorHandler = require("./middleware/errors-middleware")
 
@@ -52,6 +53,7 @@ server.use("/api/hawker", hawkerRoutes)
 server.use("/api/hawker", stallRoutes)
 server.use("/api/hawker", dishRoutes)
 server.use("/api/hawker", shoutoutRoutes)
+server.use("/api/admin", adminRoutes)
 
 //error handling
 server.use(errorHandler)

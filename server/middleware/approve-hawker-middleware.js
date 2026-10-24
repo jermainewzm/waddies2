@@ -1,15 +1,22 @@
 const Stall = require("../models/stall-model")
-const currentUser = require("../utils/mockUser")
 
 async function requireApprovedHawker(req, res, next) {
     try {
+        const hawkerId = req.headers["x-hawker-id"]
+
+        if (!hawkerId) {
+            return res.status(401).json({
+                message: "Hawker ID is required."
+            })
+        }
+
         const stall = await Stall.findOne({
-            owner_id: currentUser.id
+            owner_id: hawkerId
         })
 
         if (!stall) {
             return res.status(403).json({
-                message: "Only approved hawkers can access this feature."
+                message: "You do not have access to a stall."
             })
         }
 

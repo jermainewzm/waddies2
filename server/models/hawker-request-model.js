@@ -1,12 +1,7 @@
 const mongoose = require("mongoose")
 
 const hawkerRequestSchema = new mongoose.Schema({
-    user_id: {
-        type: String,
-        required: true
-    },
-
-    centre_id: {
+    serialNo: {
         type: String,
         required: true
     },
@@ -32,6 +27,11 @@ const hawkerRequestSchema = new mongoose.Schema({
         type: String,
         enum: ["pending", "approved", "rejected"],
         default: "pending"
+    },
+
+    assigned_owner_id: {
+        type: String,
+        default: null
     },
 
     created_at: {
