@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted} from "vue"
 import axios from "axios"
 import { API_URL } from "@/utils/constants"
 import { useRoute, useRouter } from "vue-router"
+const AVATARS = ["av-milo", "av-waffle", "av-toast", "av-tissue"]
 
 const route = useRoute()
 const router = useRouter()
@@ -190,6 +191,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <main class="bg-tiles">
   <div class="container py-4 swipe-page">
 
     <div v-if="isLoading" class="text-center py-5">
@@ -210,7 +212,7 @@ onUnmounted(() => {
           {{ winner ? "You're all heading to..." : "No match this time" }}
         </h2>
 
-        <div v-if="winner" class="swipe-card text-center mb-4">
+        <div v-if="winner" class="card swipe-card text-center mb-4">
           <img v-if="winner.photoUrl" :src="winner.photoUrl" :alt="winner.name" class="card-photo" />
           <div class="p-4">
             <h2 class="hh-display">{{ winner.name }}</h2>
@@ -223,7 +225,7 @@ onUnmounted(() => {
         <p v-else class="text-center text-muted">
           Nobody liked any of the centres. Try a new plan with different choices.
         </p>
-        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn btn-hh-red w-100 mb-4"> Take me there!</button>
+        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn red w-100 mb-4"> Take me there!</button>
         <h3 class="h6 fw-bold mb-2">All centres</h3>
         <div v-for="result in plan.results" :key="result.centreId"
              class="result-row d-flex justify-content-between">
@@ -233,16 +235,27 @@ onUnmounted(() => {
       </div>
 
       <!-- 2. WAITING: I've swiped, others haven't -->
-      <div v-else-if="finished || isSending" class="swipe-card text-center p-4">
+      <div v-else-if="finished || isSending" class="card swipe-card text-center p-4">
         <h2 class="hh-display">{{ isSending ? "Sending your swipes..." : "You're done!" }}</h2>
         <p class="text-muted">
           Waiting for everyone ({{ plan.finishedIds.length }} of {{ plan.members.length }} finished)
         </p>
+        <div class="progress-bar">
+          <div class="progress-fill" v-bind:style="{width: (plan.finishedIds.length) / plan.members.length * 100 + '%'}"></div>
+        </div>
         <ul class="list-unstyled mb-0">
-          <li v-for="member in plan.members" :key="member._id">
+          <li v-for="(member, index) in plan.members" :key="member._id">
+            <span class="avatar" v-bind:class="{ 'not-done': !plan.finishedIds.includes(member._id)}">
+            <svg width="24" height="326" aria-hidden="true">
+                <use v-bind:href="`#${AVATARS[index % AVATARS.length]}`"/>
+              </svg>
+            </span>
             <strong>{{ member.name }}</strong>
-            <span class="text-muted">
-              · {{ plan.finishedIds.includes(member._id) ? "✓ done" : "still swiping" }}
+             <span v-if="plan.finishedIds.includes(member._id)" class="status">
+              <span class="tick">✓</span> Done
+            </span>
+            <span v-else class="status">
+              <span class="spinner"></span> Still swiping
             </span>
           </li>
         </ul>
@@ -252,7 +265,7 @@ onUnmounted(() => {
       <div v-else-if="currentCard">
         <p class="text-center text-muted">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
 
-        <div class="swipe-card draggable-card"
+        <div class="card swipe-card draggable-card"
             :style="{
               transform: `translateX(${dragX}px) rotate(${dragX / 20}deg)`,
               transition: isDragging ? 'none' : 'transform 0.2s'
@@ -264,6 +277,7 @@ onUnmounted(() => {
 
           <span v-if="dragX > 40" class="stamp stamp-yes">I'M IN</span>
           <span v-if="dragX < -40" class="stamp stamp-no">SKIP</span>
+          <span v-if="currentCard.addedBy" class="recommend-stamp">⭐ Recommended!</span>
           <img v-if="currentCard.photoUrl" :src="currentCard.photoUrl" :alt="currentCard.name" class="card-photo" draggable="false"/>
 
           <div class="p-4">
@@ -273,17 +287,13 @@ onUnmounted(() => {
                 {{ currentCard.crowd.label }}
               </span>
             </div>
-            <!-- (Dish Search): shows who added this centre from Dish Search -->
-            <p v-if="currentCard.addedBy" class="small fw-bold mb-1">
-              Added by {{ currentCard.addedBy }} from Dish Search
-            </p>
 
             <p class="text-muted small">{{ currentCard.address }}</p>
-            <p><strong>{{ currentCard.distanceKm }} km</strong> from your pin</p>
+            <p><strong>{{ currentCard.distanceKm }} km</strong> from your pin 📍</p>
 
             <h3 class="h6 fw-bold">Stalls that suit you</h3>
-            <p v-if="currentCard.stalls.length === 0" class="small text-muted mb-0">
-              No stalls here match your diet and budget.
+            <p v-if="currentCard.stalls.length === 0" class="no-stalls">
+              ⚠ No stalls here match your diet and budget.
             </p>
             <div v-for="(stall, index) in currentCard.stalls.slice(0, 3)" :key="index" class="small mb-1">
               <strong>{{ stall.name }}</strong>
@@ -293,44 +303,42 @@ onUnmounted(() => {
         </div>
 
         <div class="d-flex gap-3 mt-4">
-          <button type="button" class="btn btn-outline-dark w-50 fw-bold" v-on:click="answer(false)">Skip</button>
-          <button type="button" class="btn btn-hh-red w-50 fw-bold" v-on:click="answer(true)">I'm in</button>
+          <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">Next!</button>
+          <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">I'm in!</button>
         </div>
       </div>
 
       <!-- 4. Something went wrong -->
-      <div v-else class="swipe-card text-center p-4">
+      <div v-else class="card swipe-card text-center p-4">
         <p class="text-danger">{{ errorMessage || "Something went wrong." }}</p>
-        <button type="button" class="btn btn-hh-red" v-on:click="retry()">Try again</button>
+        <button type="button" class="btn red" v-on:click="retry()">Try again</button>
       </div>
     </template>
 
   </div>
+  </main>
 </template>
-
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
 .swipe-page {
   max-width: 560px;
 }
 
 .section-kicker {
-  color: var(--hh-red);
+  color: var(--tomato);
   font-weight: 800;
   letter-spacing: 0.12em;
   font-size: 0.8rem;
-}
-
-.swipe-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 6px 24px rgba(59, 42, 32, 0.08);
 }
 
 .card-photo {
   width: 100%;
   height: 200px;
   object-fit: cover;
+  border-radius: 22px 22px 0 0;
 }
 
 .info-pill {
@@ -348,8 +356,9 @@ onUnmounted(() => {
 .crowd-none { background: #e8e8e8; color: #666; }
 
 .result-row {
-  background: white;
+  background: var(--paper);
   border-radius: 12px;
+  border: 3px solid var(--ink);
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
 }
@@ -363,9 +372,9 @@ onUnmounted(() => {
 
 .stamp {
   position: absolute;
-  top: 16px;
+  top: 23px;
   z-index: 1;
-  background: white;
+  background: var(--paper);
   border: 3px solid;
   border-radius: 8px;
   padding: 4px 12px;
@@ -373,4 +382,101 @@ onUnmounted(() => {
 }
 .stamp-yes { left: 16px; color: #17603a; }
 .stamp-no { right: 16px; color: #8f211c; }
+
+.progress-bar {
+  height: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.list-unstyled li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--pandan);
+  transition: width 0.3s ease; 
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);       
+  background-color: var(--cream);
+  font-weight: bold;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.tick {
+  color: var(--ok);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.not-done {
+  opacity: .35;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;        /* pushes the whole thing right */
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--line);
+  border-top-color: var(--tomato);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.no-stalls {
+  padding: 8px 12px;
+  border: 3px solid var(--bad);
+  border-radius: 12px;
+  background: #f7ceca;    
+  color: #8f211c;
+  font-weight: 800;
+}
+
+.recommend-stamp {
+  position: absolute;
+  top: -19px;
+  right: -34px;
+  z-index: 2;                 /* above the SKIP / I'M IN stamps, which use z-index 1 */
+  background: var(--tomato);
+  color: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 6px 16px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: rotate(13deg);    /* the slant */
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>

@@ -1,4 +1,3 @@
-
 const express = require("express")
 const dotenv = require("dotenv")
 const cors = require("cors")
@@ -19,58 +18,56 @@ const dishRoutes = require("./routes/dish-routes")
 const shoutoutRoutes = require("./routes/shoutout-routes")
 
 const planRoutes = require("./routes/plans-routes")
-const dishSearchRoutes = require("./routes/dish-search-routes")
+const centreSearchRoutes = require("./routes/centre-search-routes")
 const centreRoutes = require("./routes/centres-routes")
+const adminRoutes = require("./routes/admin-routes")
 
 const errorHandler = require("./middleware/errors-middleware")
 
-server.use("/api/plans", planRoutes )
-server.use("/api/centres", centreRoutes)
-server.use("/api/dishes", dishSearchRoutes)
+// On Vercel the server starts fresh for a request, so we connect once and
+// reuse that connection while the instance stays warm
+let dbConnection = null
 
-server.use('/api/hawker', hawkerRoutes)
-server.use('/api/hawker', stallRoutes)
-server.use('/api/hawker', dishRoutes)
-server.use('/api/hawker', shoutoutRoutes)
+function connectDB() {
+  if (!dbConnection) {
+    dbConnection = mongoose.connect(process.env.DB)
+  }
+  return dbConnection
+}
 
-
-server.post('/api/hawker/apply-test', (req, res) => {
-  res.json({ message: 'route works' })
+// every route needs the database, so wait for it before handling anything
+server.use(async (req, res, next) => {
+  try {
+    await connectDB()
+    next()
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message)
+    next(error)
+  }
 })
+
+server.use("/api/plans", planRoutes)
+server.use("/api/centres", centreRoutes)
+server.use("/api/centre-search", centreSearchRoutes)
+server.use("/api/hawker", hawkerRoutes)
+server.use("/api/hawker", stallRoutes)
+server.use("/api/hawker", dishRoutes)
+server.use("/api/hawker", shoutoutRoutes)
+server.use("/api/admin", adminRoutes)
+
 //error handling
 server.use(errorHandler)
 
-async function connectDB() {
-  try {
-    await mongoose.connect(
-      process.env.DB
-    )
+// locally we listen on a port; on Vercel the app is exported instead
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 8000
 
-    console.log(
-      "Using database:",
-      mongoose.connection.name
-    )
-
-    console.log(
-      "MongoDB connected"
-    )
-  } catch (error) {
-    console.error(
-      "MongoDB connection failed:",
-      error.message
-    )
-
-    process.exit(1)
-  }
+  connectDB().then(() => {
+    console.log("Using database:", mongoose.connection.name)
+    server.listen(PORT, () => {
+      console.log(`API running on http://localhost:${PORT}`)
+    })
+  })
 }
 
-const PORT =
-  process.env.PORT || 8000
-
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(
-      `API running on http://localhost:${PORT}`
-    )
-  })
-})
+module.exports = server

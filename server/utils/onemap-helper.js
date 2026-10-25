@@ -53,24 +53,57 @@ function toRoutingDate(planDate) {
 
 }
 
-/* Public transport route from one point to another, at the plan's date and time.
+function formatDrivingRoute(data, centreName) {
+    const routeSummary = data.route_summary
+
+    return {
+        totalMinutes: Math.round(routeSummary.total_time / 60),
+        fare: null,
+        transfers: 0,
+        legs: [{
+            mode: "DRIVE",
+            minutes: Math.round(routeSummary.total_time / 60),
+            service: "",
+            to: centreName,
+            geometry: data.route_geometry
+        }]
+    }
+}
+
+/* Checks if the mode is driving or public transport. Public transport route from one point to another, at the plan's date and time.
    start/end are { lat, lng }. Returns null if no route is found. */
+exports.getRoute = async function (start, end, planDate, planTime, centreName, mode = "pt") {
+    const params = {
+        start: `${start.lat},${start.lng}`,
+        end: `${end.lat},${end.lng}`
+    }
+    if (mode === "drive") {
+        params.routeType = "drive"
+    } else {
+        params.routeType = "pt"
+        params.mode = "TRANSIT"
+        params.date = toRoutingDate(planDate)
+        params.time = `${planTime}:00`
+        params.maxWalkDistance = 2000
+        params.numItineraries = 1
+    }
+    
+    let response = null
+    try {
+        response = await axios.get("https://www.onemap.gov.sg/api/public/routingsvc/route", {
+                params: params,
+                headers: {Authorization: await getToken()}
+            })
 
-exports.getRoute = async function (start, end, planDate, planTime, centreName) {
-    const response = await axios.get("https://www.onemap.gov.sg/api/public/routingsvc/route" , {
-        params: {
-            start: `${start.lat},${start.lng}`,
-            end: `${end.lat},${end.lng}`,
-            routeType: "pt",
-            mode: "TRANSIT",
-            date: toRoutingDate(planDate),
-            time: `${planTime}:00`, // plans store "12:00", routing wants "12:00:00"
-            maxWalkDistance: 2000,
-            numItineraries: 1
-        },
-        headers: {Authorization: await getToken()}
-    })
+        } catch(error) {
+            console.error("OneMap routing failed:", error.response?.status)
+            console.error("OneMap error details:", error.response?.data || error.message)
 
+            return null
+        }
+        if (mode === "drive") {
+            return formatDrivingRoute(response.data, centreName)
+        }
     const itineraries = response.data.plan.itineraries
 
     if (!itineraries || itineraries.length === 0) {
@@ -90,9 +123,11 @@ exports.getRoute = async function (start, end, planDate, planTime, centreName) {
         })
     }
 
+    const fare = isNaN(Number(bestRoute.fare)) ? null : bestRoute.fare
+
     return {
         totalMinutes: Math.round(bestRoute.duration /60 ),
-        fare: bestRoute.fare,
+        fare: fare,
         transfers: bestRoute.transfers,
         legs: legs
     }

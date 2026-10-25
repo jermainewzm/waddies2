@@ -15,11 +15,12 @@ exports.getFinishedIds = function(plan) {
 
 //For every shortlisted centre, how many members liked it and how far everyone will travel in total.
 //returns best first
-exports.getResults = function(plan) {
+//centresBySerial = { "72": centre document, ... } from the controller
+exports.getResults = function(plan, centresBySerial) {
     const results = []
 
     for (const item of plan.shortlist) {
-        const centre = item.centre_id       //full centre document 
+        const centre = centresBySerial[String(item.serialNo)]   //find the centre by its serialNo
 
         if (!centre) {      //if centre no longer exists
             continue
@@ -27,7 +28,7 @@ exports.getResults = function(plan) {
 
         let likes = 0
         for (const swipe of plan.swipes) {
-            if (String(swipe.centreId) === String(centre._id) && swipe.liked) {
+            if (String(swipe.centreId) === String(centre.serialNo) && swipe.liked) {   //swipes save the serialNo
                 likes++
             }
         }
@@ -38,7 +39,7 @@ exports.getResults = function(plan) {
         }
 
         results.push({
-            centreId: centre._id,
+            centreId: centre.serialNo,   //serialNo
             name: centre.name,
             address: centre.address,
             photoUrl: centre.photoUrl,

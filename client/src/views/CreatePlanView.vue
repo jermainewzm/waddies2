@@ -9,6 +9,7 @@ const date = ref("")
 const time = ref("")
 const code = ref("")
 const errorMessage = ref("")
+const isCreating = ref(false)
 
 const router = useRouter()
 
@@ -71,7 +72,7 @@ async function createPlan() {
     errorMessage.value = "Please pick a date and time in the future."
     return
   }
-
+  isCreating.value = true
   try {
     const response = await axios.post(`${API_URL}/plans`, {
       name: name.value,
@@ -83,6 +84,7 @@ async function createPlan() {
     errorMessage.value = error.response
       ? error.response.data.error
       : "Can't reach the server."
+      isCreating.value = false
   }
 }
 
@@ -145,12 +147,12 @@ function formatTime(time) {
               </p>
             </div>
 
-            <button type="submit" class="btn w-100 red">Create plan →</button>
+            <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating">{{ isCreating ? 'Creating...' : "Create Plan →" }}</button>
           </form>
 
         <p v-if="errorMessage" class="error-message text-danger mt-3">{{ errorMessage }}</p>
 
-        <div v-if="code" class="alert alert-success mt-4">
+        <div v-if="code" class="text-center alert alert-success mt-4">
           Your makan plan code is: <strong>{{ code }}</strong>
           <button v-on:click="goToLobby()" type="button" class="btn green w-100 mt-3"> Go to Plan Lobby </button>
         </div>

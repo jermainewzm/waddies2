@@ -14,8 +14,10 @@ const router = useRouter()
 const code = route.params.code
 const plan = ref(null)
 const errorMessage = ref("")
+const mapError = ref("")
 const isLoading = ref(true)
 const isJoining = ref(false)
+const isStartingSwiping = ref(false)
 
 const name = ref("")
 const diet = ref("any")
@@ -117,7 +119,12 @@ async function submitPreferences() {
 
 async function startSwiping() {
   errorMessage.value = ""
+  
+  if (isStartingSwiping.value) {
+    return
+  }
 
+  isStartingSwiping.value = true
   try {
     const response = await axios.post(`${API_URL}/plans/${code}/start`, {
         memberId : myId.value
@@ -127,6 +134,7 @@ async function startSwiping() {
     router.push(`/plan/${code}/swipe`)
   } catch (error) {
     errorMessage.value = error.response ? error.response.data.error: "Cant reach the server."
+    isStartingSwiping.value = false
   }
 }
 
@@ -148,9 +156,16 @@ function formatDate(date) {
   })
 }
 
+const pinIcon = L.divIcon({
+  className: "",         
+  html: `<div class="map-pin">📍</div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 36]   
+})
+
 function movePin(position) {
     if (pinnedOnce === null) {
-        pinnedOnce = L.marker(position).addTo(map)
+        pinnedOnce = L.marker(position, { icon: pinIcon }).addTo(map)
     } else {
         pinnedOnce.setLatLng(position)
     }
@@ -160,7 +175,7 @@ function movePin(position) {
 
 //sg's rough edges, so users dont click from johor, batam
 function pinInSingapore(position) {
-    return position.lat >= 1.22 && position.lat <= 1.47 && position.lng >= 103.62 && position.lng <= 104.08
+    return position.lat >= 1.24 && position.lat <= 1.47 && position.lng >= 103.63 && position.lng <= 104.01
 }
 
 async function getPostal() {
@@ -205,10 +220,10 @@ onMounted(async () => {
     //Leaflet gives the function an object that contains lat and lng values
     map.on("click", function(clickInfo) {
         if (!pinInSingapore(clickInfo.latlng)) {
-          errorMessage.value = "Please select a location within Singapore!"
+           mapError.value = "Please select a location within Singapore!"
           return
         }
-        errorMessage.value = ""
+         mapError.value = ""
         movePin(clickInfo.latlng)
     }
       )
@@ -252,7 +267,7 @@ onUnmounted(() => {
             <p class="preview-code mb-0">{{ plan.code }}</p>
           </div>
 
-          <h2 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h2>
+          <h1 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h1>
           <div class="members-list">
             <div class="member-card" v-for="(member, index) in plan.members" :key="member._id">
               <svg class="avatar" width="32" height="35" aria-hidden="true">
@@ -286,7 +301,8 @@ onUnmounted(() => {
                <button type="button" class="btn sm" v-on:click="getPostal()">Find</button>
            </div>
             <div id="map"></div>
-            <p v-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="location-set mt-2 mb-0">Location set</p>
+            <p v-if="mapError" class="text-center text-danger small fw-bold mt-2 mb-0">{{ mapError }}</p>
+            <p v-else-if="selectedLat !== null && selectedLng !== null && !errorMessage" class="location-set mt-2 mb-0">Location set</p>
           </div>
 
           <div class="mb-3">
@@ -340,8 +356,12 @@ onUnmounted(() => {
               <span class="status-dot"></span>
               Waiting for everyone to join...
             </div>
-            <button v-if="isHost" v-on:click="startSwiping()" type="button" class="btn green w-50 mt-4 mx-auto">Start swiping!</button>
-            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0">{{ errorMessage }}</p>
+            <button v-if="isHost" v-on:click="startSwiping()" type="button" v-bind:disabled="isStartingSwiping" class="btn green w-50 mt-4 mx-auto">
+            <span v-if="isStartingSwiping" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            {{ isStartingSwiping ? 'Starting...' : 'Start Swiping!' }}
+            </button>
+            <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0 start-error">{{ errorMessage }}</p>
+            <button v-if="isHost && errorMessage.includes('Nothing nearby')" type="button" class="btn red mt-2 mx-auto" v-on:click="router.push(`/centre-search?plan=${code}`)">Add a centre</button>
         </div>
 
         <div v-if="myId" class="next-section">
@@ -377,13 +397,13 @@ onUnmounted(() => {
           <div class="dish-search-content">
             <div class="dish-search-icon">🔎</div>
             <div>
-              <h3 class="h5 fw-bold mb-1">Got specific cravings? </h3>
+              <h3 class="h5 fw-bold mb-1">Got a centre in mind? </h3>
               <p class="text-muted mb-0">
-                Search dishes and add your desired hawker centre to swipe!
+                Look through a centre's stalls and add it to your group's picks!
               </p>
               </div>
           </div>
-          <button type="button" class="btn red" v-on:click="router.push(`/dish-search?plan=${code}`)"> Search dishes</button>
+            <button type="button" class="btn red" v-on:click="router.push(`/centre-search?plan=${code}`)"> Find a centre</button>
         </div>
       </div>
     </div>
@@ -392,6 +412,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+
+main {
+  min-height: 100vh;
+}
 
 .plan-card {
   padding: 24px;
@@ -511,7 +535,7 @@ onUnmounted(() => {
   margin-top: 20px;
   margin-bottom: 12px;
   color: var(--ink) ;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: bold;
 }
 
@@ -681,5 +705,10 @@ onUnmounted(() => {
 }   
 .step-3 {
    background: #D7F2E3; 
-}   
+}
+
+.start-error {
+  white-space: pre-line;
+}
+
 </style>

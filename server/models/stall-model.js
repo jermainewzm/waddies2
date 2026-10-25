@@ -2,7 +2,7 @@
 const mongoose = require("mongoose")
 
 const stallSchema = new mongoose.Schema({
-    centre_id: {
+    serialNo: {
         type: String,
         required: true
     },

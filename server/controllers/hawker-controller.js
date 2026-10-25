@@ -1,52 +1,57 @@
 const HawkerRequest = require("../models/hawker-request-model")
-const currentUser = require("../utils/mockUser")
 const Stall = require("../models/stall-model")
+const mongoose = require("mongoose")
 
 async function createHawkerRequest(req, res) {
     try {
         const {
-            centre_id,
+            serialNo,
             stall_name,
             unit_no,
             message
         } = req.body
 
-        // check for existing stall, then block if have
-        const existingStall = await Stall.findOne({
-            owner_id: currentUser.id
-        })
-
-        if (existingStall) {
+        // required fields
+        if (
+            !serialNo ||
+            !stall_name ||
+            !unit_no
+        ) {
             return res.status(400).json({
-                message: "You are already an approved hawker."
+                message:
+                    "Centre, stall name and unit number are required."
             })
         }
 
-        // if already got pendign req, block duplicate 
-        const existingRequest = await HawkerRequest.findOne({
-            user_id: currentUser.id,
+        // prevent duplicate pending requests for same stall/unit
+        const existingRequest =
+        await HawkerRequest.findOne({
+            serialNo: serialNo.trim(),
+            unit_no: unit_no.trim(),
             status: "pending"
         })
 
         if (existingRequest) {
             return res.status(400).json({
-                message: "You already have a pending hawker request."
+                message:
+                    "A pending request already exists for this stall."
             })
         }
 
-        const newRequest = await HawkerRequest.create({
-            user_id: currentUser.id,
-            centre_id,
-            stall_name,
-            unit_no,
-            message
-        })
+        const newRequest =
+            await HawkerRequest.create({
+                serialNo: serialNo.trim(),
+                stall_name: stall_name.trim(),
+                unit_no: unit_no.trim(),
+                message: message || ""
+            })
 
-        res.status(201).json(newRequest)
+        return res.status(201).json(newRequest)
 
     } catch (error) {
-        res.status(500).json({
-            message: "Failed to submit hawker request",
+        return res.status(500).json({
+            message:
+                "Failed to submit hawker request",
             error: error.message
         })
     }
@@ -84,41 +89,80 @@ async function approveHawkerRequest(req, res) {
             })
         }
 
+        // Check that the selected hawker centre actually exists
+        const centre = await mongoose.connection
+            .collection("centres")
+            .findOne({
+                serialNo: String(request.serialNo)
+            })
 
-        // ERR HANDLING: Check if this user already owns a stall 
-
-        const existingStall = await Stall.findOne({
-            owner_id: request.user_id
-        })
-
-        if (existingStall) {
+        if (!centre) {
             return res.status(400).json({
-                message: "This hawker already has a stall."
+                message: "The selected hawker centre does not exist."
             })
         }
 
-        // Create the stall first
+        // Check whether the requested unit is already occupied
+        const occupiedUnit = await Stall.findOne({
+            serialNo: request.serialNo,
+            unit_no: request.unit_no
+        })
+
+        if (occupiedUnit) {
+            return res.status(400).json({
+                message: "This unit is already occupied by another stall."
+            })
+        }
+
+        // Generate next hawker ID
+        const hawkerStalls = await Stall.find({
+        owner_id: /^HAWKER_\d+$/
+        }).select("owner_id")
+
+        let highestNumber = 0
+
+        for (const stall of hawkerStalls) {
+            const number = parseInt(
+                stall.owner_id.split("_")[1]
+            )
+
+            // parseInt extracts string and converts to number, stripping the 0s at the front. e.g '005' --> 5
+
+            if (number > highestNumber) {
+                highestNumber = number
+            }
+        }
+
+        const nextNumber = highestNumber + 1
+
+        const newOwnerId =
+            `HAWKER_${String(nextNumber).padStart(3, "0")}`
+
+        // Create actual stall
         const stall = await Stall.create({
-            centre_id: request.centre_id,
-            owner_id: request.user_id,
+            serialNo: request.serialNo,
+            owner_id: newOwnerId,
             name: request.stall_name,
             unit_no: request.unit_no,
             status: "closed",
             rest_days: []
         })
 
-        // Only approve the request if stall creation succeeded
+        // Update request
         request.status = "approved"
+        request.assigned_owner_id = newOwnerId
+
         await request.save()
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Hawker approved successfully",
+            assigned_owner_id: newOwnerId,
             request: request,
             stall: stall
         })
 
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             message: "Failed to approve hawker request",
             error: error.message
         })
@@ -157,10 +201,71 @@ async function rejectHawkerRequest(req, res) {
     }
 }
 
+async function verifyExistingHawker(req, res) {
+    try {
+        const {
+            owner_id,
+            stall_name
+        } = req.body
+
+        if (!owner_id || !stall_name) {
+            return res.status(400).json({
+                message: "Hawker ID and stall name are required."
+            })
+        }
+
+        const stall = await Stall.findOne({
+            owner_id: owner_id.trim(),
+            name: stall_name.trim()
+        })
+
+        if (!stall) {
+            return res.status(404).json({
+                message: "Hawker ID or stall name is incorrect."
+            })
+        }
+
+        return res.status(200).json({
+            message: "Hawker verified successfully.",
+            stall: stall
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to verify hawker.",
+            error: error.message
+        })
+    }
+}
+
+async function getHawkerRequestStatus(req, res) {
+    try {
+        const request = await HawkerRequest.findById(req.params.id)
+
+        if (!request) {
+            return res.status(404).json({
+                message: "Hawker request not found."
+            })
+        }
+
+        return res.status(200).json({
+            status: request.status,
+            assigned_owner_id: request.assigned_owner_id
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to retrieve hawker request status.",
+            error: error.message
+        })
+    }
+}
 
 module.exports = {
     createHawkerRequest,
     getPendingRequests,
     approveHawkerRequest,
     rejectHawkerRequest,
+    verifyExistingHawker,
+    getHawkerRequestStatus
 }

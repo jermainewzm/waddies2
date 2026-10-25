@@ -23,11 +23,10 @@ const memberSchema = new mongoose.Schema({
     required: true }
 })
 
-//ADDED for Dish Search: one centre on the plan's shortlist
+
 const shortlistSchema = new mongoose.Schema({
-  centre_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Centre",
+  serialNo: {
+    type: String,
     required: true
   },
   added_by: {
@@ -64,24 +63,25 @@ const planSchema = new mongoose.Schema({
       enum: ["joining", "swiping", "done"],
       default: "joining"
     },
-    shortlist: [shortlistSchema], //ADDED for Dish Search
+    shortlist: [shortlistSchema], //Centre Search
 
     swipes : [
       {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
-       centreId: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", required: true},
+       centreId: {type: String, required: true}, // (Centre Search): the centre's serialNo 
        liked: {type: Boolean, required: true}
     }
     ],
 
-    winner: {type: mongoose.Schema.Types.ObjectId, ref: "Centre", default: null}
+    winner: {type: String, default: null} //Centre Search: the winning centre's serialNo
     },
     { timestamps: true }
 )
 
 const Plan = mongoose.model("Plan", planSchema, "plan")
 
+
 exports.findByCode = function (code) {
-  return Plan.findOne({ code: code }).populate('shortlist.centre_id')
+  return Plan.findOne({ code: code })
 }
 
 exports.addPlan = function (code, name, date, time) {
@@ -139,6 +139,5 @@ exports.finishPlan = function(code, winnerId) {
   )
 }
 
-exports.findWinnerByCode = function(code) {
-  return Plan.findOne({code:code}).populate('winner')
-}
+//REMOVED (Centre Search): findWinnerByCode. winner is a serialNo now, so getRouteToWinner
+//uses findByCode and looks the centre up by serialNo

@@ -26,7 +26,6 @@ const dishes = ref([])
 const shoutout = ref(null)
 const shoutoutMessage = ref('')
 
-
 // stalls
 
 async function loadStall() {
@@ -241,7 +240,7 @@ onMounted(async () => {
 
 
 <template>
-
+    <main class="bg-tiles">
     <div class="container py-4">
 
         <h1 class="outline hawker-title">
@@ -276,7 +275,7 @@ onMounted(async () => {
                     <div>
 
                         <p class="lbl">
-                            Centre {{ stall.centre_id }}
+                            Centre {{ stall.serialNo }}
                         </p>
 
                         <h2 class="stall-name">
@@ -376,11 +375,14 @@ onMounted(async () => {
         </div>
 
     </div>
-
+</main>
 </template>
 
 
 <style scoped>
+main {
+    min-height: 100vh;
+}
 
 .hawker-title {
     color: var(--paper);

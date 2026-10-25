@@ -7,7 +7,7 @@ import JourneyView from "../views/JourneyView.vue"
 import CreatePlanView from "../views/CreatePlanView.vue"
 import JoinPlanView from "../views/JoinPlanView.vue"
 import CentresView from "../views/CentresView.vue"
-import DishSearch from "../views/DishSearch.vue"
+import CentreSearch from "../views/CentreSearch.vue"
 import CentreDetailView from "../views/CentreDetailView.vue"
 import HawkerDashboard from "../views/HawkerDashboard.vue"
 import NotFoundView from "@/views/NotFoundView.vue"
@@ -57,9 +57,9 @@ const router = createRouter({
       component: CentresView
     },
     {
-      path: "/dish-search",
-      name: "dish-search",
-      component: DishSearch
+      path: "/centre-search",   
+      name: "centre-search",
+      component: CentreSearch
     },
     {
       path: "/centres/:id",
