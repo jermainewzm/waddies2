@@ -1,6 +1,5 @@
 const Shoutout = require("../models/shoutout-model")
 const Stall = require("../models/stall-model")
-const currentUser = require("../utils/mockUser")
 
 async function createShoutout(req, res) {
     try {

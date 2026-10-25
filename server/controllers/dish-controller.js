@@ -1,6 +1,4 @@
-const currentUser = require("../utils/mockUser")
 const Dish= require("../models/dish-model")
-const Stall = require("../models/stall-model")
 
 function hasMaxTwoDecimalPlaces(price){
     return Number.isInteger(price * 100)
