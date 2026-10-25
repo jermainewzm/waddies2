@@ -103,7 +103,7 @@ exports.updatePlanStatus = function(code,status) {
     {$set: {status: status}},
     { returnDocument: "after" })}
 
-//ADDED for Dish Search: adds one centre to the shortlist
+//adds one centre to the shortlist (Centre Search)
 exports.addToShortlist = function(code, item) {
   return Plan.findOneAndUpdate(
     {code: code},
@@ -138,6 +138,3 @@ exports.finishPlan = function(code, winnerId) {
     {returnDocument: "after"}
   )
 }
-
-//REMOVED (Centre Search): findWinnerByCode. winner is a serialNo now, so getRouteToWinner
-//uses findByCode and looks the centre up by serialNo

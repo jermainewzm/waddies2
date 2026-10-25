@@ -132,7 +132,7 @@ exports.getCentreMenu = async (req, res) => {
             }
         }
 
-        //3. who can't eat here (same rules addToShortlist checks)
+        //3. who can't eat here (for the warning)
         const validDishes = await getValidDishes(centre, date)
         const cannotEat = []
         for (const member of plan.members) {
