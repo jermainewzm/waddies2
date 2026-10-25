@@ -150,7 +150,7 @@ exports.getValidDishes = async function (centre, planDate) {
     const planDay = new Date(`${planDate}T00:00:00+08:00`).toLocaleDateString("en-SG", { weekday: "long", timeZone: "Asia/Singapore" })
 
     //find this centre's stalls
-    const stalls = await Stall.find({centre_id: String(centre.serialNo)})
+    const stalls = await Stall.find({serialNo: String(centre.serialNo)})
     const openStallIds = []
 
     for (const stall of stalls) {

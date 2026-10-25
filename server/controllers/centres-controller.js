@@ -112,28 +112,7 @@ function groupReportsByCentre(reports) {
   return grouped
 }
 
-async function collectionExists(name) {
-  if (!mongoose.connection.db) {
-    return false
-  }
-
-  const result = await mongoose.connection.db
-    .listCollections(
-      {
-        name
-      },
-      {
-        nameOnly: true
-      }
-    )
-    .toArray()
-
-  return result.length > 0
-}
-
-// WP4 owns stalls and shout-outs.
-// This safely reads them when WP4 has created those collections.
-// Until then it simply returns empty arrays.
+// stalls and shout-outs for one centre (stalls link to centres by serialNo)
 async function getWp4Data(centreId) {
   if (!mongoose.connection.db) {
     return {
@@ -142,120 +121,56 @@ async function getWp4Data(centreId) {
     }
   }
 
-  let stalls = []
   let shoutouts = []
 
-  if (await collectionExists("stalls")) {
-    const possibleIds = [String(centreId)]
+  const stalls = await mongoose.connection.db
+    .collection("stalls")
+    .find({ serialNo: String(centreId) })
+    .toArray()
 
-    const numericId = Number(centreId)
+  if (stalls.length > 0) {
+    const stallIds = stalls.map((stall) => stall._id)
 
-    if (Number.isFinite(numericId)) {
-      possibleIds.push(numericId)
-    }
-
-    stalls = await mongoose.connection.db
-      .collection("stalls")
-      .find({
-        $or: [
-          {
-            centre_id: {
-              $in: possibleIds
-            }
-          },
-          {
-            centreId: {
-              $in: possibleIds
-            }
-          }
-        ]
-      })
+    const allShoutouts = await mongoose.connection.db
+      .collection("shoutouts")
+      .find({ stall_id: { $in: stallIds } })
+      .sort({ created_at: -1 })
       .toArray()
-  }
 
-  if (
-    stalls.length > 0 &&
-    (await collectionExists("shoutouts"))
-  ) {
-    const stallIds = stalls
-      .map((stall) => stall._id)
-      .filter(Boolean)
+    const now = Date.now()
 
-    if (stallIds.length > 0) {
-      const allShoutouts = await mongoose.connection.db
-        .collection("shoutouts")
-        .find({
-          $or: [
-            {
-              stall_id: {
-                $in: stallIds
-              }
-            },
-            {
-              stallId: {
-                $in: stallIds
-              }
-            }
-          ]
-        })
-        .sort({
-          created_at: -1,
-          createdAt: -1
-        })
-        .toArray()
+    const stallsById = new Map(
+      stalls.map((stall) => [
+        String(stall._id),
+        stall
+      ])
+    )
 
-      const now = Date.now()
+    shoutouts = allShoutouts
+      .filter((shoutout) => {
+        const expiryTime =
+          new Date(shoutout.expires_at).getTime()
 
-      const stallsById = new Map(
-        stalls.map((stall) => [
-          String(stall._id),
-          stall
-        ])
-      )
-
-      shoutouts = allShoutouts
-        .filter((shoutout) => {
-          const expiry =
-            shoutout.expires_at ??
-            shoutout.expiresAt ??
-            null
-
-          if (!expiry) {
-            return true
-          }
-
-          const expiryTime =
-            new Date(expiry).getTime()
-
-          return (
-            !Number.isFinite(expiryTime) ||
-            expiryTime >= now
+        return expiryTime >= now
+      })
+      .map((shoutout) => {
+        const stall =
+          stallsById.get(
+            String(shoutout.stall_id)
           )
-        })
-        .map((shoutout) => {
-          const stallId =
-            shoutout.stall_id ??
-            shoutout.stallId
 
-          const stall =
-            stallsById.get(
-              String(stallId)
-            )
+        return {
+          ...shoutout,
 
-          return {
-            ...shoutout,
+          stall_name:
+            stall?.name ??
+            "Unknown stall",
 
-            stall_name:
-              stall?.name ??
-              "Unknown stall",
-
-            stall_unit_no:
-              stall?.unit_no ??
-              stall?.unitNo ??
-              null
-          }
-        })
-    }
+          stall_unit_no:
+            stall?.unit_no ??
+            null
+        }
+      })
   }
 
   return {

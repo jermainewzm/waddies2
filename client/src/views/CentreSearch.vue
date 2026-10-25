@@ -1,7 +1,7 @@
 <script setup>
 //pick a centre, look through its stalls, then add it to the group's picks (max 10)
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import axios from 'axios'
 import { API_URL } from '@/utils/constants'
 
@@ -30,6 +30,7 @@ const DIET_OPTIONS = [
 
 //PlanLobby opens this page as /centre-search?plan=123456
 const route = useRoute()
+const router = useRouter()
 const planCode = String(route.query.plan || '')
 
 //member _id PlanLobby saved when you joined (ie. "memberId-123456")
@@ -42,6 +43,7 @@ const planLoadError = ref('')
 const allCentres = ref([])       //every centre: { serialNo, name, lat, lng, is_open }
 const centresError = ref('')
 
+const centreQuery = ref('')      //what's typed in the centre search box
 const selectedSerialNo = ref('') //centre chosen in the dropdown ('' = none yet)
 const menu = ref(null)           //that centre's stalls + dishes (null = not loaded)
 const menuLoading = ref(false)
@@ -110,6 +112,15 @@ const suggested = computed(() => {
     const copy = [...openCentres.value]   //copy first as .sort() changes the original list
     copy.sort((a, b) => distanceKm(a) - distanceKm(b))
     return copy.slice(0, SUGGESTED_COUNT)
+})
+
+//open centres with the typed words in their name, max 6 (ie. "max" -> Maxwell Food Centre)
+const centreMatches = computed(() => {
+    const query = centreQuery.value.trim().toLowerCase()
+    if (query === '') {
+        return []
+    }
+    return openCentres.value.filter(centre => centre.name.toLowerCase().includes(query)).slice(0, 6)
 })
 
 //serialNos already picked (ie. ["72", "2"])
@@ -186,9 +197,6 @@ const cannotAddReason = computed(() => {
     if (!me.value) {
         return 'Join the plan to add centres'
     }
-    if (plan.value.status !== 'joining') {
-        return 'Swiping has started, picks are locked'
-    }
     if (!menu.value) {
         return 'Choose a centre first'
     }
@@ -253,6 +261,12 @@ async function loadPlan() {
         const response = await axios.get(`${API_URL}/plans/${planCode}`)
         plan.value = response.data
 
+        //host started swiping (or it's done): members go to the swipe page (same as PlanLobby)
+        if (plan.value.status !== 'joining' && me.value) {
+            router.push(`/plan/${planCode}/swipe`)
+            return
+        }
+
         //first time only: start the filters on my plan diet + budget
         if (!filtersSet && me.value) {
             diet.value = me.value.diet
@@ -308,10 +322,16 @@ async function loadMenu() {
     }
 }
 
-//suggested button = choosing that centre in the dropdown
+//choose a centre without the dropdown (first load + typed search), the dropdown updates too
 function chooseCentre(serialNo) {
     selectedSerialNo.value = serialNo
     loadMenu()
+}
+
+//tapped a centre from the typed search: choose it and empty the box
+function pickTyped(serialNo) {
+    centreQuery.value = ''
+    chooseCentre(serialNo)
 }
 
 //tap a stall to open it, tap again to close it
@@ -417,17 +437,41 @@ onUnmounted(() => {
 
                 <!-- left: choose a centre + filters (stays in place on laptops) -->
                 <section class="search-box">
+                    <!-- type part of a name, matching centres show underneath to tap -->
+                    <label for="centre-query" class="visually-hidden">Type a centre name</label>
+                    <input
+                        id="centre-query"
+                        v-model="centreQuery"
+                        type="search"
+                        maxlength="50"
+                        class="cute-input form-control"
+                        placeholder="🔍 Type a centre name"
+                    >
+                    <div v-if="centreQuery.trim() !== '' && allCentres.length > 0" class="match-list">
+                        <button
+                            v-for="centre in centreMatches"
+                            :key="centre.serialNo"
+                            type="button"
+                            class="match"
+                            @click="pickTyped(centre.serialNo)"
+                        >
+                            {{ suggested.includes(centre) ? '⭐ ' : '' }}{{ centre.name }}<template v-if="distanceKm(centre) !== null"> · {{ distanceKm(centre) }} km</template>
+                        </button>
+                        <p v-if="centreMatches.length === 0" class="no-match">No open centre matches "{{ centreQuery.trim() }}"</p>
+                    </div>
+
+                    <!-- or choose from the full list -->
                     <label for="centre-select" class="visually-hidden">Which centre?</label>
                     <select
                         id="centre-select"
                         v-model="selectedSerialNo"
-                        class="cute-input form-select"
+                        class="cute-input form-select centre-select"
                         @change="loadMenu"
                     >
                         <option value="" disabled>Choose a centre…</option>
-                        <optgroup v-if="suggested.length > 0" label="⭐ Suggested">
+                        <optgroup v-if="suggested.length > 0" label="Suggested">
                             <option v-for="centre in suggested" :key="'s' + centre.serialNo" :value="centre.serialNo">
-                                {{ centre.name }} · {{ distanceKm(centre) }} km
+                                ⭐ {{ centre.name }} · {{ distanceKm(centre) }} km
                             </option>
                         </optgroup>
                         <optgroup label="All open centres (A–Z)">
@@ -468,20 +512,6 @@ onUnmounted(() => {
                     </div>
                     <p v-if="priceError" class="text-danger small fw-bold mb-0" role="alert">{{ priceError }}</p>
 
-                    <!-- 5 nearest open centres, clicking one = choosing it in the dropdown -->
-                    <div v-if="suggested.length > 0" class="chip-row">
-                        <b>⭐ Suggested:</b>
-                        <button
-                            v-for="centre in suggested"
-                            :key="centre.serialNo"
-                            type="button"
-                            class="suggest-chip"
-                            :class="{ on: selectedSerialNo === centre.serialNo }"
-                            @click="chooseCentre(centre.serialNo)"
-                        >
-                            {{ centre.name }} · {{ distanceKm(centre) }} km
-                        </button>
-                    </div>
 
                     <!-- diet: radio buttons styled as chips (same as DishForm.vue) -->
                     <div class="chip-row">
@@ -704,36 +734,58 @@ main {
     margin-top: 10px;
 }
 
-/* suggested + diet rows: scroll sideways on phones */
-.chip-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow-x: auto;
-    padding: 4px 2px 6px;
-    margin-top: 8px;
+/* typed search results: a list of centres to tap */
+.match-list {
+    margin-top: 6px;
+    background: var(--paper);
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+    overflow: hidden;   /* keeps the rows inside the rounded corners */
 }
 
-.chip-row b {
-    flex: none;
-}
-
-.suggest-chip {
-    flex: none;
-    padding: 4px 10px;
-    background: var(--cream);
-    border: 2.5px solid var(--ink);
-    border-radius: 999px;
+.match {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: 0;
+    border-top: 2px dashed var(--line);
     font: inherit;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--ink);
-    white-space: nowrap;
+    text-align: left;
     cursor: pointer;
 }
 
-.suggest-chip.on {
-    background: var(--sun);
+.match:first-child {
+    border-top: 0;
+}
+
+.match:hover {
+    background: var(--cream);
+}
+
+.no-match {
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.centre-select {
+    margin-top: 8px;
+}
+
+/* diet row: every option shows, wraps onto the next line when there's no room */
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px 6px;
+    margin-top: 8px;
 }
 
 /* holds one radio + its label (main.css hides the radio with position: absolute) */
@@ -887,7 +939,6 @@ main {
 
     /* enough room so wrap instead of scrolling sideways */
     .plan-strip,
-    .chip-row,
     .pill-row {
         flex-wrap: wrap;
         overflow-x: visible;
