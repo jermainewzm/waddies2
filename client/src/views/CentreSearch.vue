@@ -369,6 +369,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+    <main class="bg-tiles">
     <div class="container centre-search">
 
         <!-- no plan code in the url -->
@@ -571,9 +572,15 @@ onUnmounted(() => {
 
         <p v-else class="my-4">Loading your plan…</p>
     </div>
+</main>
 </template>
 
+
 <style scoped>
+
+main {
+    min-height: 100vh;
+}
 /* phone (base) */
 .centre-search {
     padding-top: 12px;
