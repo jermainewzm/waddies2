@@ -1,4 +1,4 @@
-const currentUser = require("../utils/mockUser")
+
 const Stall= require("../models/stall-model")
 
 async function getMyStall(req, res) {
@@ -41,12 +41,14 @@ async function updateMyStallStatus(req, res) {
         }
 
         const stall = await Stall.findOneAndUpdate(
-            { owner_id: currentUser.id },
+            { _id: req.stall._id },
             {
                 status: status,
                 status_updated_at: new Date()
             },
-            { new: true }
+            {
+                new: true
+            }
         )
 
         if (!stall) {
@@ -96,11 +98,13 @@ async function updateMyStallRestDays(req, res) {
         }
 
         const stall = await Stall.findOneAndUpdate(
-            { owner_id: currentUser.id },
+            { _id: req.stall._id },
             {
                 rest_days: rest_days
             },
-            { new: true }
+            {
+                new: true
+            }
         )
 
         if (!stall) {
