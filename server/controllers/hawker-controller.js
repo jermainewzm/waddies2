@@ -1,5 +1,6 @@
 const HawkerRequest = require("../models/hawker-request-model")
 const Stall = require("../models/stall-model")
+const Centre = require("../models/centre-model")
 const mongoose = require("mongoose")
 
 async function createHawkerRequest(req, res) {
@@ -59,11 +60,30 @@ async function createHawkerRequest(req, res) {
 
 async function getPendingRequests(req, res) {
     try {
+        // oldest first, so the admin works through them in order
         const requests = await HawkerRequest.find({
             status: "pending"
-        })
+        }).sort({ created_at: 1 }).lean()
 
-        res.json(requests)
+        // requests only store the centre's serialNo, so look the names up in one query
+        const serialNos = [
+            ...new Set(requests.map((request) => String(request.serialNo)))
+        ]
+
+        const centres = await Centre.findBySerials(serialNos)
+
+        const nameBySerial = new Map(
+            centres.map((centre) => [String(centre.serialNo), centre.name])
+        )
+
+        const requestsWithNames = requests.map((request) => ({
+            ...request,
+            centre_name:
+                nameBySerial.get(String(request.serialNo)) ||
+                `Centre ${request.serialNo}`
+        }))
+
+        res.json(requestsWithNames)
 
     } catch (error) {
         res.status(500).json({

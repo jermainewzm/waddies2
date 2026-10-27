@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { useRouter } from 'vue-router'
+import axios from '../services/api'   // same axios, but adds the x-hawker-id header for us
+import { clearHawkerId } from '../services/authService'
 import { API_URL } from '../utils/constants'
 
 import StallStatusCard from '../components/StallStatusCard.vue'
@@ -9,6 +11,8 @@ import DishList from '../components/Dishlist.vue'
 import DishForm from '../components/DishForm.vue'
 import ShoutoutForm from '../components/ShoutoutForm.vue'
 
+
+const router = useRouter()
 
 const stall = ref(null)
 const errorMsg = ref('')
@@ -25,6 +29,12 @@ const dishes = ref([])
 
 const shoutout = ref(null)
 const shoutoutMessage = ref('')
+
+// log out: forget the hawker ID and go back to the For Hawkers page
+function logout() {
+    clearHawkerId()
+    router.push('/hawker')
+}
 
 // stalls
 
@@ -243,9 +253,18 @@ onMounted(async () => {
     <main class="bg-tiles">
     <div class="container py-4">
 
-        <h1 class="outline hawker-title">
-            Hawker Dashboard
-        </h1>
+        <div class="title-row">
+            <h1 class="outline hawker-title">
+                Hawker Dashboard
+            </h1>
+
+            <button
+                class="btn sm red"
+                @click="logout"
+            >
+                Log out
+            </button>
+        </div>
 
         <p v-if="loading">
             Loading stall...
@@ -384,10 +403,19 @@ main {
     min-height: 100vh;
 }
 
+.title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
 .hawker-title {
     color: var(--paper);
     font-size: clamp(44px, 6vw, 72px);
-    margin-bottom: 24px;
+    margin-bottom: 0;
 }
 
 
