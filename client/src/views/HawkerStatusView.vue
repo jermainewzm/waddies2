@@ -16,6 +16,7 @@ const requestId = ref(getRequestId())
 
 const status = ref(null)            // "pending" | "approved" | "rejected"
 const assignedId = ref("")          // e.g. "HAWKER_005" once approved
+const stallName = ref("")
 
 const loading = ref(false)
 const errorMsg = ref("")
@@ -33,6 +34,8 @@ async function checkStatus() {
 
     status.value = data.status
     assignedId.value = data.assigned_owner_id || ""
+    stallName.value = data.stall_name || ""
+
   } catch (error) {
     if (error.response?.status === 404) {
       // the request no longer exists, so stop remembering it
@@ -120,13 +123,18 @@ onMounted(checkStatus)
                   <p class="hh-code">{{ assignedId }}</p>
                 </div>
 
+                <div class="hh-plate mt-3">
+                  <small>YOUR STALL NAME</small>
+                  <p class="hh-code">{{ stallName }}</p>
+                </div>
+
                 <div class="hh-tip">
                   <span>💡</span>
-                  <p class="mb-0 fw-bold">Keep this ID safe. You'll log in with it and your stall name.</p>
+                  <p class="mb-0 fw-bold">Keep these details safe. You'll log in with it and your stall name.</p>
                 </div>
 
                 <RouterLink class="btn w-100 green mt-3"
-                            v-bind:to="{ path: '/hawker/login', query: { id: assignedId } }">
+                            v-bind:to="{ path: '/hawker/login', query: { id: assignedId, stall: stallName } }">
                   Go to Hawker Login →
                 </RouterLink>
               </div>

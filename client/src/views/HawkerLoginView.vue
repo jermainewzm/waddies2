@@ -14,7 +14,7 @@ const router = useRouter()
 
 // The status page links here with ?id=HAWKER_005 so hawkers don't retype it
 const ownerId = ref(String(route.query.id || ""))
-const stallName = ref("")
+const stallName = ref(String(route.query.stall || ""))
 
 const errorMsg = ref("")
 const submitting = ref(false)

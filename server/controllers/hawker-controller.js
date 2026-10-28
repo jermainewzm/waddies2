@@ -273,7 +273,8 @@ async function getHawkerRequestStatus(req, res) {
 
         return res.status(200).json({
             status: request.status,
-            assigned_owner_id: request.assigned_owner_id
+            assigned_owner_id: request.assigned_owner_id,
+            stall_name: request.stall_name
         })
 
     } catch (error) {
