@@ -66,7 +66,7 @@ async function loadPlan() {
     }
 }
 
-const MIN_BUDGET = 1
+const MIN_BUDGET = 5 
 const MAX_BUDGET = 100
 
 function blockBadKeys(event) {
@@ -329,9 +329,8 @@ onUnmounted(() => {
                 placeholder="e.g. 8"
                 @keydown="blockBadKeys"
               />
-            <!-- NEW (error prevention): red line ABOVE the hint, only when the budget is wrong -->
             <p v-if="budgetError" class="text-danger small fw-bold mt-1 mb-0" role="alert">{{ budgetError }}</p>
-            <small class="text-muted">Between ${{ MIN_BUDGET }} and ${{ MAX_BUDGET }}</small>
+            <small class="text-muted">Do add an amount between ${{ MIN_BUDGET }} and ${{ MAX_BUDGET }}. Any amount lower may restrict choices!</small>
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>

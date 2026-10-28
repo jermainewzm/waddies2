@@ -8,6 +8,8 @@ const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
 const Stall = require("../models/stall-model") //for swipe cards
 const MAX_SHORTLIST = 5 //how many nearby centres are added after the picks
 const MAX_PICKS = 10 //each Makan Plan can pick up to 10 centres in Centre Search
+const MIN_BUDGET = 5 //realistic hawker meal, most centres have something halal/veg under $5
+const MAX_BUDGET = 100
 
 //gets many centres in one query and returns a lookup (ie. { "72": centre, "2": centre })
 async function getCentresBySerial(serialNos) {
@@ -70,8 +72,8 @@ exports.joinPlan = async (req,res) => {
 
         //error prevention: also rejects things that aren't numbers (eg. "abc" or "1e5abc")
     const budgetNumber = Number(budget)
-    if (Number.isNaN(budgetNumber) || budgetNumber < 1 || budgetNumber > 100) {
-        return res.status(400).json({error: "Budget must be between $1 and $100"})
+    if (Number.isNaN(budgetNumber) || budgetNumber < MIN_BUDGET || budgetNumber > MAX_BUDGET) {
+        return res.status(400).json({error: `Budget must be between $${MIN_BUDGET} and $${MAX_BUDGET}`})
     }
     try {
         const plan = await Plan.findByCode(code)
