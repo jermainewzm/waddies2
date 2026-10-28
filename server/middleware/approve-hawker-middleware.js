@@ -2,7 +2,7 @@ const Stall = require("../models/stall-model")
 
 async function requireApprovedHawker(req, res, next) {
     try {
-        const hawkerId = req.headers["x-hawker-id"]
+        const hawkerId = req.headers["x-hawker-id"]?.trim().toUpperCase()
 
         if (!hawkerId) {
             return res.status(401).json({

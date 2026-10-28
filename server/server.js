@@ -4,6 +4,9 @@ const cors = require("cors")
 const mongoose = require("mongoose")
 
 const server = express()
+server.get("/test", (req, res) => {
+  res.send("server works")
+})
 
 server.use(express.json())
 server.use(cors())

@@ -30,7 +30,10 @@ async function login() {
   submitting.value = true
 
   try {
-    const data = await verifyHawker(ownerId.value, stallName.value)
+    const data = await verifyHawker(
+      ownerId.value,
+      stallName.value
+    )
 
     // from now on every /hawker/... request sends x-hawker-id (see services/api.js)
     saveHawkerId(data.stall.owner_id)
@@ -62,7 +65,7 @@ async function login() {
           <div class="awning"></div>
           <div class="card hh-card">
             <div class="hh-badge">🔑</div>
-            <h2 class="mb-2">Enter your details</h2>
+            <h2 class="mb-2">Enter your <details></details></h2>
             <p class="text-muted mb-4">Use the Hawker ID the admin gave you.</p>
 
             <form v-on:submit.prevent="login">
@@ -74,8 +77,13 @@ async function login() {
 
               <div class="mb-3">
                 <label for="stallName" class="form-label">Stall name</label>
-                <input id="stallName" v-model="stallName" class="form-control cute-input"
-                       placeholder="Exactly as registered" autocomplete="off" />
+                  <input
+                    id="stallName"
+                    v-model="stallName"
+                    class="form-control cute-input"
+                    placeholder="Exactly as registered"
+                    autocomplete="off"
+                  />
               </div>
 
               <button type="submit" class="btn w-100 green" v-bind:disabled="submitting">

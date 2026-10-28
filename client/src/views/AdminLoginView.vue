@@ -62,7 +62,7 @@ async function login() {
               <div class="mb-3">
                 <label for="adminId" class="form-label">Admin ID</label>
                 <input id="adminId" v-model="adminId" class="form-control cute-input"
-                       placeholder="e.g. admin_001" autocomplete="off" />
+                      autocomplete="off" />
               </div>
 
               <button type="submit" class="btn w-100 blue" v-bind:disabled="submitting">

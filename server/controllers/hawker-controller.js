@@ -235,13 +235,16 @@ async function verifyExistingHawker(req, res) {
         }
 
         const stall = await Stall.findOne({
-            owner_id: owner_id.trim(),
-            name: stall_name.trim()
+            owner_id: owner_id.trim().toUpperCase(),
+            name: {
+                $regex: `^${stall_name.trim()}$`,
+                $options: "i"
+            }
         })
 
         if (!stall) {
             return res.status(404).json({
-                message: "Hawker ID or stall name is incorrect."
+                message: "Hawker ID or stall name is incorrect"
             })
         }
 
