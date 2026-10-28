@@ -101,7 +101,7 @@ exports.getCentreMenu = async (req, res) => {
         const isToday = date === getSingaporeToday()
 
         //1. split the stalls into open / not open (stalls link to centres by serialNo)
-        const stalls = await Stall.find({ centre_id: serialNo }).sort({ name: 1 })
+        const stalls = await Stall.find({ serialNo: serialNo }).sort({ name: 1 })
         const openStalls = []
         const closedStalls = []
 
@@ -132,7 +132,7 @@ exports.getCentreMenu = async (req, res) => {
             }
         }
 
-        //3. who can't eat here (same rules addToShortlist checks)
+        //3. who can't eat here (for the warning)
         const validDishes = await getValidDishes(centre, date)
         const cannotEat = []
         for (const member of plan.members) {

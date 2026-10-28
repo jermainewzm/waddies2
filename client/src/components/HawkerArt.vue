@@ -71,3 +71,20 @@
             </defs>
      </svg>
 </template>
+
+<style>
+
+
+/* ceiling fans: squash left-right so they look like they're spinning */
+.a-spin { animation: art-spin 1.3s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes art-spin { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.12); } }
+
+/* characters waving */
+.a-wave { animation: art-wave 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 100% 100%; }
+@keyframes art-wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+
+/* people who turn off animations in their settings: everything stays still */
+@media (prefers-reduced-motion: reduce) {
+    .a-spin, .a-wave { animation: none; }
+}
+</style>

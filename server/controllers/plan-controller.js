@@ -6,7 +6,7 @@ const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Sw
 const { summariseCrowd } = require("./centres-controller") //for Swiping Card
 const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
 const Stall = require("../models/stall-model") //for swipe cards
-const MAX_SHORTLIST = 5 //how many swipe cards the best centres fill
+const MAX_SHORTLIST = 5 //how many nearby centres are added after the picks
 const MAX_PICKS = 10 //each Makan Plan can pick up to 10 centres in Centre Search
 
 //gets many centres in one query and returns a lookup (ie. { "72": centre, "2": centre })
@@ -177,7 +177,7 @@ exports.startSwiping = async (req,res) => {
         }
 
         //picks (up to 10) + nearby centres are scored together and
-        //the best 5 for the whole group become the swipe cards
+        //every pick becomes a swipe card, then the best 5 nearby centres
 
         //centres members picked in Centre Search
         const pickedBySerial = await getCentresBySerial(getShortlistSerials(plan))
@@ -192,7 +192,7 @@ exports.startSwiping = async (req,res) => {
         const allCentres = await Centre.findAllCentres()
         const centresRanked = await rankCentres(plan, allCentres)
 
-        //score picks + nearby centres together, keep the best 5
+        //picks first, then the best 5 nearby centres
         const bestCentres = await pickBestCentres(plan, pickedCentres, centresRanked, MAX_SHORTLIST)
 
         const shortlist = []
@@ -226,7 +226,7 @@ exports.startSwiping = async (req,res) => {
 
 //POST /api/plans/:code/shortlist   body: { serialNo, added_by, member_id }
 //adds a centre to the plan's picks (Centre Search's add button)
-//up to 10 picks per plan, the best 5 are chosen when swiping starts
+//up to 10 picks per plan, all of them become swipe cards
 exports.addToShortlist = async (req, res) => {
     const code = req.params.code
     const {serialNo, added_by, member_id} = req.body || {}
@@ -278,7 +278,7 @@ exports.addToShortlist = async (req, res) => {
             return res.status(409).json({error: "This centre is already on the shortlist."})
         }
 
-        //each plan can pick up to 10 centres. The best 5 are chosen when swiping starts
+        //each plan can pick up to 10 centres
         if (plan.shortlist.length >= MAX_PICKS) {
             return res.status(400).json({error: `Your group has picked ${MAX_PICKS} centres already (max).`})
         }
