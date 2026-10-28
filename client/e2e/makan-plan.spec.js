@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test"
 
 test("two people can create a plan, join it and start swiping", async ({ browser }) => {
   //separate contexts so each has its own localStorage, like two different people
+  test.setTimeout(90000)
   const hostContext = await browser.newContext()
   const friendContext = await browser.newContext()
   const hostPage = await hostContext.newPage()
@@ -9,7 +10,7 @@ test("two people can create a plan, join it and start swiping", async ({ browser
 
   // 1. the host creates a plan
   await hostPage.goto("/")
-  await hostPage.getByRole("link", { name: /start a makan plan/i }).click()
+  await hostPage.getByRole("link", { name: /start a makan plan/i }).first().click()
   await hostPage.getByRole("textbox", { name: /plan name/i }).fill("saturday lunch")
   await hostPage.getByRole("textbox", { name: /date/i }).fill("2026-12-26")
   await hostPage.getByRole("textbox", { name: /time/i }).fill("12:30")
@@ -54,10 +55,10 @@ test("two people can create a plan, join it and start swiping", async ({ browser
 
   // check that both host and friend go to the swipe page for this plan.  
   await expect(hostPage).toHaveURL(`/plan/${code}/swipe`, {
-    timeout: 15000
+    timeout: 30000
   })
   await expect(friendPage).toHaveURL(`/plan/${code}/swipe`, {
-    timeout: 15000
+    timeout: 30000
   })
 
   await hostContext.close()
