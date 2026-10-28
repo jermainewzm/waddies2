@@ -396,3 +396,104 @@ h1, h2, h3, h4 {
   height: 36px;
   font-size: 30px;
 }
+
+
+/* hawker & admin pages (entry, login, apply, status, admin)
+   same look as the Plan pages: centred header, awning, chunky card */
+
+.hh-header h1 {
+  font-size: 42px;
+}
+
+.hh-card {
+  padding: 32px;
+}
+
+.hh-card h2 {
+  font-size: 28px;
+}
+
+.hh-card .form-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* little round badge above a card title (number or emoji) */
+.hh-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--cream);
+  border: 3px solid var(--ink);
+  font-size: 15px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* bootstrap alerts, with the ink outline used everywhere else */
+.hh-card .alert {
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* "tip" strip, same as the one on the Create Plan page */
+.hh-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  background-color: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 10px;
+}
+
+/* inner box, same idea as .plan-preview */
+.hh-plate {
+  background-color: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.hh-plate small {
+  display: block;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+
+.hh-plate .hh-code {
+  margin: 8px 0 0;
+  font-size: 32px;
+  font-weight: bold;
+  letter-spacing: 3px;
+}
+
+/* status pills */
+.hh-pill {
+  display: inline-block;
+  padding: 4px 16px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  font-weight: 800;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.hh-pill.pending {
+  background: var(--sun);
+}
+
+.hh-pill.rejected {
+  background: var(--tomato);
+}
+
+.hh-pill.approved {
+  background: var(--pandan);
+}
