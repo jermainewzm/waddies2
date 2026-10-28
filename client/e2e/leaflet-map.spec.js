@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test"
 
 test("Host can create a plan, get a 6-digit code and join using the map.", async ({ page }) => {
   await page.goto('/');
-  await page.getByRole("link", { name: /start a makan plan/i }).click()
+  await page.getByRole("link", { name: /start a makan plan/i }).first().click()
   await page.getByRole("textbox", { name: /plan name/i }).fill("saturday lunch")
   await page.getByRole("textbox", { name: /date/i }).fill("2026-12-26")
   await page.getByRole("textbox", { name: /time/i }).fill("12:30")
