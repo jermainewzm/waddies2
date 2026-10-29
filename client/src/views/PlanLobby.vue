@@ -344,7 +344,7 @@ onUnmounted(() => {
           <RouterLink class="btn mx-auto red w-50 mt-4" to="/plan/new">Start your own plan</RouterLink>
         </div>
 
-         <div v-else class="card waiting-card">
+         <div v-else-if="plan && myId" class="card waiting-card">
             <h2 class="h3 fw-bold">You're in!</h2>
             <div class="loading-dots">
               <span></span>
@@ -362,6 +362,10 @@ onUnmounted(() => {
             <p v-if="isHost && errorMessage" class="text-danger fs-5 fw-bold mt-2 mb-0 start-error">{{ errorMessage }}</p>
             <button v-if="isHost && errorMessage.includes('Nothing nearby')" type="button" class="btn red mt-2 mx-auto" v-on:click="router.push(`/centre-search?plan=${code}`)">Add a centre</button>
         </div>
+
+        <div v-else class="card waiting-card">
+            <p class="mb-0">Loading your plan...</p>
+         </div>
 
         <div v-if="myId" class="next-section">
           <div class="h3 fw-bold mb-3"> What's next?</div>
