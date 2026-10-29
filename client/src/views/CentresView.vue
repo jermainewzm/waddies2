@@ -488,4 +488,21 @@ main {
   border: 4px solid var(--ink);
   padding: 4rem 1rem;
 }
+
+@media (max-width: 767px) {
+  .centre-card {
+    flex-direction: row;
+  }
+
+  .centre-card .card-body {
+    padding: 12px;
+  }
+  
+  .centre-photo {
+    width: 110px;
+    height: auto;
+    flex-shrink: 0;
+    object-fit: cover; /* fill the box, crop rather than stretch */
+  }
+}
 </style>
