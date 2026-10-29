@@ -153,7 +153,7 @@ function formatTime(time) {
         <p v-if="errorMessage" class="error-message text-danger mt-3">{{ errorMessage }}</p>
 
         <div v-if="code" class="text-center alert alert-success mt-4">
-          Your makan plan code is: <strong>{{ code }}</strong>
+          Your makan plan code is: <strong data-testid="plan-code">{{ code }}</strong>
           <button v-on:click="goToLobby()" type="button" class="btn green w-100 mt-3"> Go to Plan Lobby </button>
         </div>
       

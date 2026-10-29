@@ -18,7 +18,7 @@ test("two people can create a plan, join it and start swiping", async ({ browser
 
   // 2. a 6-digit code comes back
   await expect(hostPage.getByText(/your makan plan code is/i)).toBeVisible()
-  const code = (await hostPage.locator(".alert-success strong").textContent()).trim()
+  const code = (await hostPage.getByTestId("plan-code").textContent()).trim()
   expect(code).toMatch(/^\d{6}$/)
 
   // 3. the host joins their own plan, dropping a pin on the map
@@ -51,7 +51,7 @@ test("two people can create a plan, join it and start swiping", async ({ browser
 
   // 6. only the host can start, and both land on the swipe page
   await hostPage.getByRole("button", { name: /start swiping/i }).click()
-  await expect(hostPage.getByText(/swiping/i)).toBeVisible({timeout: 10000})
+  await expect(friendPage.getByRole("button", { name: /start swiping/i })).not.toBeVisible()
 
   // check that both host and friend go to the swipe page for this plan.  
   await expect(hostPage).toHaveURL(`/plan/${code}/swipe`, {

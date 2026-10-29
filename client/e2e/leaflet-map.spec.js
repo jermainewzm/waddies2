@@ -10,7 +10,7 @@ test("Host can create a plan, get a 6-digit code and join using the map.", async
 
   await expect(page.getByText(/your makan plan code is/i)).toBeVisible()
 
-  await expect(page.locator(".alert-success strong")).toHaveText(/^\d{6}$/)
+  await expect(page.getByTestId("plan-code")).toHaveText(/^\d{6}$/)
 
   await page.getByRole('button', { name: /go to plan lobby/i }).click();
   await page.getByRole("textbox", { name: /your name/i }).fill("Aisha")
@@ -22,7 +22,7 @@ test("Host can create a plan, get a 6-digit code and join using the map.", async
   // Check that the location has been set
   await expect(page.getByText(/location set/i)).toBeVisible()
 
-  await page.getByRole('spinbutton', { name: 'Max budget per person ($)' }).fill('20')
+  await page.getByRole("spinbutton", { name: /budget/i }).fill("20")
   await page.getByRole('button', { name: /i'm in/i }).click()
 
   // Check that the host joined

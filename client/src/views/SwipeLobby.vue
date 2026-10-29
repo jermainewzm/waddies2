@@ -215,7 +215,7 @@ onUnmounted(() => {
         <div v-if="winner" class="card swipe-card text-center mb-4">
           <img v-if="winner.photoUrl" :src="winner.photoUrl" :alt="winner.name" class="card-photo" />
           <div class="p-4">
-            <h2 class="hh-display">{{ winner.name }}</h2>
+            <h2 data-testid="winner-name" class="hh-display">{{ winner.name }}</h2>
             <p class="text-muted">{{ winner.address }}</p>
             <p class="mb-0">
               <strong>{{ winner.likes }} of {{ plan.members.length }}</strong> said yes
@@ -263,7 +263,7 @@ onUnmounted(() => {
 
       <!-- 3. SWIPING: the current card -->
       <div v-else-if="currentCard">
-        <p class="text-center text-muted">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
+        <p data-testid="swipe-counter" class="text-center text-muted">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
 
         <div class="card swipe-card draggable-card"
             :style="{
