@@ -193,6 +193,11 @@ onMounted(async () => {
     }
     isLoading.value = false
 
+    //plan couldn't be loaded: the error card explains it, so don't keep asking the server
+    if (!plan.value) {
+      return
+    }
+
     //keep checking, so waiting screen will update as friends finish
     refreshTimer = setInterval(loadPlan, 5000)
 })
@@ -210,7 +215,10 @@ onUnmounted(() => {
       <div class="spinner-border" role="status"></div>
     </div>
 
-    <p v-else-if="!plan" class="text-danger text-center">{{ errorMessage }}</p>
+    <div v-else-if="!plan" class="card swipe-card text-center p-4">
+      <p class="text-danger">{{ errorMessage || "We couldn't load this plan." }}</p>
+      <RouterLink to="/plan/join" class="btn red">Enter another code</RouterLink>
+    </div>
 
     <template v-else>
       <div class="text-center mb-3">
@@ -234,16 +242,26 @@ onUnmounted(() => {
             </p>
           </div>
         </div>
-        <p v-else class="text-center text-muted">
-          Nobody liked any of the centres. Try a new plan with different choices.
-        </p>
-        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn red w-100 mb-4"> Take me there!</button>
-        <h3 class="h6 fw-bold mb-2">All centres</h3>
-        <div v-for="result in plan.results" :key="result.centreId"
-             class="result-row d-flex justify-content-between">
-          <span class="fw-bold">{{ result.name }}</span>
-          <span class="text-muted">{{ result.likes }} yes · {{ result.totalDist }} km total</span>
+        <!-- no match: a friendly card with a way forward, instead of a dead end -->
+        <div v-else class="card swipe-card text-center p-4 mb-4">
+          <svg width="64" height="70" class="mx-auto mb-2" aria-hidden="true"><use href="#av-tissue"/></svg>
+          <p class="fw-bold mb-1">Tough crowd!</p>
+          <p class="text-muted">Nobody said yes to any of these centres. Start a new plan, or look around and pick one yourselves.</p>
+          <div class="d-flex flex-column gap-2">
+            <RouterLink to="/plan/new" class="btn red">Start a new plan</RouterLink>
+            <RouterLink to="/centres" class="btn">Browse centres</RouterLink>
+          </div>
         </div>
+        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn red w-100 mb-4"> Take me there!</button>
+        <!-- only show the votes when there is a winner (with no match they would all be 0) -->
+        <template v-if="winner">
+          <h3 class="h6 fw-bold mb-2">All centres</h3>
+          <div v-for="result in plan.results" :key="result.centreId"
+               class="result-row d-flex justify-content-between">
+            <span class="fw-bold">{{ result.name }}</span>
+            <span class="text-muted">{{ result.likes }} yes · {{ result.totalDist }} km total</span>
+          </div>
+        </template>
       </div>
 
       <!-- 2. WAITING: I've swiped, others haven't -->
