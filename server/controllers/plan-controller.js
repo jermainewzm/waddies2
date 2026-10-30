@@ -70,11 +70,34 @@ exports.joinPlan = async (req,res) => {
         return res.status(400).json({error: "Name, location and budget are required!"})
     }
 
-        //error prevention: also rejects things that aren't numbers (eg. "abc" or "1e5abc")
+    //error prevention: also rejects things that aren't numbers (eg. "abc" or "1e5abc")
     const budgetNumber = Number(budget)
     if (Number.isNaN(budgetNumber) || budgetNumber < MIN_BUDGET || budgetNumber > MAX_BUDGET) {
         return res.status(400).json({error: `Budget must be between $${MIN_BUDGET} and $${MAX_BUDGET}`})
     }
+    // below errors are reachable by bypassing the frontend completely
+
+    const DIETS = ["any", "halal", "vegetarian", "no_pork", "no_beef"]
+    if (diet && !DIETS.includes(diet)) {
+        return res.status(400).json({ error: "Please pick a diet from the list." })
+    }
+    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
+        return res.status(400).json({ error: "Please set your location on the map." })
+    }
+    // same box as pinInSingapore() in PlanLobby.vue, so a pin outside Singapore can't be saved
+    const latNumber = Number(lat)
+    const lngNumber = Number(lng)
+    if (latNumber < 1.24 || latNumber > 1.47 || lngNumber < 103.63 || lngNumber > 104.01) {
+        return res.status(400).json({ error: "Please pick a location in Singapore." })
+    }
+    // a name of only spaces passes !name above, so check it again after trimming
+    if (String(name).trim().length === 0) {
+        return res.status(400).json({ error: "Please enter your name." })
+    }
+    if (String(name).trim().length > 30) {
+        return res.status(400).json({ error: "Name must be 30 characters or less." })
+    }
+
     try {
         const plan = await Plan.findByCode(code)
 

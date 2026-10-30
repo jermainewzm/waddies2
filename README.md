@@ -1,33 +1,24 @@
-
 # HawkerHop
 
-Group hawker centre decisions, settled. One code for the whole group, everyone's
-diet and budget considered, and a shortlist of centres where everyone can eat.
+Group hawker centre decisions, settled. One code for the whole group, everyone's diet and budget considered, and a shortlist of centres where everyone can eat.
 
-Live at: https://hawkerhop-one.vercel.app
+**Live at:** https://hawkerhop-one.vercel.app
 
 ---
 
 ## Features
 
-- **Makan Plan** — create a plan, share a 6-digit code, friends join with their
-  location, diet and budget. The group swipes on a shortlist and the most-liked
-  centre wins. Each member then gets their own route there.
-- **Centre Search** — browse a centre's stalls and dishes, filter by diet and
-  price, and add a centre to the group's picks.
-- **Live Centre Status** — NEA closure data plus crowd reports from diners at
-  the centre.
-- **Hawker Dashboard** — stall owners set their status, rest days, menu and
-  shout-outs.
+- **Makan Plan** — create a plan, share a 6-digit code, friends join with their location, diet and budget. The group swipes on a shortlist and the most-liked centre wins. Each member then gets their own route there.
+- **Centre Search** — browse a centre's stalls and dishes, filter by diet and price, and add a centre to the group's picks.
+- **Live Centre Status** — NEA closure data plus crowd reports from diners at the centre.
+- **Hawker Dashboard** — stall owners set their status, rest days, menu and shout-outs.
 - **Hawker & admin accounts** — new hawkers apply for a stall, admins approve.
 
 ---
 
 ## Tech stack
 
-Vue 3 + Vite · Express 5 · MongoDB Atlas (Mongoose) · Leaflet ·
-OneMap API (geocoding and routing) · NEA hawker centre data from data.gov.sg ·
-Vitest · Playwright · Deployed on Vercel
+Vue 3 + Vite · Express 5 · MongoDB Atlas (Mongoose) · Leaflet · OneMap API (geocoding and routing) · NEA hawker centre data from data.gov.sg · Vitest · Playwright · Deployed on Vercel
 
 ---
 
@@ -35,159 +26,225 @@ Vitest · Playwright · Deployed on Vercel
 
 ### Prerequisites
 
-Node 18+, pnpm, a MongoDB Atlas cluster, a OneMap account
+- Node.js 22.18.0 or later within the 22.x series, or 24.12.0 or later.
+- pnpm 12.8.1
+- A MongoDB Atlas cluster
+- A OneMap account
 
 ### Install
 
-```
-cd server && pnpm install
-cd ../client && pnpm install
+Install the server and client dependencies:
+
+```bash
+cd server
+pnpm install
+
+cd ../client
+pnpm install
 ```
 
 ### Environment variables
 
 Create `server/.env` (see `server/.env.example`):
 
-```
+```env
 DB=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/hawkerhop
 ONEMAP_EMAIL=your_onemap_email
 ONEMAP_PASSWORD=your_onemap_password
 PORT=8000
 ```
 
-The client needs no `.env`. The Vite dev server proxies `/api` to
-`localhost:8000` (see `vite.config.js`), and in production Vercel rewrites
-`/api` to the server service on the same domain.
+The client needs no `.env`. The Vite development server proxies `/api` to `localhost:8000` (see `vite.config.js`), and in production Vercel rewrites `/api` to the server service on the same domain.
 
-### Seeding — run in this order
+### Seeding
 
-```
+Run the seed scripts in this order:
+
+```bash
 cd server
-node seed/seed.js              # 123 NEA hawker centres + demo admins
-node seed/seed-test-stalls.js  # example stalls and dishes at every centre
-node seed/seed-shoutouts.js    # sample shout-outs
+
+node seed/seed.js
+node seed/seed-test-stalls.js
+node seed/seed-test-shoutouts.js
 ```
 
-Order matters: the stall seed needs the centres, and the shout-out seed needs
-the stalls.
+Order matters: the stall seed needs the centres, and the shout-out seed needs the stalls.
 
-The hawker centres are real, imported from NEA's dataset. The stalls, dishes
-and shout-outs are fictional examples, since real stall menus and prices aren't
-publicly available — real hawkers add their own through the Hawker Dashboard.
+The hawker centres are real, imported from NEA's dataset. The stalls, dishes and shout-outs are fictional examples, since real stall menus and prices aren't publicly available. Real hawkers can add their own through the Hawker Dashboard.
 
 ### Running
 
+Open two terminals.
+
+**Terminal 1: Start the backend**
+
+```bash
+cd server
+pnpm dev
 ```
-cd server && pnpm start     # http://localhost:8000
-cd client && pnpm dev       # http://localhost:5173
+
+Backend: http://localhost:8000
+
+**Terminal 2: Start the frontend**
+
+```bash
+cd client
+pnpm dev
 ```
+
+Frontend: http://localhost:5173
 
 ### Demo logins
 
-- **Admin:** `admin_001` (created by `seed.js`)
-- **Hawker:** any `HAWKER_xxx` id from the `stalls` collection, plus that
-  stall's exact name
+**Admin**
+
+- ID: `admin_001` (created by `seed.js`)
+
+**Hawker**
+
+- ID: `HAWKER_001`
+- Stall name: `Sunrise Chicken Rice` (Adam Road Food Centre, created by `seed-test-stalls.js`)
+
+Hawker login uses the hawker ID and the exact stall name.
 
 ---
 
 ## Tests
 
+### Backend unit tests
+
+Run the Vitest unit tests:
+
+```bash
+cd server
+pnpm test
 ```
-cd server && pnpm test                    # Vitest — shortlist and swipe logic
-cd client && pnpm exec playwright test    # Playwright — end-to-end flows
+
+The tests run once and exit after completion.
+
+Unit tests (`server/tests/`) cover the pure logic: the group midpoint, distance, the diet and budget rules, centre closures, candidate selection, and the results tally with its travel-distance tie-break.
+
+### Frontend end-to-end tests
+
+The Playwright tests (`client/e2e/`) drive the app in a real browser. Playwright starts the Vite dev server itself, but **not** the backend.
+
+**1. Install the browser (once)**
+
+```bash
+cd client
+pnpm exec playwright install chromium
 ```
 
-The Playwright tests use the real API, so the Express server must be running
-on port 8000.
+**2. Start the backend** in its own terminal and leave it running (the database must be seeded, see [Seeding](#seeding)):
 
-**Unit tests** (`server/tests/`) cover the pure logic: the group midpoint,
-distance, the diet and budget rules, centre closures, candidate selection,
-and the results tally with its travel-distance tie-break.
+```bash
+cd server
+pnpm dev
+```
 
-**End-to-end tests** (`client/e2e/`) cover the full flows in a real browser,
-including two people joining the same plan from separate browser contexts.
+Wait for `API running on http://localhost:8000`. Without it, the plan tests fail with `ECONNREFUSED` in the Vite log.
+
+**3. Run the tests** from `client/`:
+
+```bash
+pnpm exec playwright test --project=chromium
+```
+
+We run Chromium only because the app is graded in Google Chrome. Run without `--project=chromium` only if you have also installed Firefox and WebKit (`pnpm exec playwright install`).
+
+Other useful commands:
+
+```bash
+pnpm exec playwright test swipe --project=chromium        # one spec file
+pnpm exec playwright test --project=chromium --ui         # watch tests run step by step
+pnpm exec playwright test --project=chromium --workers=2  # fewer tests at once, if the backend is slow
+pnpm exec playwright show-report                          # open the HTML report of the last run
+```
+
+A full run takes about 2–3 minutes. The two-person tests are the slow ones (30–60 seconds each), because building the shortlist and loading the swipe cards both query the database.
+
+**What the E2E tests cover**
+
+| Spec | User journey | Backend |
+|---|---|---|
+| `makan-plan.spec.js` | Host creates a plan and gets a 6-digit code, joins with a map pin; a friend joins with a postal code; the host's lobby picks up the friend; the host starts swiping and both people land on the swipe page | Real |
+| `leaflet-map.spec.js` | Host creates a plan and joins by clicking the Leaflet map | Real |
+| `swipe.spec.js` | Both people say yes to every card: both see the same winner ("2 of 2"), the waiting screen shows "1 of 2 finished", "Take me there!" opens the journey page and "See live seats" opens the winning centre. Both skip every card: both see "No match this time" and no "Take me there!" button | Real |
+| `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
+| `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px | Mocked |
+
+**How the tests are built**
+
+- **Two people, two browser contexts.** The plan and swipe tests open two separate browser contexts, so the host and the friend each have their own `localStorage`, like two different phones.
+- **Real backend vs mocks.** The full journeys (create → join → swipe → result) use the real API, because the point is to check that the frontend, Express and MongoDB work together. Tests that only check how a page reacts to data (`centres.spec.js`) replace the API with `page.route`, so they are fast and don't depend on the database.
+- **Stable selectors.** Tests find elements the way a user does (`getByRole` with the button, link or heading text). Where text changes from run to run, they use `data-testid` (`plan-code`, `swipe-counter`, `winner-name`).
+- **Repeatable without hardcoding.** The number of swipe cards depends on the plan, so the swipe tests read "Centre 1 of N" and loop N times instead of clicking a fixed number of times.
+- **Negative checks.** Tests also assert what must *not* happen, for example staying on the join page after a bad code, and no "Take me there!" button when there is no match.
+- **Waiting for polling.** The lobby and swipe pages refresh every 5 seconds, so checks that depend on another person's action use longer timeouts (10–30 seconds), and the two-person tests raise the test limit with `test.setTimeout`.
+
+**Database note**
+
+The tests that use the real backend create a new plan (named "saturday lunch") on every run. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them.
 
 ---
 
 ## How the shortlist works
 
 1. **Midpoint** — average of every member's pin.
-2. **Open** — centres closed on the plan's date (NEA cleaning, repairs) are
-   dropped.
+2. **Open** — centres closed on the plan's date (NEA cleaning, repairs) are dropped.
 3. **Distance** — the 15 nearest centres to the midpoint become candidates.
-4. **Diet and budget** — a centre is kept only if every member has at least one
-   dish they can eat within their budget.
-5. **Ranking** — candidates are scored as distance, plus a price penalty, plus
-   a crowd penalty if the plan starts within two hours. Lowest score first.
-6. **Picks** — centres the group added through Centre Search are kept
-   regardless, and appear before the suggestions.
+4. **Diet and budget** — a centre is kept only if every member has at least one dish they can eat within their budget.
+5. **Ranking** — candidates are scored as distance, plus a price penalty, plus a crowd penalty if the plan starts within two hours. Lowest score first.
+6. **Picks** — centres the group added through Centre Search are kept regardless, and appear before the suggestions.
 
-The group then swipes, and the centre with the most yeses wins. Ties are broken
-by the shortest total travel distance for the whole group.
+The group then swipes, and the centre with the most yeses wins. Ties are broken by the shortest total travel distance for the whole group.
 
 ---
 
 ## Deployment
 
 Deployed on Vercel as a multi-service project configured in `vercel.json`:
-`/api/*` routes to the Express service, everything else to the Vue client.
 
-The client service needs its own rewrite to `/index.html`, or any direct URL
-(for example a shared plan lobby link) returns a 404 before the app loads.
+- `/api/*` routes to the Express service.
+- Everything else routes to the Vue client.
 
-MongoDB Atlas network access is set to allow all IPs, because Vercel's
-serverless functions don't have fixed addresses.
+The client service needs its own rewrite to `/index.html`, or any direct URL (for example, a shared plan lobby link) returns a 404 before the app loads.
+
+MongoDB Atlas network access is set to allow all IPs, because Vercel's serverless functions don't have fixed addresses.
 
 ---
 
 ## AI use
 
-**Visual design — AI-generated, used largely as produced**
+### Visual design — AI-generated, used largely as produced
 
-- The colour palette and design tokens in `client/src/assets/main.css`
-- Shared component styles: buttons, cards, chips, form inputs
-- All SVG illustrations: the food-friend avatars and icons in
-  `components/HawkerArt.vue`, the animated kopitiam scene in
-  `components/HawkerScene.vue`, and the background patterns in
-  `client/src/assets/`
-- The CSS keyframe animations in `HawkerScene.vue`
+- The colour palette and design tokens in `client/src/assets/main.css`.
+- Shared component styles: buttons, cards, chips, form inputs.
+- All SVG illustrations: the food-friend avatars and icons in `components/HawkerArt.vue`, the animated kopitiam scene in `components/HawkerScene.vue`, and the background patterns in `client/src/assets/`.
+- The CSS keyframe animations in `HawkerScene.vue`.
 
-**Tests**
+### Tests
 
-- The Vitest unit tests in `server/tests/` were generated with AI from our own
-  function signatures, then checked and extended by us.
-- Playwright selectors were found using Playwright's codegen recorder; the test
-  structure and assertions are ours.
+- The Vitest unit tests in `server/tests/` were generated with AI from our own function signatures, then checked and extended by us.
+- `client/e2e/swipe.spec.js` and `client/e2e/validation.spec.js` were drafted with AI (Claude), following the style of our own `makan-plan.spec.js`. We then ran them, fixed the failures (timeouts under parallel load, the renamed "Skip!" button, the lobby's new error card) and added our own cases and test ids.
+- `client/e2e/makan-plan.spec.js` and `leaflet-map.spec.js` are ours, with selectors found using Playwright's codegen recorder.
 
-**Written by us**
+### Written by us
 
-- All application logic: the shortlist funnel (midpoint, closure checks, diet
-  and budget matching, crowd and price ranking), the OneMap routing
-  integration, the plan/join/swipe/results flow, every backend endpoint, and
-  the NEA data import and seed scripts.
+- All application logic: the shortlist funnel (midpoint, closure checks, diet and budget matching, crowd and price ranking), the OneMap routing integration, the plan/join/swipe/results flow, every backend endpoint, and the NEA data import and seed scripts.
 
-> **[Teammates: add your own sections here.]**
+> **Teammates: add your own sections here.**
 
 ---
 
 ## Known limitations
 
-- **Hawker and admin login is identification, not authentication.** An ID is
-  stored in localStorage and sent as a header; there are no passwords or
-  tokens. A production version would need proper authentication.
-- **Member locations are validated against a bounding box**, so a pin in the
-  Straits or just across the Causeway is accepted. OneMap then can't route from
-  it, and the journey page offers Google Maps as a fallback.
-- **Members can't change their diet or budget after joining.** They would need
-  to rejoin or start a new plan.
-- **NEA's data has closure dates but not opening hours**, so a plan at 4am
-  produces a shortlist of centres that are closed. We warn on the create page
-  rather than blocking it.
-- **The host is whoever joins first.** This matches the usual flow — you create
-  a plan, add your own details, then share the code — but it isn't enforced.
-- **Live updates use polling, not websockets.** The lobby and swipe pages
-  refresh every five seconds, so changes appear within that window rather than
-  instantly.
+- **Hawker and admin login is identification, not authentication.** An ID is stored in localStorage and sent as a header; there are no passwords or tokens. A production version would need proper authentication.
+- **Member locations are validated against a bounding box**, so a pin in the Straits or just across the Causeway is accepted. OneMap then can't route from it, and the journey page offers Google Maps as a fallback.
+- **Members can't change their diet or budget after joining.** They would need to rejoin or start a new plan.
+- **NEA's data has closure dates but not opening hours**, so a plan at 4am produces a shortlist of centres that are closed. We warn on the create page rather than blocking it.
+- **The host is whoever joins first.** This matches the usual flow — you create a plan, add your own details, then share the code — but it isn't enforced.
+- **Live updates use polling, not websockets.** The lobby and swipe pages refresh every five seconds, so changes appear within that window rather than instantly.
 
 ---
 

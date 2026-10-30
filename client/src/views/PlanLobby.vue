@@ -19,6 +19,7 @@ const isLoading = ref(true)
 const isJoining = ref(false)
 const isStartingSwiping = ref(false)
 
+const copied = ref(false)
 const name = ref("")
 const diet = ref("any")
 const budget = ref("")
@@ -41,6 +42,32 @@ const isHost = computed(() => {
   return plan.value.members[0]._id === myId.value
 })
 
+//NEW: add a copy code or share invite option for greater user usability
+
+async function shareInvite() {
+  const url = `${location.origin}/plan/${code}` // location.origin gets the current website's origin (protocol + domain)
+  const text = `Join "${plan.value.name}" on HawkerHop! Code ${code}`
+  
+  if (navigator.share) { //navigator.share checks if the browser supports the web share API. so if supported, we can open the device native sharing interface
+    try {
+      await navigator.share({
+        title: "HawkerHop",
+        text: text,
+        url: url
+      })
+    } catch {
+      // sharing was cancelled or failed
+    }
+    return
+  }
+  // If native sharing is unavailable, copy the invite to the clipboard
+  await navigator.clipboard.writeText(`${text} ${url}`)
+  copied.value = true
+  setTimeout(() => {
+    copied.value = false
+  }, 2000)
+}
+
 // Holds the timer that refreshes the plan, so we can stop it when leaving the page
 let refreshTimer = null
 
@@ -49,6 +76,15 @@ async function loadPlan() {
         const response = await axios.get(`${API_URL}/plans/${code}`)
         plan.value = response.data
 
+        //forget a saved member id that isnt in the plan
+
+        const stillMember = plan.value.members.some(member => String(member._id) === String(myId.value))
+
+        if (myId.value && !stillMember) {
+          localStorage.removeItem(`memberId-${code}`)
+          myId.value = null
+        }
+
         //members who are mid-swipe belong on the swipe bage, non members see the too late card
         if (plan.value.status === "swiping" && myId.value) {
           router.push(`/plan/${code}/swipe`)
@@ -56,14 +92,22 @@ async function loadPlan() {
         }
         // else if plan is already finished, redirect to journey page
         if (plan.value.status === "done" && myId.value) {
-          router.push(`/plan/${code}/swipe`)
+          router.push(`/plan/${code}/journey`)
           return
         }
         isLoading.value = false
     } catch(error) {
         isLoading.value = false
-        errorMessage.value = error.response ? error.response.data.error : 'Cant reach the server.'
-    }
+        if (error.response && error.response.status === 404) {
+          errorMessage.value = "We couldn't find a plan with that code."
+        } 
+        else if (error.response && error.response.data && error.response.data.error) {
+          errorMessage.value = error.response.data.error
+        } 
+        else {
+          errorMessage.value = "Can't reach the server. Please try again."
+        }
+          }
 }
 
 const MIN_BUDGET = 5 
@@ -112,7 +156,11 @@ async function submitPreferences() {
       localStorage.setItem(`memberId-${code}`, me._id)
       myId.value = me._id
     } catch(error) {
-        errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+        if (error.response && error.response.data && error.response.data.error) {
+          errorMessage.value = error.response.data.error
+        } else {
+          errorMessage.value = "Can't reach the server."
+        }
         isJoining.value = false
     }
 }
@@ -133,7 +181,11 @@ async function startSwiping() {
 
     router.push(`/plan/${code}/swipe`)
   } catch (error) {
-    errorMessage.value = error.response ? error.response.data.error: "Cant reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
     isStartingSwiping.value = false
   }
 }
@@ -187,20 +239,23 @@ async function getPostal() {
         movePin(response.data)
         map.setView(response.data, 16)
     } catch(error) {
-        errorMessage.value = error.response ? error.response.data.error: "Can't reach the server"
+        if (error.response && error.response.data && error.response.data.error) {
+          errorMessage.value = error.response.data.error
+        } else {
+          errorMessage.value = "Can't reach the server."
+        }
     }
 }
 
 onMounted(async () => {
+    await loadPlan()
+
+    if (!plan.value) {
+      return
+    }
     refreshTimer = setInterval(() => {
       loadPlan()
     }, 5000)
-    console.log(refreshTimer)
-    await loadPlan()
-    if (!plan.value) {
-      router.push("/plan/join")   // plan not found: will redirect back to join page
-    return
-  }
     if (myId.value) {
       return
     }
@@ -238,11 +293,21 @@ onUnmounted(() => {
 <template>
   <main class="bg-tiles">
   <div class="container py-4">
-    <div class="row g-4">
+    <!-- Plan failed to load -->
+    <div v-if="!isLoading && !plan" class="d-flex justify-content-center">
+      <div class="card waiting-card text-center p-4">
+        <h2 class="h3 fw-bold">Couldn't load your plan</h2>
+        <p class="text-muted">{{ errorMessage }}</p>
+        <RouterLink to="/plan/join" class="btn red">
+          Enter another code
+        </RouterLink>
+      </div>
+    </div>
+    <div v-else class="row g-4">
             <div class="col-12 col-lg-5">
         <div v-if="plan" class="card plan-card">
           <div class="text-center">
-             <svg width="70" height="77" aria-hidden="true"><use href="#av-milo"/></svg>
+             <svg width="50" height="55" aria-hidden="true"><use href="#av-milo"/></svg>
             <h1 class="plan-name mb-1">{{ plan.name }}</h1>
             <span class="plan-type">MAKAN PLAN</span>
           </div>
@@ -265,6 +330,9 @@ onUnmounted(() => {
           <div class="text-center mt-3">
             <small class="code-label">PLAN CODE</small>
             <p class="preview-code mb-0">{{ plan.code }}</p>
+            <button type="button" class="btn sm yellow mt-2" @click="shareInvite">
+              {{ copied ? "✅ Link copied!" : "📤 Share invite link" }}
+            </button>
           </div>
 
           <h1 class="members-title">Members: <span class="member-count">{{ plan.members.length }}</span></h1>
@@ -417,7 +485,7 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 
 .plan-card {
@@ -477,7 +545,7 @@ main {
 }
 
 #map {
-  height: 280px;
+  height: 220px;
   border: 3px solid var(--ink);
   border-radius: 12px;
   box-shadow: 3px 3px 0 var(--ink);
@@ -503,7 +571,7 @@ main {
 
 @media (min-width: 992px) {
   #map {
-    height: 400px;
+    height: 300px;
   }
 }
 
@@ -712,6 +780,62 @@ main {
 
 .start-error {
   white-space: pre-line;
+}
+
+@media (max-width: 992px) {
+  .plan-card {
+    padding: 16px;
+  }
+
+  .plan-card .text-center:first-child {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .plan-card .text-center:first-child svg {
+    width: 40px;
+    height: 44px;
+  }
+
+  .plan-name {
+    font-size: 20px;
+    margin: 0;
+  }
+
+  .plan-type {
+    font-size: 13px;
+  }
+
+  .plan-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 12px;
+  }
+
+  .plan-detail {
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .members-title {
+    font-size: 17px;
+    margin-top: 10px;
+    margin-bottom: 6px;
+  }
+
+  .members-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .member-card {
+    width: auto;
+    padding: 4px 10px;
+  }
 }
 
 </style>

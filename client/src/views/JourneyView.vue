@@ -7,6 +7,7 @@ import { API_URL } from "@/utils/constants"
 import { stations } from "@/utils/station-helper"
 import L from "leaflet"     //map library same as lobby
 import "leaflet/dist/leaflet.css"     //styling for the map
+import NotFoundView  from "./NotFoundView.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -43,14 +44,14 @@ async function loadRoute() {
       params: { memberId: myId, mode: routeMode.value }
     })
     myRoute.value = response.data
-    console.log("Route legs:", response.data.legs)
   } catch (error) {
-    console.log("Status:", error.response?.status)
-  console.log("Response:", error.response?.data)
-  console.log("Message:", error.message)
-    errorMessage.value = error.response ? error.response.data.error: "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
 
-    if (error.response && error.response.data.centre) {
+    if (error.response && error.response.data && error.response.data.centre) {
       myRoute.value = {
         centre: error.response.data.centre,
         member: error.response.data.member
@@ -384,12 +385,12 @@ onUnmounted(() => {
 <template>
   <main class="bg-tiles">
   <div class="container py-4">
-    <button class="btn mb-4" v-on:click="goBack()">
+    <button v-if="!errorMessage" class="btn mb-4" v-on:click="goBack()">
       ← Back to results
     </button>
 
-    <h1 class="hh-display mb-2 d-flex justify-content-center">Journey Summary</h1>
-    <p class="text-muted mb-4 d-flex justify-content-center">
+    <h1 v-if="!errorMessage" class="hh-display mb-2 d-flex justify-content-center">Journey Summary</h1>
+    <p v-if="!errorMessage" class="text-muted mb-4 d-flex justify-content-center">
       Choose how to get to your group's winning hawker centre. 
     </p>
 
@@ -399,7 +400,7 @@ onUnmounted(() => {
     </div>
 
     <!-- travel mode toggles-->
-    <div v-if="!isLoading" class="mb-4 d-flex justify-content-center">
+    <div v-if="!isLoading && !errorMessage" class="mb-4 d-flex justify-content-center">
       <button class="btn me-2" 
       v-on:click="changeRouteMode('pt')">Public Transport 🚌</button>
       <button class="btn" v-on:click="changeRouteMode('drive')">Driving 🚗 
@@ -428,6 +429,16 @@ onUnmounted(() => {
         </RouterLink>
       </div>
     </div>
+  </div>
+
+   <!-- Show the specific error, followed by the not-found page -->
+  <div v-else-if="!isLoading && errorMessage">
+    <div class="container text-center pt-4">
+      <div class="alert alert-danger d-inline-block px-4 py-3 mb-0">
+        <strong>Oops!</strong> {{ errorMessage }}
+    </div>
+  </div>
+    <NotFoundView></NotFoundView>
   </div>
 
     <template v-else-if="!isLoading && myRoute && !errorMessage">
@@ -539,11 +550,11 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 .journey-map {
   width: 100%;
-  height: 380px;  /* Leaflet map needs a set height to appear */
+  height: 300px;  /* Leaflet map needs a set height to appear */
   z-index: 0;   /* keeps map from floating over navbar when scrolling */
 }
 
@@ -566,7 +577,7 @@ main {
 
 .journey-map {
   width: 100%;
-  height: 380px;  /* Leaflet map needs a set height to appear */
+  height: 300px;  /* Leaflet map needs a set height to appear */
   z-index: 0;     /* keeps map from floating over navbar when scrolling */
   border: 3px solid var(--ink);
   border-radius: 12px;

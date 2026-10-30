@@ -44,6 +44,13 @@ const menuOpen = ref(false)
   border-bottom: 4px solid var(--ink);
 }
 
+/* on phones the header scrolls away, so there's more room for the page */
+@media (max-width: 576px) {
+  .site-head {
+    position: static;
+  }
+}
+
 .site-head .page {
   display: flex;
   align-items: center;

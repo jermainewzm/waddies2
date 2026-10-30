@@ -54,13 +54,13 @@ async function loadPlan() {
     }
     //guardrail for a person who types in /plan/:code/swipe manually
     if (!isMember) {
-      router.push(`/plan/${code}`)
+      router.replace(`/plan/${code}`)
       return
     }
 
     //guardrail for members who try to access the swipe page before the host presses swipe
     if (plan.value.status === 'joining') {
-      router.push(`/plan/${code}`)
+      router.replace(`/plan/${code}`)
       return 
     }
 
@@ -69,7 +69,11 @@ async function loadPlan() {
       clearInterval(refreshTimer)
     }
   } catch(error) {
-    errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   }
 }
 
@@ -80,7 +84,11 @@ async function loadCards() {
     })
     cards.value = response.data.cards
   } catch(error) {
-    errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   }
 }
 
@@ -95,7 +103,11 @@ async function submitSwipes() {
     })
     await loadPlan()  //refresh so waiting screen (or results if everyone is done) shows
   } catch(error) {
-    errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   } finally {
     isSending.value = false
   }
@@ -181,6 +193,11 @@ onMounted(async () => {
     }
     isLoading.value = false
 
+    //plan couldn't be loaded: the error card explains it, so don't keep asking the server
+    if (!plan.value) {
+      return
+    }
+
     //keep checking, so waiting screen will update as friends finish
     refreshTimer = setInterval(loadPlan, 5000)
 })
@@ -192,18 +209,21 @@ onUnmounted(() => {
 
 <template>
   <main class="bg-tiles">
-  <div class="container py-4 swipe-page">
+  <div class="container py-3 swipe-page">
 
     <div v-if="isLoading" class="text-center py-5">
       <div class="spinner-border" role="status"></div>
     </div>
 
-    <p v-else-if="!plan" class="text-danger text-center">{{ errorMessage }}</p>
+    <div v-else-if="!plan" class="card swipe-card text-center p-4">
+      <p class="text-danger">{{ errorMessage || "We couldn't load this plan." }}</p>
+      <RouterLink to="/plan/join" class="btn red">Enter another code</RouterLink>
+    </div>
 
     <template v-else>
-      <div class="text-center mb-4">
+      <div class="text-center mb-3">
         <p class="section-kicker mb-1">SWIPE TO MATCH</p>
-        <h1 class="hh-display">{{ plan.name }}</h1>
+        <h1 class="hh-display h3 mb-0">{{ plan.name }}</h1>
       </div>
 
       <!-- 1. RESULTS: everyone has finished -->
@@ -215,23 +235,33 @@ onUnmounted(() => {
         <div v-if="winner" class="card swipe-card text-center mb-4">
           <img v-if="winner.photoUrl" :src="winner.photoUrl" :alt="winner.name" class="card-photo" />
           <div class="p-4">
-            <h2 data-testid="winner-name" class="hh-display">{{ winner.name }}</h2>
+            <h2 data-testid="winner-name" class="hh-display h3">{{ winner.name }}</h2>
             <p class="text-muted">{{ winner.address }}</p>
             <p class="mb-0">
               <strong>{{ winner.likes }} of {{ plan.members.length }}</strong> said yes
             </p>
           </div>
         </div>
-        <p v-else class="text-center text-muted">
-          Nobody liked any of the centres. Try a new plan with different choices.
-        </p>
-        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn red w-100 mb-4"> Take me there!</button>
-        <h3 class="h6 fw-bold mb-2">All centres</h3>
-        <div v-for="result in plan.results" :key="result.centreId"
-             class="result-row d-flex justify-content-between">
-          <span class="fw-bold">{{ result.name }}</span>
-          <span class="text-muted">{{ result.likes }} yes · {{ result.totalDist }} km total</span>
+        <!-- no match: a friendly card with a way forward, instead of a dead end -->
+        <div v-else class="card swipe-card text-center p-4 mb-4">
+          <svg width="64" height="70" class="mx-auto mb-2" aria-hidden="true"><use href="#av-tissue"/></svg>
+          <p class="fw-bold mb-1">Tough crowd!</p>
+          <p class="text-muted">Nobody said yes to any of these centres. Start a new plan, or look around and pick one yourselves.</p>
+          <div class="d-flex flex-column gap-2">
+            <RouterLink to="/plan/new" class="btn red">Start a new plan</RouterLink>
+            <RouterLink to="/centres" class="btn">Browse centres</RouterLink>
+          </div>
         </div>
+        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn red w-100 mb-4"> Take me there!</button>
+        <!-- only show the votes when there is a winner (with no match they would all be 0) -->
+        <template v-if="winner">
+          <h3 class="h6 fw-bold mb-2">All centres</h3>
+          <div v-for="result in plan.results" :key="result.centreId"
+               class="result-row d-flex justify-content-between">
+            <span class="fw-bold">{{ result.name }}</span>
+            <span class="text-muted">{{ result.likes }} yes · {{ result.totalDist }} km total</span>
+          </div>
+        </template>
       </div>
 
       <!-- 2. WAITING: I've swiped, others haven't -->
@@ -263,7 +293,7 @@ onUnmounted(() => {
 
       <!-- 3. SWIPING: the current card -->
       <div v-else-if="currentCard">
-        <p data-testid="swipe-counter" class="text-center text-muted">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
+        <p data-testid="swipe-counter" class="text-center text-muted mb-2">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
 
         <div class="card swipe-card draggable-card"
             :style="{
@@ -280,9 +310,9 @@ onUnmounted(() => {
           <span v-if="currentCard.addedBy" class="recommend-stamp">⭐ Recommended!</span>
           <img v-if="currentCard.photoUrl" :src="currentCard.photoUrl" :alt="currentCard.name" class="card-photo" draggable="false"/>
 
-          <div class="p-4">
+          <div class="p-3">
             <div class="d-flex justify-content-between align-items-start gap-2">
-              <h2 class="hh-display h3 mb-1">{{ currentCard.name }}</h2>
+              <h2 class="hh-display h4 mb-1">{{ currentCard.name }}</h2>
               <span class="info-pill" :class="crowdClass(currentCard.crowd.level)">
                 {{ currentCard.crowd.label }}
               </span>
@@ -302,9 +332,9 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="d-flex gap-3 mt-4">
-          <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">Next!</button>
-          <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">I'm in!</button>
+        <div class="d-flex gap-3 mt-3 swipe-buttons">
+          <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">👎 Skip!</button>
+          <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">👍 I'm in!</button>
         </div>
       </div>
 
@@ -321,10 +351,10 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 .swipe-page {
-  max-width: 560px;
+  max-width: 480px;
 }
 
 .section-kicker {
@@ -336,7 +366,7 @@ main {
 
 .card-photo {
   width: 100%;
-  height: 200px;
+  height: 140px;
   object-fit: cover;
   border-radius: 22px 22px 0 0;
 }
@@ -363,6 +393,13 @@ main {
   margin-bottom: 0.5rem;
 }
 
+/* the buttons stick to the bottom of the screen, so you never scroll to answer */
+.swipe-buttons {
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
+}
+
 .draggable-card {
   position: relative;
   touch-action: pan-y;     /* up/down still scrolls the page; sideways goes to our code */
@@ -384,9 +421,9 @@ main {
 .stamp-no { right: 16px; color: #8f211c; }
 
 .progress-bar {
-  height: 16px;
-  margin-top: 16px;
-  margin-bottom: 16px;
+  height: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
   border: 3px solid var(--ink);
   border-radius: 999px;
   background: var(--paper);
