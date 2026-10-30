@@ -54,13 +54,13 @@ async function loadPlan() {
     }
     //guardrail for a person who types in /plan/:code/swipe manually
     if (!isMember) {
-      router.push(`/plan/${code}`)
+      router.replace(`/plan/${code}`)
       return
     }
 
     //guardrail for members who try to access the swipe page before the host presses swipe
     if (plan.value.status === 'joining') {
-      router.push(`/plan/${code}`)
+      router.replace(`/plan/${code}`)
       return 
     }
 

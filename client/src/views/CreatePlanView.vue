@@ -130,7 +130,7 @@ function formatTime(time) {
              <!-- makan plan name -->
             <div class="mb-3">
               <label for="name" class="form-label">Plan name</label>
-              <input id="name" v-model="name" class="form-control cute-input" placeholder="e.g. Saturday lunch" />
+              <input id="name" maxlength="40" v-model="name" class="form-control cute-input" placeholder="e.g. Saturday lunch" />
             </div>
 
              <!-- date -->
