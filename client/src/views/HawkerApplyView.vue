@@ -117,7 +117,7 @@ async function submit() {
               </div>
 
               <div class="mb-3">
-                <label for="message" class="form-label">Shoutout for customers (optional)</label>
+                <label for="message" class="form-label">Message for admin (optional)</label>
                 <textarea id="message" v-model="message" rows="3" class="form-control cute-input"
                           placeholder="Anything that helps us verify your stall"></textarea>
               </div>
