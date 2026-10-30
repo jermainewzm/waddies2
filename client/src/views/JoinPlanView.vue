@@ -12,7 +12,8 @@ const errorMessage = ref("")
 async function joinPlan() {
   errorMessage.value = ""
 
-  if (code.value.trim().length !== 6) {
+  // ^\d{6}$ means: exactly 6 digits from start to end, nothing else (so "abc123" fails)
+  if (!/^\d{6}$/.test(code.value.trim())) {
     errorMessage.value = "Please enter the 6-digit code."
     return
   }

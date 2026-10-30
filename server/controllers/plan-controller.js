@@ -84,10 +84,19 @@ exports.joinPlan = async (req,res) => {
     if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
         return res.status(400).json({ error: "Please set your location on the map." })
     }
+    // same box as pinInSingapore() in PlanLobby.vue, so a pin outside Singapore can't be saved
+    const latNumber = Number(lat)
+    const lngNumber = Number(lng)
+    if (latNumber < 1.24 || latNumber > 1.47 || lngNumber < 103.63 || lngNumber > 104.01) {
+        return res.status(400).json({ error: "Please pick a location in Singapore." })
+    }
+    // a name of only spaces passes !name above, so check it again after trimming
+    if (String(name).trim().length === 0) {
+        return res.status(400).json({ error: "Please enter your name." })
+    }
     if (String(name).trim().length > 30) {
         return res.status(400).json({ error: "Name must be 30 characters or less." })
     }
-
 
     try {
         const plan = await Plan.findByCode(code)
