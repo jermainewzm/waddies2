@@ -18,7 +18,7 @@ import { RouterLink } from "vue-router"
 
 <style scoped>
 .not-found {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header */
 }
 
 .not-found h1 {

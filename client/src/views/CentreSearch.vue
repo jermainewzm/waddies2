@@ -609,7 +609,7 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-    min-height: 100vh;
+    min-height: calc(100vh - 72px);   /* full screen minus the 72px header */
 }
 /* phone (base) */
 .centre-search {

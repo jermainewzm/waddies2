@@ -109,11 +109,11 @@ function formatTime(time) {
 
 <template>
   <main class="bg-tiles">
-  <div class="container py-5">
+  <div class="container py-3">
 
     <!-- page heading -->
-    <div class="page-header text-center mb-5">
-        <svg width="70" height="77" aria-hidden="true"><use href="#av-waffle"/></svg>
+    <div class="page-header text-center mb-3">
+        <svg width="44" height="48" aria-hidden="true"><use href="#av-waffle"/></svg>
         <h1 class=" mb-2">Start a Makan Plan</h1>
         <p class="mb-0 text-muted fst-italic"> Get everyone together. We'll handle the makan. </p>
      </div>
@@ -123,28 +123,37 @@ function formatTime(time) {
         <div class="awning"></div>
         <div class="card create-plan-card">
           <div class="section-label"> 01</div>
-          <h2 class=" mb-2"> Set up your plan </h2>
-          <p class="text-muted mb-4"> Give your makan session a name and choose when to meet.</p>
+          <h2 class="mb-1"> Set up your plan </h2>
+          <p class="text-muted mb-2"> Give your makan session a name and choose when to meet.</p>
 
           <form v-on:submit.prevent="createPlan">
              <!-- makan plan name -->
-            <div class="mb-3">
+            <div class="mb-2">
               <label for="name" class="form-label">Plan name</label>
               <input id="name" maxlength="40" v-model="name" class="form-control cute-input" placeholder="e.g. Saturday lunch" />
             </div>
 
+            <!-- date and time sit side by side on bigger screens -->
+            <div class="row">
              <!-- date -->
-            <div class="mb-3">
+            <div class="col-md-6 mb-2">
             <label for="date" class="form-label">Date</label>
-            <input id="date" v-model="date" type="date" class="form-control cute-input" :min="minDate" :max="maxDate"/>
+            <div class="picker">
+              <input id="date" v-model="date" type="date" class="form-control cute-input" :class="{ empty: !date }" :min="minDate" :max="maxDate"/>
+              <span v-if="!date" class="picker-hint">📅 Tap to pick a date</span>
+            </div>
             </div>
              <!-- time -->
-            <div class="mb-3">
+            <div class="col-md-6 mb-2">
               <label for="time" class="form-label">Time</label>
-              <input id="time" v-model="time" type="time" class="form-control cute-input" :min="minTime" />
+              <div class="picker">
+                <input id="time" v-model="time" type="time" class="form-control cute-input" :class="{ empty: !time }" :min="minTime" />
+                <span v-if="!time" class="picker-hint">🕒 Tap to pick a time</span>
+              </div>
               <p v-if="isOddHour" class="text-danger fw-bold small mb-0 mt-1">
                 NOTE: Most hawker centres are closed at this hour, and public transport may not be running.
               </p>
+            </div>
             </div>
 
             <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating">{{ isCreating ? 'Creating...' : "Create Plan →" }}</button>
@@ -159,7 +168,7 @@ function formatTime(time) {
       
         <div class="preview-tip">
             <span>💡</span>
-            <p class="fs-5 mb-0 fw-bold"> Head to the lobby and join first, then share the code with your friends.</p>
+            <p class="mb-0 fw-bold"> Head to the lobby and join first, then share the code with your friends.</p>
           </div>
       </div>
      </div>
@@ -171,7 +180,7 @@ function formatTime(time) {
             02
            </div>
            <h2 class="mb-2"> Your plan preview </h2>
-           <p class="text-muted mb-4"> This is how your plan will appear in the lobby.</p>
+           <p class="text-muted mb-3"> This is how your plan will appear in the lobby.</p>
 
            <div class="plan-preview">
 
@@ -228,17 +237,17 @@ function formatTime(time) {
 }
 
 .page-header h1{
-  font-size: 42px;
+  font-size: 34px;
 }
 
 .create-plan-card, .preview-plan-card {
-  padding: 32px;
+  padding: 24px;
 }
 
 .plan-preview {
   background-color: var(--paper);
   border-radius: 16px;
-  padding: 24px;
+  padding: 16px;
   border: 3px solid var(--ink);
   text-align: center;
 }
@@ -265,11 +274,11 @@ function formatTime(time) {
 }
 
 .create-plan-card h2 {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .plan-details {
-  margin-top: 24px;
+  margin-top: 16px;
   background-color: var(--cream);
   border-radius: 12px;
   padding: 18px 20px;
@@ -339,5 +348,64 @@ function formatTime(time) {
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-7px); }
+}
+
+/* hint text shown on top of the empty date & time boxes */
+.picker {
+  position: relative;    /* so the hint is placed inside the box */
+}
+
+.picker input {
+  min-height: 48px;      /* iPhones make an empty date box very thin */
+}
+
+.picker-hint {
+  display: none;        /* hidden on computers, they already show dd/mm/yyyy */
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  color: grey;
+  font-weight: bold;
+  pointer-events: none;  /* tapping the hint still opens the picker */
+}
+
+/* "pointer: coarse" means a touch screen, like a phone */
+@media (pointer: coarse) {
+  .picker-hint {
+    display: block;
+  }
+
+  /* hide the box's own grey "dd/mm/yyyy" so it doesn't sit under our hint */
+  .picker .empty {
+    color: transparent;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header h1 {
+    font-size: 32px;
+  }
+
+  .create-plan-card, .preview-plan-card {
+    padding: 20px;
+  }
+
+  .create-plan-card h2 {
+    font-size: 22px;
+  }
+
+  .plan-preview {
+    padding: 16px;
+  }
+}
+
+/* make the page shorter on computers so you don't need to scroll */
+.create-plan-card .form-control {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.preview-plan-card h2 {
+  font-size: 24px;
 }
 </style>

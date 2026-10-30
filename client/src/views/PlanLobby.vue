@@ -295,7 +295,7 @@ onUnmounted(() => {
             <div class="col-12 col-lg-5">
         <div v-if="plan" class="card plan-card">
           <div class="text-center">
-             <svg width="70" height="77" aria-hidden="true"><use href="#av-milo"/></svg>
+             <svg width="50" height="55" aria-hidden="true"><use href="#av-milo"/></svg>
             <h1 class="plan-name mb-1">{{ plan.name }}</h1>
             <span class="plan-type">MAKAN PLAN</span>
           </div>
@@ -473,7 +473,7 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 
 .plan-card {
@@ -533,7 +533,7 @@ main {
 }
 
 #map {
-  height: 280px;
+  height: 220px;
   border: 3px solid var(--ink);
   border-radius: 12px;
   box-shadow: 3px 3px 0 var(--ink);
@@ -559,7 +559,7 @@ main {
 
 @media (min-width: 992px) {
   #map {
-    height: 400px;
+    height: 300px;
   }
 }
 

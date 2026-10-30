@@ -192,7 +192,7 @@ onUnmounted(() => {
 
 <template>
   <main class="bg-tiles">
-  <div class="container py-4 swipe-page">
+  <div class="container py-3 swipe-page">
 
     <div v-if="isLoading" class="text-center py-5">
       <div class="spinner-border" role="status"></div>
@@ -201,9 +201,9 @@ onUnmounted(() => {
     <p v-else-if="!plan" class="text-danger text-center">{{ errorMessage }}</p>
 
     <template v-else>
-      <div class="text-center mb-4">
+      <div class="text-center mb-3">
         <p class="section-kicker mb-1">SWIPE TO MATCH</p>
-        <h1 class="hh-display">{{ plan.name }}</h1>
+        <h1 class="hh-display h3 mb-0">{{ plan.name }}</h1>
       </div>
 
       <!-- 1. RESULTS: everyone has finished -->
@@ -215,7 +215,7 @@ onUnmounted(() => {
         <div v-if="winner" class="card swipe-card text-center mb-4">
           <img v-if="winner.photoUrl" :src="winner.photoUrl" :alt="winner.name" class="card-photo" />
           <div class="p-4">
-            <h2 data-testid="winner-name" class="hh-display">{{ winner.name }}</h2>
+            <h2 data-testid="winner-name" class="hh-display h3">{{ winner.name }}</h2>
             <p class="text-muted">{{ winner.address }}</p>
             <p class="mb-0">
               <strong>{{ winner.likes }} of {{ plan.members.length }}</strong> said yes
@@ -263,7 +263,7 @@ onUnmounted(() => {
 
       <!-- 3. SWIPING: the current card -->
       <div v-else-if="currentCard">
-        <p data-testid="swipe-counter" class="text-center text-muted">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
+        <p data-testid="swipe-counter" class="text-center text-muted mb-2">Centre {{ currentIndex + 1 }} of {{ cards.length }}</p>
 
         <div class="card swipe-card draggable-card"
             :style="{
@@ -280,9 +280,9 @@ onUnmounted(() => {
           <span v-if="currentCard.addedBy" class="recommend-stamp">⭐ Recommended!</span>
           <img v-if="currentCard.photoUrl" :src="currentCard.photoUrl" :alt="currentCard.name" class="card-photo" draggable="false"/>
 
-          <div class="p-4">
+          <div class="p-3">
             <div class="d-flex justify-content-between align-items-start gap-2">
-              <h2 class="hh-display h3 mb-1">{{ currentCard.name }}</h2>
+              <h2 class="hh-display h4 mb-1">{{ currentCard.name }}</h2>
               <span class="info-pill" :class="crowdClass(currentCard.crowd.level)">
                 {{ currentCard.crowd.label }}
               </span>
@@ -302,7 +302,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="d-flex gap-3 mt-4">
+        <div class="d-flex gap-3 mt-3 swipe-buttons">
           <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">👎 Skip!</button>
           <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">👍 I'm in!</button>
         </div>
@@ -321,10 +321,10 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 .swipe-page {
-  max-width: 560px;
+  max-width: 480px;
 }
 
 .section-kicker {
@@ -336,7 +336,7 @@ main {
 
 .card-photo {
   width: 100%;
-  height: 200px;
+  height: 140px;
   object-fit: cover;
   border-radius: 22px 22px 0 0;
 }
@@ -363,6 +363,13 @@ main {
   margin-bottom: 0.5rem;
 }
 
+/* the buttons stick to the bottom of the screen, so you never scroll to answer */
+.swipe-buttons {
+  position: sticky;
+  bottom: 12px;
+  z-index: 2;
+}
+
 .draggable-card {
   position: relative;
   touch-action: pan-y;     /* up/down still scrolls the page; sideways goes to our code */
@@ -384,9 +391,9 @@ main {
 .stamp-no { right: 16px; color: #8f211c; }
 
 .progress-bar {
-  height: 16px;
-  margin-top: 16px;
-  margin-bottom: 16px;
+  height: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
   border: 3px solid var(--ink);
   border-radius: 999px;
   background: var(--paper);

@@ -31,10 +31,10 @@ async function joinPlan() {
 
 <template>
   <main class="bg-tiles">
-  <div class="container py-5">
+  <div class="container py-4">
 
     <!-- page heading -->
-    <div class="page-header text-center mb-5">
+    <div class="page-header text-center mb-4">
       <div class="heading-icon">🎟️</div>
       <h1 class="hh-display mb-2">Join a Makan Plan</h1>
       <p class="mb-0 text-muted fst-italic">Got a code from a friend? Pop it in below.</p>
@@ -68,27 +68,27 @@ async function joinPlan() {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 
 .heading-icon {
-  font-size: 48px;
+  font-size: 36px;
   margin-bottom: 5px;
 }
 
 .page-header h1 {
-  font-size: 42px;
+  font-size: 34px;
 }
 
 .join-plan-card {
   background-color: white;
   border-radius: 20px;
-  padding: 32px;
+  padding: 24px;
   box-shadow: 0 6px 24px rgba(59, 42, 32, 0.08);
 }
 
 .join-plan-card h2 {
-  font-size: 28px;
+  font-size: 24px;
 }
 
 .form-label {
@@ -121,5 +121,23 @@ main {
 .join-button:hover {
   background-color: #f8756b;
   color: white;
+}
+
+@media (max-width: 576px) {
+  .heading-icon {
+    font-size: 36px;
+  }
+
+  .page-header h1 {
+    font-size: 32px;
+  }
+
+  .join-plan-card {
+    padding: 20px;
+  }
+
+  .join-plan-card h2 {
+    font-size: 22px;
+  }
 }
 </style>

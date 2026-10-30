@@ -546,11 +546,11 @@ onUnmounted(() => {
 <style scoped>
 
 main {
-  min-height: 100vh;
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so the page doesn't scroll for nothing */
 }
 .journey-map {
   width: 100%;
-  height: 380px;  /* Leaflet map needs a set height to appear */
+  height: 300px;  /* Leaflet map needs a set height to appear */
   z-index: 0;   /* keeps map from floating over navbar when scrolling */
 }
 
@@ -573,7 +573,7 @@ main {
 
 .journey-map {
   width: 100%;
-  height: 380px;  /* Leaflet map needs a set height to appear */
+  height: 300px;  /* Leaflet map needs a set height to appear */
   z-index: 0;     /* keeps map from floating over navbar when scrolling */
   border: 3px solid var(--ink);
   border-radius: 12px;
