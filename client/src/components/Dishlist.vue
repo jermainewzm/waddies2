@@ -25,6 +25,8 @@ const editHalal = ref(false)
 const editNoPork = ref(false)
 const editNoBeef = ref(false)
 
+const dishToDelete = ref(null)
+
 
 function getDietLabel(tag) {
     const option = DIET_OPTIONS.find(
@@ -95,8 +97,17 @@ function cancelEdit() {
 }
 
 
-function removeDish(id) {
-    emit('delete-dish', id)
+function askDelete(dish) {
+    dishToDelete.value = dish
+}
+
+function cancelDelete() {
+    dishToDelete.value = null
+}
+
+function confirmDelete() {
+    emit('delete-dish', dishToDelete.value._id)
+    dishToDelete.value = null
 }
 
 function blockBadKeys(event) {
@@ -198,7 +209,7 @@ function blockBadKeys(event) {
                                 class="icon-btn red-bg"
                                 aria-label="Delete dish"
                                 title="Delete"
-                                @click="removeDish(dish._id)"
+                                @click="askDelete(dish)"
                             >
                                 🗑️
                             </button>
@@ -397,6 +408,45 @@ function blockBadKeys(event) {
 
         </div>
 
+        <div
+            v-if="dishToDelete"
+            class="confirm-overlay"
+        >
+            <div class="confirm-card">
+
+                <h3 class="mb-3">
+                    Delete dish?
+                </h3>
+
+                <p class="mb-4">
+                    Are you sure you want to delete
+                    <strong>{{ dishToDelete.name }}</strong>
+                    from your menu?
+                </p>
+
+                <div class="d-flex justify-content-center gap-3">
+
+                    <button
+                        type="button"
+                        class="btn sm"
+                        @click="cancelDelete"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn sm red"
+                        @click="confirmDelete"
+                    >
+                        Delete
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
 </template>
@@ -578,6 +628,45 @@ function blockBadKeys(event) {
 
 .chip-wrap {
     position: relative;
+}
+
+
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 1000;
+}
+
+.confirm-card {
+    width: min(100%, 380px);
+
+    padding: 24px;
+
+    background: var(--paper);
+
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+
+    box-shadow: 6px 6px 0 var(--ink);
+
+    text-align: center;
+}
+
+.confirm-card h3 {
+    font-weight: 800;
+}
+
+.confirm-card strong {
+    color: var(--tomato);
 }
 
 

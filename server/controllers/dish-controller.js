@@ -1,4 +1,5 @@
 const Dish= require("../models/dish-model")
+const mongoose = require("mongoose")
 
 function hasMaxTwoDecimalPlaces(price){
     return Number.isInteger(price * 100)
@@ -23,7 +24,6 @@ async function getMyStallDishes(req, res) {
     } catch (error) {
         res.status(500).json({
             message: "Failed to retrieve dishes",
-            error: error.message
         })
     }
 }
@@ -67,6 +67,20 @@ async function addDish(req, res) {
             })
         }
 
+        const existingDish = await Dish.findOne({
+            stall_id: stall._id,
+            name: {
+                $regex: `^${name.trim()}$`,
+                $options: "i"
+            }
+        })
+
+        if (existingDish) {
+            return res.status(409).json({
+                message: "You already have a dish with that name."
+            })
+        }
+
         const newDish = await Dish.create({
             stall_id: stall._id,
             name: name.trim(),
@@ -81,13 +95,19 @@ async function addDish(req, res) {
     } catch (error) {
         res.status(500).json({
             message: "Failed to add dish",
-            error: error.message
         })
     }
 }
 
 async function updateDish(req, res) {
     try {
+
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({
+                message: "Dish not found for this stall."
+            })
+        }
+
         const stall = req.stall
 
         if (!stall) {
@@ -159,13 +179,19 @@ async function updateDish(req, res) {
     } catch (error) {
         res.status(500).json({
             message: "Failed to update dish",
-            error: error.message
         })
     }
 }
 
 async function deleteDish(req, res) {
     try {
+
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({
+                message: "Dish not found for this stall."
+            })
+        }
+
         const stall = req.stall
         
         if (!stall) {
@@ -191,8 +217,7 @@ async function deleteDish(req, res) {
 
     } catch (error) {
         res.status(500).json({
-            message: "Failed to delete dish",
-            error: error.message
+            message: "Failed to delete dish"
         })
     }
 }

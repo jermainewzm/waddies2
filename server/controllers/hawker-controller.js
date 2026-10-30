@@ -10,7 +10,7 @@ async function createHawkerRequest(req, res) {
             stall_name,
             unit_no,
             message
-        } = req.body
+        } = req.body || {}
 
         // required fields
         if (
@@ -53,7 +53,6 @@ async function createHawkerRequest(req, res) {
         return res.status(500).json({
             message:
                 "Failed to submit hawker request",
-            error: error.message
         })
     }
 }
@@ -88,13 +87,19 @@ async function getPendingRequests(req, res) {
     } catch (error) {
         res.status(500).json({
             message: "Failed to retrieve hawker requests",
-            error: error.message
         })
     }
 }
 
 async function approveHawkerRequest(req, res) {
     try {
+
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({
+                message: "Hawker request not found."
+            })
+        }
+
         const request = await HawkerRequest.findById(req.params.id)
 
         if (!request) {
@@ -184,13 +189,19 @@ async function approveHawkerRequest(req, res) {
     } catch (error) {
         return res.status(500).json({
             message: "Failed to approve hawker request",
-            error: error.message
         })
     }
 }
 
 async function rejectHawkerRequest(req, res) {
     try {
+
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({
+                message: "Hawker request not found."
+            })
+        }
+
         const request = await HawkerRequest.findById(req.params.id)
 
         if (!request) {
@@ -216,7 +227,6 @@ async function rejectHawkerRequest(req, res) {
     } catch (error) {
         res.status(500).json({
             message: "Failed to reject hawker request",
-            error: error.message
         })
     }
 }
@@ -226,7 +236,7 @@ async function verifyExistingHawker(req, res) {
         const {
             owner_id,
             stall_name
-        } = req.body
+        } = req.body || {}
 
         if (!owner_id || !stall_name) {
             return res.status(400).json({
@@ -256,13 +266,19 @@ async function verifyExistingHawker(req, res) {
     } catch (error) {
         return res.status(500).json({
             message: "Failed to verify hawker.",
-            error: error.message
         })
     }
 }
 
 async function getHawkerRequestStatus(req, res) {
     try {
+
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({
+                message: "Hawker request not found."
+            })
+        }
+
         const request = await HawkerRequest.findById(req.params.id)
 
         if (!request) {
@@ -280,7 +296,6 @@ async function getHawkerRequestStatus(req, res) {
     } catch (error) {
         return res.status(500).json({
             message: "Failed to retrieve hawker request status.",
-            error: error.message
         })
     }
 }

@@ -65,7 +65,7 @@ async function login() {
           <div class="awning"></div>
           <div class="card hh-card">
             <div class="hh-badge">🔑</div>
-            <h2 class="mb-2">Enter your <details></details></h2>
+            <h2 class="mb-2">Enter your details</h2>
             <p class="text-muted mb-4">Use the Hawker ID the admin gave you.</p>
 
             <form v-on:submit.prevent="login">
