@@ -102,8 +102,8 @@ Frontend: http://localhost:5173
 
 **Hawker**
 
-- ID: `[INSERT REAL HAWKER ID]`
-- Stall name: `[INSERT EXACT STALL NAME]`
+- ID: `HAWKER_001`
+- Stall name: `Sunrise Chicken Rice` (Adam Road Food Centre, created by `seed-test-stalls.js`)
 
 Hawker login uses the hawker ID and the exact stall name.
 
@@ -126,24 +126,65 @@ Unit tests (`server/tests/`) cover the pure logic: the group midpoint, distance,
 
 ### Frontend end-to-end tests
 
-First, install the required Playwright browser:
+The Playwright tests (`client/e2e/`) drive the app in a real browser. Playwright starts the Vite dev server itself, but **not** the backend.
+
+**1. Install the browser (once)**
 
 ```bash
 cd client
 pnpm exec playwright install chromium
 ```
 
-Make sure the Express backend is running on port 8000, then run:
+**2. Start the backend** in its own terminal and leave it running (the database must be seeded, see [Seeding](#seeding)):
 
 ```bash
-pnpm exec playwright test
+cd server
+pnpm dev
 ```
 
-The Playwright tests (`client/e2e/`) cover the full flows in a real browser, including two people joining the same plan from separate browser contexts.
+Wait for `API running on http://localhost:8000`. Without it, the plan tests fail with `ECONNREFUSED` in the Vite log.
 
-**Important: Database safety**
+**3. Run the tests** from `client/`:
 
-The Playwright tests use the real API and create plans. Before running them, ensure the backend is connected to a separate test database, not the Atlas database containing your demo data. Do not run the E2E tests against your demo database.
+```bash
+pnpm exec playwright test --project=chromium
+```
+
+We run Chromium only because the app is graded in Google Chrome. Run without `--project=chromium` only if you have also installed Firefox and WebKit (`pnpm exec playwright install`).
+
+Other useful commands:
+
+```bash
+pnpm exec playwright test swipe --project=chromium        # one spec file
+pnpm exec playwright test --project=chromium --ui         # watch tests run step by step
+pnpm exec playwright test --project=chromium --workers=2  # fewer tests at once, if the backend is slow
+pnpm exec playwright show-report                          # open the HTML report of the last run
+```
+
+A full run takes about 2–3 minutes. The two-person tests are the slow ones (30–60 seconds each), because building the shortlist and loading the swipe cards both query the database.
+
+**What the E2E tests cover**
+
+| Spec | User journey | Backend |
+|---|---|---|
+| `makan-plan.spec.js` | Host creates a plan and gets a 6-digit code, joins with a map pin; a friend joins with a postal code; the host's lobby picks up the friend; the host starts swiping and both people land on the swipe page | Real |
+| `leaflet-map.spec.js` | Host creates a plan and joins by clicking the Leaflet map | Real |
+| `swipe.spec.js` | Both people say yes to every card: both see the same winner ("2 of 2"), the waiting screen shows "1 of 2 finished", "Take me there!" opens the journey page and "See live seats" opens the winning centre. Both skip every card: both see "No match this time" and no "Take me there!" button | Real |
+| `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
+| `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px | Mocked |
+
+**How the tests are built**
+
+- **Two people, two browser contexts.** The plan and swipe tests open two separate browser contexts, so the host and the friend each have their own `localStorage`, like two different phones.
+- **Real backend vs mocks.** The full journeys (create → join → swipe → result) use the real API, because the point is to check that the frontend, Express and MongoDB work together. Tests that only check how a page reacts to data (`centres.spec.js`) replace the API with `page.route`, so they are fast and don't depend on the database.
+- **Stable selectors.** Tests find elements the way a user does (`getByRole` with the button, link or heading text). Where text changes from run to run, they use `data-testid` (`plan-code`, `swipe-counter`, `winner-name`).
+- **Repeatable without hardcoding.** The number of swipe cards depends on the plan, so the swipe tests read "Centre 1 of N" and loop N times instead of clicking a fixed number of times.
+- **Negative checks.** Tests also assert what must *not* happen, for example staying on the join page after a bad code, and no "Take me there!" button when there is no match.
+- **Waiting for polling.** The lobby and swipe pages refresh every 5 seconds, so checks that depend on another person's action use longer timeouts (10–30 seconds), and the two-person tests raise the test limit with `test.setTimeout`.
+
+**Database note**
+
+The tests that use the real backend create a new plan (named "saturday lunch") on every run. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them.
 
 ---
 
@@ -185,7 +226,8 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 ### Tests
 
 - The Vitest unit tests in `server/tests/` were generated with AI from our own function signatures, then checked and extended by us.
-- Playwright selectors were found using Playwright's codegen recorder; the test structure and assertions are ours.
+- `client/e2e/swipe.spec.js` and `client/e2e/validation.spec.js` were drafted with AI (Claude), following the style of our own `makan-plan.spec.js`. We then ran them, fixed the failures (timeouts under parallel load, the renamed "Skip!" button, the lobby's new error card) and added our own cases and test ids.
+- `client/e2e/makan-plan.spec.js` and `leaflet-map.spec.js` are ours, with selectors found using Playwright's codegen recorder.
 
 ### Written by us
 
