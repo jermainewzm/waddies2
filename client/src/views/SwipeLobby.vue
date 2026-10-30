@@ -69,7 +69,11 @@ async function loadPlan() {
       clearInterval(refreshTimer)
     }
   } catch(error) {
-    errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   }
 }
 
@@ -80,7 +84,11 @@ async function loadCards() {
     })
     cards.value = response.data.cards
   } catch(error) {
-    errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   }
 }
 
@@ -95,7 +103,11 @@ async function submitSwipes() {
     })
     await loadPlan()  //refresh so waiting screen (or results if everyone is done) shows
   } catch(error) {
-    errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   } finally {
     isSending.value = false
   }

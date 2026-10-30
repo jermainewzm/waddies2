@@ -45,9 +45,13 @@ async function loadRoute() {
     })
     myRoute.value = response.data
   } catch (error) {
-    errorMessage.value = error.response ? error.response.data.error: "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
 
-    if (error.response && error.response.data.centre) {
+    if (error.response && error.response.data && error.response.data.centre) {
       myRoute.value = {
         centre: error.response.data.centre,
         member: error.response.data.member

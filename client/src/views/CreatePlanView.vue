@@ -81,9 +81,11 @@ async function createPlan() {
     })
     code.value = response.data.code
   } catch (error) {
-    errorMessage.value = error.response
-      ? error.response.data.error
-      : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
       isCreating.value = false
   }
 }

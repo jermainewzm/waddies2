@@ -22,9 +22,11 @@ async function joinPlan() {
     await axios.get(`${API_URL}/plans/${code.value.trim()}`)
     router.push(`/plan/${code.value.trim()}/lobby`)
   } catch (error) {
-    errorMessage.value = error.response
-      ? error.response.data.error
-      : "Can't reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
   }
 }
 </script>

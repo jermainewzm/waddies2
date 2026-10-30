@@ -156,7 +156,11 @@ async function submitPreferences() {
       localStorage.setItem(`memberId-${code}`, me._id)
       myId.value = me._id
     } catch(error) {
-        errorMessage.value = error.response ? error.response.data.error : "Can't reach the server."
+        if (error.response && error.response.data && error.response.data.error) {
+          errorMessage.value = error.response.data.error
+        } else {
+          errorMessage.value = "Can't reach the server."
+        }
         isJoining.value = false
     }
 }
@@ -177,7 +181,11 @@ async function startSwiping() {
 
     router.push(`/plan/${code}/swipe`)
   } catch (error) {
-    errorMessage.value = error.response ? error.response.data.error: "Cant reach the server."
+    if (error.response && error.response.data && error.response.data.error) {
+      errorMessage.value = error.response.data.error
+    } else {
+      errorMessage.value = "Can't reach the server."
+    }
     isStartingSwiping.value = false
   }
 }
@@ -231,7 +239,11 @@ async function getPostal() {
         movePin(response.data)
         map.setView(response.data, 16)
     } catch(error) {
-        errorMessage.value = error.response ? error.response.data.error: "Can't reach the server"
+        if (error.response && error.response.data && error.response.data.error) {
+          errorMessage.value = error.response.data.error
+        } else {
+          errorMessage.value = "Can't reach the server."
+        }
     }
 }
 
