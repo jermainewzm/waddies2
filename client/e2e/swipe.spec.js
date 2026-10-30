@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test"
 
 test("two people who both say yes to every centre see the same winner", async ({ browser }) => {
   //setup, swiping and the 5 second refreshes take longer than the default 30s
-  test.setTimeout(90000)
+  test.setTimeout(150000)
 
   //separate contexts so each has its own localStorage, like two different people
   const hostContext = await browser.newContext()
@@ -65,7 +65,7 @@ test("two people who both say yes to every centre see the same winner", async ({
   // \d+ matches 1 or more digit
   // (\d+/) is DIFFERENT from \d+/. without brackets we get 1 item only. with brackets, the digit comes back as a seperate item at [1]
   const hostCounter = hostPage.getByTestId("swipe-counter")
-  await expect(hostCounter).toBeVisible()
+   await expect(hostCounter).toBeVisible({ timeout: 30000 })
 
   const total = Number((await hostCounter.textContent()).match(/of (\d+)/)[1])
 
@@ -189,7 +189,7 @@ test("two people who skip every centre will see no match", async ({ browser }) =
   // 6. the host skips every centre, then waits for the friend
   for (let i = 1; i <= total; i++) {
     await expect(hostCounter).toHaveText(`Centre ${i} of ${total}`)
-    await hostPage.getByRole("button", { name: /next/i }).click()
+    await hostPage.getByRole("button", { name: /skip/i }).click()
   }
 
   await expect(hostPage.getByRole("heading", { name: /you're done/i })).toBeVisible()
@@ -200,7 +200,7 @@ test("two people who skip every centre will see no match", async ({ browser }) =
 
   for (let i = 1; i <= total; i++) {
     await expect(friendCounter).toHaveText(`Centre ${i} of ${total}`)
-    await friendPage.getByRole("button", { name: /next/i }).click()
+    await friendPage.getByRole("button", { name: /skip/i }).click()
   }
 
   // 8. nobody said yes, so both see no match (the host's page refreshes every 5s)

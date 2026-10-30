@@ -33,8 +33,16 @@ test("a 6-digit code that doesn't exist shows an error", async ({ page }) => {
   await expect(page).toHaveURL("/plan/join")
 })
 
-test("visiting a lobby for a plan that doesn't exist redirects to join", async ({ page }) => {
+test("visiting a lobby for a plan that doesn't exist shows an error", async ({ page }) => {
+  // 1. open the lobby of a plan that doesn't exist
   await page.goto("/plan/999999/lobby")
+
+  // 2. the lobby explains what went wrong
+  await expect(page.getByRole("heading", { name: /couldn't load your plan/i })).toBeVisible()
+  await expect(page.getByText(/couldn't find a plan with that code/i)).toBeVisible()
+
+  // 3. the button takes you to enter another code
+  await page.getByRole("link", { name: /enter another code/i }).click()
   await expect(page).toHaveURL("/plan/join")
 })
 
