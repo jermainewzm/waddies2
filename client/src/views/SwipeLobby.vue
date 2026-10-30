@@ -303,8 +303,8 @@ onUnmounted(() => {
         </div>
 
         <div class="d-flex gap-3 mt-4">
-          <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">Next!</button>
-          <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">I'm in!</button>
+          <button type="button" class="btn w-50 fw-bold" v-on:click="answer(false)">👎 Skip!</button>
+          <button type="button" class="btn w-50 fw-bold green" v-on:click="answer(true)">👍 I'm in!</button>
         </div>
       </div>
 
