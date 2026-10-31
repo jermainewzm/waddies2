@@ -1,5 +1,6 @@
 
 const Stall= require("../models/stall-model")
+const Centre= require("../models/centre-model")
 
 async function getMyStall(req, res) {
     try {
@@ -11,11 +12,19 @@ async function getMyStall(req, res) {
             })
         }
 
-        res.status(200).json(stall)
+        const centres = await Centre.findBySerials([String(stall.serialNo)])
+        const centre = centres[0]
+
+        return res.status(200).json({
+            ...stall.toObject(),
+            centre_name:
+                centre?.name || `Centre ${stall.serialNo}`
+        })
 
     } catch (error) {
+        console.error(error)
         res.status(500).json({
-            message: "Failed to retrieve stall",
+            message: "Something went wrong. Please try again.",
             error: error.message
         })
     }
@@ -60,6 +69,7 @@ async function updateMyStallStatus(req, res) {
         res.status(200).json(stall)
 
     } catch (error) {
+        console.error(error)
         res.status(500).json({
             message: "Failed to update stall status",
             error: error.message
@@ -116,6 +126,7 @@ async function updateMyStallRestDays(req, res) {
         res.status(200).json(stall)
 
     } catch (error) {
+        console.error(error)
         res.status(500).json({
             message: "Failed to update rest days",
             error: error.message

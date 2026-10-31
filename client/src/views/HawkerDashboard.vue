@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from '../services/api'   // same axios, but adds the x-hawker-id header for us
+import axios, {getErrorMessage} from '../services/api'   // same axios, but adds the x-hawker-id header for us
 import { clearHawkerId } from '../services/authService'
 import { API_URL } from '../utils/constants'
 
@@ -55,8 +55,9 @@ async function loadStall() {
             errorMsg.value =
                 'You do not have an approved stall yet.'
         } else {
-            errorMsg.value =
-                'Unable to load your stall.'
+            errorMsg.value = getErrorMessage(
+                error, 'Unable to load your stall.'
+            )
         }
 
         return false
@@ -80,8 +81,9 @@ async function updateStatus(newStatus) {
         statusError.value = ''
 
     } catch (error) {
-        statusError.value =
-            'Unable to update stall status.'
+        statusError.value = getErrorMessage (
+            error, 'Unable to update stall status.'
+        )           
     }
 }
 
@@ -115,8 +117,9 @@ async function updateRestDays(newRestDays) {
 
         restDaysSuccess.value = ''
 
-        restDaysError.value =
-            'Unable to update rest days.'
+        restDaysError.value = getErrorMessage (
+            error, 'Unable to update rest days.'
+        )
     }
 }
 
@@ -132,8 +135,10 @@ async function loadDishes() {
         dishError.value= ''
 
     } catch (error) {
-        dishError.value =
+        dishError.value = getErrorMessage(
+            error, 
             'Unable to load dishes.'
+        )
     }
 }
 
@@ -148,8 +153,10 @@ async function deleteDish(id) {
         dishError.value = ''
 
     } catch (error) {
-        dishError.value =
+        dishError.value = getErrorMessage (
+            error, 
             'Unable to delete dish.'
+        )     
     }
 }
 
@@ -165,8 +172,10 @@ async function addDish(newDish) {
         dishError.value = ''
 
     } catch (error) {
-        dishError.value =
+        dishError.value = getErrorMessage (
+            error, 
             'Unable to add dish.'
+        )  
     }
 }
 
@@ -182,8 +191,9 @@ async function updateDish(id, updatedDish) {
         dishError.value = ''
 
     } catch (error) {
-        dishError.value =
-            'Unable to update dish.'
+        dishError.value = getErrorMessage (
+            error, 'Unable to update dish.'
+        )
     }
 }
 
@@ -207,8 +217,9 @@ async function loadShoutout() {
         shoutoutError.value = ''
 
     } catch (error) {
-        shoutoutError.value =
-            'Unable to load today\'s shout-out.'
+        shoutoutError.value = getErrorMessage(
+            error, 'Unable to load today\'s shout-out.'
+        )
     }
 }
 
@@ -230,8 +241,9 @@ async function saveShoutout() {
         shoutoutError.value = ''
 
     } catch (error) {
-        shoutoutError.value =
-            'Unable to save shout-out.'
+        shoutoutError.value = getErrorMessage (
+            error, 'Unable to save shout-out.'
+        )
     }
 }
 
@@ -294,7 +306,7 @@ onMounted(async () => {
                     <div>
 
                         <p class="lbl">
-                            Centre {{ stall.serialNo }}
+                            Centre {{ stall.centre_name }}
                         </p>
 
                         <h2 class="stall-name">
