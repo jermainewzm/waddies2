@@ -134,20 +134,10 @@ const pickedSerials = computed(() => {
 
 const picksLeft = computed(() => Math.max(MAX_PICKS - pickedSerials.value.length, 0))
 
-//picked centres with their names and who added them (ie. [{ serialNo: "72", name: "Maxwell Food Centre", added_by: "Angel" }])
-const pickedCentres = computed(() => {
-    if (!plan.value) {
-        return []
-    }
-    return plan.value.shortlist.map(item => {
-        const centre = allCentres.value.find(c => String(c.serialNo) === String(item.serialNo))
-        return {
-            serialNo: String(item.serialNo),
-            name: centre ? centre.name : `Centre ${item.serialNo}`,
-            added_by: item.added_by
-        }
-    })
-})
+//true if the group already picked this centre (shows a ✅ next to it in the lists)
+function isPicked(centre) {
+    return pickedSerials.value.includes(String(centre.serialNo))
+}
 
 //"2026-10-30" -> "Fri, 30 Oct"
 const friendlyDate = computed(() => {
@@ -162,7 +152,7 @@ const friendlyDate = computed(() => {
     })
 })
 
-//empty = no limit, otherwise must be more than $0 and at most $100
+//empty = no limit, otherwise must be $0.50 to $100
 const priceError = computed(() => {
     if (maxPrice.value === '' || maxPrice.value === null) {
         return ''
@@ -236,7 +226,7 @@ const addButtonText = computed(() => {
         return 'Adding…'
     }
     if (alreadyPicked.value) {
-        return '✓ In group picks'
+        return '✓ Picked'   //same words as the phone bar
     }
     if (cannotAddReason.value === '') {
         return '+ Add to picks'   //same words as the phone bar
@@ -284,8 +274,9 @@ async function loadPlan() {
         plan.value = response.data
 
         //host started swiping (or it's done): members go to the swipe page (same as PlanLobby)
-        if (plan.value.status !== 'joining' && me.value) {
-            router.replace(`/plan/${planCode}/swipe`)   //replace, so Back doesn't land here again
+        //swiping started (or done): members go to the swipe page, everyone else to the plan page (it shows "Too late!")
+        if (plan.value.status !== 'joining') {
+            router.replace(me.value ? `/plan/${planCode}/swipe` : `/plan/${planCode}`)   //replace, so Back doesn't land here again
             return
         }
 
@@ -437,7 +428,6 @@ onUnmounted(() => {
             <RouterLink to="/plan/new">Start a plan</RouterLink>
         </div>
 
-        <!-- plan couldn't load -->
         <!-- plan couldn't load (fake code, broken link, server down): the message + the team's Not Found page (same as JourneyView) -->
         <div v-else-if="planChecked && planLoadError">
             <div class="text-center pt-4">
@@ -449,13 +439,6 @@ onUnmounted(() => {
         </div>
 
         <!-- the actual page -->
-        <!-- plan already swiping or done (members are sent to the swipe page; this is for everyone else) -->
-        <div v-else-if="plan && plan.status !== 'joining'" class="card p-4 my-4">
-            <h1 class="h4">Picks are closed</h1>
-            <p>This plan has moved on to {{ plan.status === 'done' ? 'its results' : 'swiping' }}, so no more centres can be added.</p>
-            <RouterLink :to="`/plan/${planCode}`" class="btn red">Back to the plan</RouterLink>
-        </div>
-
         <template v-else-if="plan">
 
             <div class="top-row">
@@ -474,13 +457,6 @@ onUnmounted(() => {
                     Your group can pick up to {{ MAX_PICKS }} centres · your picks are swiped first, followed by nearby suggestions!
                 </span>
             </div>
-
-            <!-- which centres the group picked, and who added each -->
-            <ul v-if="pickedCentres.length > 0" class="pick-chips" aria-label="Group picks">
-                <li v-for="pick in pickedCentres" :key="pick.serialNo">
-                    {{ pick.name }}<small v-if="pick.added_by"> · {{ pick.added_by }}</small>
-                </li>
-            </ul>
 
             <!-- plan name, date, code -->
             <div class="plan-strip">
@@ -511,7 +487,7 @@ onUnmounted(() => {
                             class="match"
                             @click="pickTyped(centre.serialNo)"
                         >
-                            {{ suggested.includes(centre) ? '⭐ ' : '' }}{{ centre.name }}<template v-if="distanceKm(centre) !== null"> · {{ distanceKm(centre) }} km</template>
+                            {{ isPicked(centre) ? '✅ ' : '' }}{{ suggested.includes(centre) ? '⭐ ' : '' }}{{ centre.name }}<template v-if="distanceKm(centre) !== null"> · {{ distanceKm(centre) }} km</template>
                         </button>
                         <p v-if="centreMatches.length === 0" class="no-match">No open centre matches "{{ centreQuery.trim() }}"</p>
                     </div>
@@ -527,12 +503,12 @@ onUnmounted(() => {
                         <option value="" disabled>Choose a centre…</option>
                         <optgroup v-if="suggested.length > 0" label="Suggested">
                             <option v-for="centre in suggested" :key="'s' + centre.serialNo" :value="centre.serialNo">
-                                ⭐ {{ centre.name }} · {{ distanceKm(centre) }} km
+                                {{ isPicked(centre) ? '✅ ' : '' }}⭐ {{ centre.name }} · {{ distanceKm(centre) }} km
                             </option>
                         </optgroup>
                         <optgroup label="All open centres (A–Z)">
                             <option v-for="centre in openCentres" :key="centre.serialNo" :value="centre.serialNo">
-                                {{ centre.name }}<template v-if="distanceKm(centre) !== null"> · {{ distanceKm(centre) }} km</template>
+                                {{ isPicked(centre) ? '✅ ' : '' }}{{ centre.name }}<template v-if="distanceKm(centre) !== null"> · {{ distanceKm(centre) }} km</template>
                             </option>
                         </optgroup>
                     </select>
@@ -642,8 +618,8 @@ onUnmounted(() => {
 
             <!-- add bar stuck to the bottom of the screen (phones + tablets) -->
             <div v-if="menu" class="add-bar">
-                <span class="add-bar-name" :class="{ bad: menu.cannotEat.length > 0 }">
-                    {{ menu.cannotEat.length > 0 ? 'Not everyone can eat here' : menu.centre.name }}
+                <span class="add-bar-name" :class="{ bad: !menuLoading && menu.cannotEat.length > 0 }">
+                    {{ menuLoading ? 'Loading the menu…' : (menu.cannotEat.length > 0 ? 'Not everyone can eat here' : menu.centre.name) }}
                 </span>
                 <button
                     type="button"
@@ -1040,47 +1016,11 @@ main {
     }
 }
 
-/* group picks as chips under the counter */
-.pick-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 8px 0 0;
-    padding: 0;
-    list-style: none;
-}
-
-.pick-chips li {
-    padding: 4px 10px;
-    background: var(--paper);
-    border: 2px solid var(--ink);
-    border-radius: 999px;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.pick-chips small {
-    font-weight: 400;
-    color: var(--muted);
-}
-
-/* phones: the add-bar warning wraps instead of being cut off with "…" */
+/* the add-bar warning wraps instead of being cut off with "…" (the bar only shows below 992px) */
 .add-bar-name {
     white-space: normal;
     overflow: visible;
     font-size: 14px;
     line-height: 1.2;
-}
-
-/* landscape phones: slimmer add bar so more of the menu shows */
-@media (max-height: 500px) {
-    .add-bar {
-        padding: 4px 16px;
-    }
-
-    .add-bar .btn {
-        padding-top: 6px;
-        padding-bottom: 6px;
-    }
 }
 </style>

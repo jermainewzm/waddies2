@@ -79,9 +79,9 @@ function addButton(page) {
   return page.getByRole("button", { name: /add to/i }).filter({ visible: true }).first()
 }
 
-//the "already picked" button (laptop: "✓ In group picks", phone: "✓ Picked")
+//the "already picked" button ("✓ Picked" on laptop and phone)
 function pickedButton(page) {
-  return page.getByRole("button", { name: /in group picks|picked/i }).filter({ visible: true }).first()
+  return page.getByRole("button", { name: /picked/i }).filter({ visible: true }).first()
 }
 
 //asks the server for the plan's shortlist
@@ -121,7 +121,7 @@ test.describe("Centre Search: opening the page", () => {
     await page.goto(`/centre-search?plan=${code}`)
 
     await page.getByRole("link", { name: /back to plan lobby/i }).click()
-    await expect(page).toHaveURL(new RegExp(`/plan/${code}`))
+    await expect(page).toHaveURL(new RegExp(`/plan/${code}/lobby$`))
   })
 })
 
@@ -242,6 +242,36 @@ test.describe("Centre Search: when the host starts swiping", () => {
 
     //the page checks every 5 seconds, so allow up to 10
     await expect(page).toHaveURL(new RegExp(`/plan/${code}/swipe`), { timeout: 10000 })
+  })
+})
+
+test.describe("Centre Search: picks and closed plans", () => {
+  test("CS-16 a picked centre gets a ✅ in the dropdown, without saying who added it", async ({ page, request }) => {
+    const { code, hostId, friendId } = await makePlan(request)
+    const centre = await findOpenCentre(request)
+    const added = await request.post(`/api/plans/${code}/shortlist`, {
+      data: { serialNo: String(centre.serialNo), added_by: "Zhe Ming", member_id: friendId }
+    })
+    expect(added.ok()).toBeTruthy()
+
+    await actAs(page, code, hostId)
+    await page.goto(`/centre-search?plan=${code}`)
+
+    //the centre can be in both "Suggested" and "All open centres", so check every copy of it
+    const options = page.locator(`#centre-select option[value="${centre.serialNo}"]`)
+    await expect(options.first()).toContainText(`✅`)
+    await expect(options.last()).toContainText(`✅`)
+    await expect(page.locator("#centre-select")).not.toContainText("Zhe Ming")   //picks stay anonymous, so nobody is biased
+  })
+
+  test("CS-17 someone who isn't a member is sent to the plan page once swiping has started", async ({ page, request }) => {
+    const { code, hostId } = await makePlan(request)
+    const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
+    expect(start.ok()).toBeTruthy()
+
+    //this browser never joined, so it goes to the plan page (which says "Too late!"), not the swipe page
+    await page.goto(`/centre-search?plan=${code}`)
+    await expect(page).toHaveURL(new RegExp(`/plan/${code}$`))
   })
 })
 

@@ -31,7 +31,7 @@ async function loadLive() {
     const reported = openCentres.filter(centre => centre.crowd && centre.crowd.level)
     const notReported = openCentres.filter(centre => !centre.crowd || !centre.crowd.level)
     liveCentres.value = [...reported, ...notReported].slice(0, LIVE_COUNT)
-  } catch (error) {
+  } catch {   //the error itself isn't needed, we just show a friendly message
     liveError.value = "Can't load the centres right now."
   } finally {
     liveLoading.value = false
@@ -128,7 +128,7 @@ function statusPill() {
           <p class="live-badge"><span class="live-dot"></span> LIVE</p>
           <h2 class="section-title outline" style="color: var(--paper)">Live centre status</h2>
           <p class="section-lead left">Open today, and how crowded right now, from what diners reported in the last hour.</p>
-          <p v-if="closedToday > 0" class="closed-fact">🧹 {{ closedToday }} hawker centres are closed today for cleaning or works. HawkerHop leaves them out of your plan.</p>
+          <p v-if="closedToday > 0" class="closed-fact">🧹 {{ closedToday }} hawker {{ closedToday === 1 ? 'centre is' : 'centres are' }} closed today for cleaning or works. HawkerHop leaves {{ closedToday === 1 ? 'it' : 'them' }} out of your plan.</p>
           <RouterLink class="btn big yellow" to="/centres">See all {{ openCount > 0 ? openCount + ' open' : '' }} centres →</RouterLink>
         </div>
 
