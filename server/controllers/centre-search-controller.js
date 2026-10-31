@@ -172,3 +172,4 @@ exports.getCentreMenu = async (req, res) => {
         res.status(500).json({ error: "Could not load this centre's menu." })
     }
 }
+exports.getClosedReason = getClosedReason //exported so the unit tests can check the closed rules

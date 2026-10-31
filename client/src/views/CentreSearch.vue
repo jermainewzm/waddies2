@@ -6,6 +6,7 @@ import axios from 'axios'
 import { API_URL } from '@/utils/constants'
 
 import CentreMenu from '../components/CentreMenu.vue'
+import NotFoundView from './NotFoundView.vue'   //team's Not Found page, shown under URL errors
 
 const MAX_PICKS = 10        //whole group can pick up to 10 centres (same as plan-controller)
 const SUGGESTED_COUNT = 5   //how many nearest centres to suggest
@@ -133,6 +134,21 @@ const pickedSerials = computed(() => {
 
 const picksLeft = computed(() => Math.max(MAX_PICKS - pickedSerials.value.length, 0))
 
+//picked centres with their names and who added them (ie. [{ serialNo: "72", name: "Maxwell Food Centre", added_by: "Angel" }])
+const pickedCentres = computed(() => {
+    if (!plan.value) {
+        return []
+    }
+    return plan.value.shortlist.map(item => {
+        const centre = allCentres.value.find(c => String(c.serialNo) === String(item.serialNo))
+        return {
+            serialNo: String(item.serialNo),
+            name: centre ? centre.name : `Centre ${item.serialNo}`,
+            added_by: item.added_by
+        }
+    })
+})
+
 //"2026-10-30" -> "Fri, 30 Oct"
 const friendlyDate = computed(() => {
     if (!plan.value) {
@@ -152,7 +168,7 @@ const priceError = computed(() => {
         return ''
     }
     const price = Number(maxPrice.value)
-    if (Number.isNaN(price) || price <= 0 || price > MAX_PRICE_LIMIT) {
+    if (Number.isNaN(price) || price < 0.5 || price > MAX_PRICE_LIMIT) {
         return `Max price must be between $0.50 and $${MAX_PRICE_LIMIT}.`
     }
     return ''
@@ -194,6 +210,9 @@ const showAllDishes = computed(() => dishQuery.value.trim() !== '')
 
 //why the add button can't be used ('' = can add)
 const cannotAddReason = computed(() => {
+    if (menuLoading.value) {
+        return 'Loading the menu…'
+    }
     if (!me.value) {
         return 'Join the plan to add centres'
     }
@@ -220,7 +239,7 @@ const addButtonText = computed(() => {
         return '✓ In group picks'
     }
     if (cannotAddReason.value === '') {
-        return '+ Add to group picks'
+        return '+ Add to picks'   //same words as the phone bar
     }
     return "Can't add"
 })
@@ -229,6 +248,9 @@ const addButtonText = computed(() => {
 const addBarText = computed(() => {
     if (adding.value) {
         return 'Adding…'
+    }
+    if (menuLoading.value) {
+        return 'Loading…'
     }
     if (alreadyPicked.value) {
         return '✓ Picked'
@@ -242,7 +264,7 @@ const addBarText = computed(() => {
 //ie. "Wei Jie (🌙 Halal, $5 budget)"
 function describeMember(member) {
     const option = DIET_OPTIONS.find(item => item.value === member.diet)
-    const dietText = member.diet === 'any' ? 'no diet' : option.label
+    const dietText = member.diet === 'any' ? 'no diet' : (option ? option.label : member.diet)   //unknown diet: show it as it is instead of crashing
     return `${member.name} (${dietText}, $${member.budget} budget)`
 }
 
@@ -263,7 +285,7 @@ async function loadPlan() {
 
         //host started swiping (or it's done): members go to the swipe page (same as PlanLobby)
         if (plan.value.status !== 'joining' && me.value) {
-            router.push(`/plan/${planCode}/swipe`)
+            router.replace(`/plan/${planCode}/swipe`)   //replace, so Back doesn't land here again
             return
         }
 
@@ -276,7 +298,7 @@ async function loadPlan() {
     } catch (error) {
         //only show the error page if the plan never loaded (keeps the page if a refresh fails)
         if (!plan.value) {
-            planLoadError.value = error.response ? error.response.data.error : "Can't reach the server."
+            planLoadError.value = (error.response && error.response.data && error.response.data.error) || "We couldn't load this plan. Check the link, or try again in a moment."
         }
     } finally {
         planChecked.value = true
@@ -297,13 +319,14 @@ async function loadCentres() {
             chooseCentre(suggested.value[0].serialNo)
         }
     } catch (error) {
-        centresError.value = error.response ? error.response.data.error : "Can't reach the server."
+        centresError.value = (error.response && error.response.data && error.response.data.error) || "Can't reach the server."
     }
 }
 
 //chosen centre's stalls + dishes (runs when the dropdown changes)
 async function loadMenu() {
-    if (selectedSerialNo.value === '') {
+    const wanted = selectedSerialNo.value   //the centre this request is for
+    if (wanted === '') {
         menu.value = null
         return
     }
@@ -312,13 +335,21 @@ async function loadMenu() {
     addError.value = ''
     openStallIds.value = []   //new centre so all stalls start closed
     try {
-        const response = await axios.get(`${API_URL}/centre-search/plans/${planCode}/centres/${selectedSerialNo.value}`)
+        const response = await axios.get(`${API_URL}/centre-search/plans/${planCode}/centres/${wanted}`)
+        if (wanted !== selectedSerialNo.value) {
+            return   //another centre was chosen meanwhile: ignore this older answer
+        }
         menu.value = response.data
     } catch (error) {
+        if (wanted !== selectedSerialNo.value) {
+            return
+        }
         menu.value = null
-        menuError.value = error.response ? error.response.data.error : "Can't reach the server."
+        menuError.value = (error.response && error.response.data && error.response.data.error) || "Can't reach the server."
     } finally {
-        menuLoading.value = false
+        if (wanted === selectedSerialNo.value) {
+            menuLoading.value = false
+        }
     }
 }
 
@@ -358,7 +389,7 @@ async function addToPicks() {
         })
         await loadPlan()   //refresh so the dots update straight away
     } catch (error) {
-        addError.value = error.response ? error.response.data.error : "Can't reach the server."
+        addError.value = (error.response && error.response.data && error.response.data.error) || "Can't reach the server."
     } finally {
         adding.value = false
     }
@@ -371,12 +402,17 @@ function blockBadKeys(event) {
     }
 }
 
+let left = false   //true once you've left the page, so a late request can't start the timer
+
 onMounted(async () => {
     if (!planCode) {
         planChecked.value = true
         return
     }
     await loadPlan()
+    if (left) {
+        return
+    }
     if (plan.value) {
         loadCentres()
         refreshTimer = setInterval(loadPlan, 5000)   //new picks from others show up within 5 sec
@@ -384,6 +420,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+    left = true
     clearInterval(refreshTimer)
 })
 </script>
@@ -401,12 +438,24 @@ onUnmounted(() => {
         </div>
 
         <!-- plan couldn't load -->
-        <div v-else-if="planChecked && planLoadError" class="card p-4 my-4">
-            <p>{{ planLoadError }}</p>
-            <RouterLink to="/plan/join">Join a plan</RouterLink>
+        <!-- plan couldn't load (fake code, broken link, server down): the message + the team's Not Found page (same as JourneyView) -->
+        <div v-else-if="planChecked && planLoadError">
+            <div class="text-center pt-4">
+                <div class="alert alert-danger d-inline-block px-4 py-3 mb-0">
+                    <strong>Oops!</strong> {{ planLoadError }}
+                </div>
+            </div>
+            <NotFoundView />
         </div>
 
         <!-- the actual page -->
+        <!-- plan already swiping or done (members are sent to the swipe page; this is for everyone else) -->
+        <div v-else-if="plan && plan.status !== 'joining'" class="card p-4 my-4">
+            <h1 class="h4">Picks are closed</h1>
+            <p>This plan has moved on to {{ plan.status === 'done' ? 'its results' : 'swiping' }}, so no more centres can be added.</p>
+            <RouterLink :to="`/plan/${planCode}`" class="btn red">Back to the plan</RouterLink>
+        </div>
+
         <template v-else-if="plan">
 
             <div class="top-row">
@@ -425,6 +474,13 @@ onUnmounted(() => {
                     Your group can pick up to {{ MAX_PICKS }} centres · your picks are swiped first, followed by nearby suggestions!
                 </span>
             </div>
+
+            <!-- which centres the group picked, and who added each -->
+            <ul v-if="pickedCentres.length > 0" class="pick-chips" aria-label="Group picks">
+                <li v-for="pick in pickedCentres" :key="pick.serialNo">
+                    {{ pick.name }}<small v-if="pick.added_by"> · {{ pick.added_by }}</small>
+                </li>
+            </ul>
 
             <!-- plan name, date, code -->
             <div class="plan-strip">
@@ -981,6 +1037,50 @@ main {
 @media (min-width: 1200px) {
     .layout {
         grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+    }
+}
+
+/* group picks as chips under the counter */
+.pick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pick-chips li {
+    padding: 4px 10px;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.pick-chips small {
+    font-weight: 400;
+    color: var(--muted);
+}
+
+/* phones: the add-bar warning wraps instead of being cut off with "…" */
+.add-bar-name {
+    white-space: normal;
+    overflow: visible;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+/* landscape phones: slimmer add bar so more of the menu shows */
+@media (max-height: 500px) {
+    .add-bar {
+        padding: 4px 16px;
+    }
+
+    .add-bar .btn {
+        padding-top: 6px;
+        padding-bottom: 6px;
     }
 }
 </style>

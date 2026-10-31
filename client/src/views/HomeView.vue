@@ -17,16 +17,19 @@ const steps = [
 const LIVE_COUNT = 5
 const liveCentres = ref([])     //ie. [{ id, name, address, crowd: { level, label } }]
 const openCount = ref(0)        //how many centres are open today
+const closedToday = ref(0)      //how many are closed today (NEA cleaning / works)
 const liveLoading = ref(true)
 const liveError = ref('')
 
 //open centres, the ones people reported on first (more interesting), keep a few
 async function loadLive() {
   try {
-    const data = await getCentres({ openOnly: true })
-    openCount.value = data.centres.length
-    const reported = data.centres.filter(centre => centre.crowd && centre.crowd.level)
-    const notReported = data.centres.filter(centre => !centre.crowd || !centre.crowd.level)
+    const data = await getCentres()   //every centre, so the closed ones can be counted too
+    const openCentres = data.centres.filter(centre => centre.isOpen)
+    openCount.value = openCentres.length
+    closedToday.value = data.centres.length - openCentres.length
+    const reported = openCentres.filter(centre => centre.crowd && centre.crowd.level)
+    const notReported = openCentres.filter(centre => !centre.crowd || !centre.crowd.level)
     liveCentres.value = [...reported, ...notReported].slice(0, LIVE_COUNT)
   } catch (error) {
     liveError.value = "Can't load the centres right now."
@@ -125,6 +128,7 @@ function statusPill() {
           <p class="live-badge"><span class="live-dot"></span> LIVE</p>
           <h2 class="section-title outline" style="color: var(--paper)">Live centre status</h2>
           <p class="section-lead left">Open today, and how crowded right now, from what diners reported in the last hour.</p>
+          <p v-if="closedToday > 0" class="closed-fact">🧹 {{ closedToday }} hawker centres are closed today for cleaning or works. HawkerHop leaves them out of your plan.</p>
           <RouterLink class="btn big yellow" to="/centres">See all {{ openCount > 0 ? openCount + ' open' : '' }} centres →</RouterLink>
         </div>
 
@@ -688,4 +692,21 @@ function statusPill() {
 .bg-hdb   { background-color: var(--sky); }
 .bg-hooks { background-color: var(--pandan); }
 .bg-tiles { background-color: var(--cream); }
+
+/* the live fact under "Live centre status" */
+.closed-fact {
+  max-width: 640px;
+  margin: 10px 0 18px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+@media (max-width: 767px) {
+  .closed-fact {
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 15px;
+    text-align: center;
+  }
+}
 </style>
