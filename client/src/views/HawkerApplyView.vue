@@ -29,7 +29,7 @@ const hasExistingRequest = !!getRequestId()
 onMounted(async () => {
   try {
     centres.value = await getCentreOptions()
-  } catch (error) {
+  } catch {
     errorMsg.value = "Unable to load the hawker centres. Please refresh."
   } finally {
     loadingCentres.value = false

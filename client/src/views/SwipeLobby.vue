@@ -43,7 +43,6 @@ async function loadPlan() {
     const response = await axios.get(`${API_URL}/plans/${code}`)
     plan.value = response.data
 
-    console.log("Shortlist:", plan.value.shortlist)
     let isMember = false
 
     for (let member of plan.value.members) {
@@ -252,7 +251,7 @@ onUnmounted(() => {
             <RouterLink to="/centres" class="btn">Browse centres</RouterLink>
           </div>
         </div>
-        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)"class="btn red w-100 mb-4"> Take me there!</button>
+        <button v-if="winner" v-on:click="router.push(`/plan/${code}/journey`)" class="btn red w-100 mb-4"> Take me there!</button>
         <!-- only show the votes when there is a winner (with no match they would all be 0) -->
         <template v-if="winner">
           <h3 class="h6 fw-bold mb-2">All centres</h3>

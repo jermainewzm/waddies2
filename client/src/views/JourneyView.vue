@@ -78,7 +78,7 @@ function goBack() {
 
 function getMRTLine(line) {
     const lineNames = {
-        TE: "Thompson East Coast Line",
+        TE: "Thomson-East Coast Line",
         NE: "North East Line",
         NS: "North South Line",
         EW: "East West Line",
