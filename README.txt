@@ -172,6 +172,12 @@ A full run takes about 2–3 minutes. The two-person tests are the slow ones (30
 | `swipe.spec.js` | Both people say yes to every card: both see the same winner ("2 of 2"), the waiting screen shows "1 of 2 finished", "Take me there!" opens the journey page and "See live seats" opens the winning centre. Both skip every card: both see "No match this time" and no "Take me there!" button | Real |
 | `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
 | `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px | Mocked |
+| `centre-search.spec.js` | Opening Centre Search with no code, a fake code or a broken link shows an error; searching by name, dish and max price; a member adds a centre and a friend sees it without reloading; the phone Add bar; members are sent to swiping when the host starts; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real |
+| `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres; no sideways scrolling on an iPhone-sized screen | Real |
+| `hawker-login.spec.js` | A valid hawker logs in; a wrong stall name is refused; both fields are required; the hawker ID is not case-sensitive | Real |
+| `hawker-dashboard.spec.js` | A logged-in hawker sees the dashboard, their stall's details, and can update the stall status | Real |
+| `hawker-application.spec.js` | A new hawker opens the application page; required fields are checked; an application is submitted | Real |
+| `admin.spec.js` | A valid admin logs in; an invalid admin ID is refused; the dashboard lists hawker applications | Real |
 
 **How the tests are built**
 
@@ -223,6 +229,10 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 - All SVG illustrations: the food-friend avatars and icons in `components/HawkerArt.vue`, the animated kopitiam scene in `components/HawkerScene.vue`, and the background patterns in `client/src/assets/`.
 - The CSS keyframe animations in `HawkerScene.vue`.
 
+### Code
+
+- `decodePolyline()` in `client/src/views/JourneyView.vue`, which turns OneMap's encoded route geometry into map coordinates, was written with AI.
+
 ### Tests
 
 - The Vitest unit tests in `server/tests/` were generated with AI from our own function signatures, then checked and extended by us.
@@ -231,9 +241,7 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 
 ### Written by us
 
-- All application logic: the shortlist funnel (midpoint, closure checks, diet and budget matching, crowd and price ranking), the OneMap routing integration, the plan/join/swipe/results flow, every backend endpoint, and the NEA data import and seed scripts.
-
-> **Teammates: add your own sections here.**
+- All application logic: the shortlist funnel (midpoint, closure checks, diet and budget matching, crowd and price ranking), the OneMap routing integration (apart from the polyline decoding above), the plan/join/swipe/results flow, every backend endpoint, and the NEA data import and seed scripts.
 
 ---
 
