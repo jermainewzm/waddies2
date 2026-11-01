@@ -2,7 +2,7 @@ const Admin = require("../models/admin-model")
 
 async function verifyAdmin(req, res) {
     try {
-        const { admin_id } = req.body
+        const { admin_id } = req.body || {}
 
         if (!admin_id) {
             return res.status(400).json({

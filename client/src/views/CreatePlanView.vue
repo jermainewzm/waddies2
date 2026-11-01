@@ -231,6 +231,10 @@ function formatTime(time) {
 
 <style scoped>
 
+main {
+  min-height: calc(100vh - 72px);   /* full screen minus the 72px header, so no yellow shows below on big screens */
+}
+
 
 .plan-name {
   font-size: 24px;
