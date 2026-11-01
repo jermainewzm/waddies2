@@ -129,12 +129,15 @@ async function submit() {
 
             <p v-if="errorMsg" class="text-danger fw-bold mt-3 mb-0">{{ errorMsg }}</p>
 
-            <div class="hh-tip">
-              <span>💡</span>
-              <p class="mb-0 fw-bold">
+            <div class="switch-card">
+              <span class="switch-icon">🔑</span>
+
+              <span>
                 Already approved?
-                <RouterLink to="/hawker/login">Hawker login</RouterLink>
-              </p>
+                <RouterLink to="/hawker/login">
+                  Hawker login
+                </RouterLink>
+              </span>
             </div>
           </div>
         </div>
@@ -147,5 +150,40 @@ async function submit() {
 <style scoped>
 main {
   min-height: calc(100vh - 72px);   /* full screen minus the 72px header */
+}
+
+.switch-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    margin-top: 18px;
+    padding: 10px 14px;
+
+    background: var(--paper);
+
+    border: 2px dashed var(--ink);
+    border-radius: 14px;
+
+    box-shadow: 3px 3px 0 var(--ink);
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.switch-icon {
+    font-size: 16px;
+}
+
+.switch-card a {
+    color: var(--tomato);
+    font-weight: 800;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+.switch-card a:hover {
+    opacity: 0.8;
 }
 </style>
