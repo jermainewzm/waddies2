@@ -306,7 +306,7 @@ onMounted(async () => {
                     <div>
 
                         <p class="lbl">
-                            Centre {{ stall.centre_name }}
+                            {{ stall.centre_name }}
                         </p>
 
                         <h2 class="stall-name">
