@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { futureDate } from "./helpers.js"
 
 test("an unknown page shows the NotFoundView.vue page", async ({ page }) => {
   // 1. go to a page that doesn't exist
@@ -51,7 +52,7 @@ test("a budget under $5 shows an error in the lobby", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("link", { name: /start a makan plan/i }).first().click()
   await page.getByRole("textbox", { name: /plan name/i }).fill("saturday lunch")
-  await page.getByRole("textbox", { name: /date/i }).fill("2026-12-26")
+  await page.getByRole("textbox", { name: /date/i }).fill(futureDate())
   await page.getByRole("textbox", { name: /time/i }).fill("12:30")
   await page.getByRole("button", { name: /create plan/i }).click()
 

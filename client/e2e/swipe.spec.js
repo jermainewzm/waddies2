@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { futureDate } from "./helpers.js"
 
 test("two people who both say yes to every centre see the same winner", async ({ browser }) => {
   //setup, swiping and the 5 second refreshes take longer than the default 30s
@@ -14,7 +15,7 @@ test("two people who both say yes to every centre see the same winner", async ({
   await hostPage.goto("/")
   await hostPage.getByRole("link", { name: /start a makan plan/i }).first().click()
   await hostPage.getByRole("textbox", { name: /plan name/i }).fill("saturday lunch")
-  await hostPage.getByRole("textbox", { name: /date/i }).fill("2026-12-26")
+  await hostPage.getByRole("textbox", { name: /date/i }).fill(futureDate())
   await hostPage.getByRole("textbox", { name: /time/i }).fill("12:30")
   await hostPage.getByRole("button", { name: /create plan/i }).click()
 
@@ -133,7 +134,7 @@ test("two people who skip every centre will see no match", async ({ browser }) =
   await hostPage.goto("/")
   await hostPage.getByRole("link", { name: /start a makan plan/i }).first().click()
   await hostPage.getByRole("textbox", { name: /plan name/i }).fill("saturday lunch")
-  await hostPage.getByRole("textbox", { name: /date/i }).fill("2026-12-26")
+  await hostPage.getByRole("textbox", { name: /date/i }).fill(futureDate())
   await hostPage.getByRole("textbox", { name: /time/i }).fill("12:30")
   await hostPage.getByRole("button", { name: /create plan/i }).click()
 

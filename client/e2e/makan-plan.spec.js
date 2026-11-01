@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { futureDate } from "./helpers.js"
 
 test("two people can create a plan, join it and start swiping", async ({ browser }) => {
   //separate contexts so each has its own localStorage, like two different people
@@ -12,7 +13,7 @@ test("two people can create a plan, join it and start swiping", async ({ browser
   await hostPage.goto("/")
   await hostPage.getByRole("link", { name: /start a makan plan/i }).first().click()
   await hostPage.getByRole("textbox", { name: /plan name/i }).fill("saturday lunch")
-  await hostPage.getByRole("textbox", { name: /date/i }).fill("2026-12-26")
+  await hostPage.getByRole("textbox", { name: /date/i }).fill(futureDate())
   await hostPage.getByRole("textbox", { name: /time/i }).fill("12:30")
   await hostPage.getByRole("button", { name: /create plan/i }).click()
 
