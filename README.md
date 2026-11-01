@@ -155,7 +155,7 @@ We run Chromium only because the app is graded in Google Chrome. Run without `--
 Other useful commands:
 
 ```bash
-pnpm exec playwright test swipe --project=chromium        # one spec file
+pnpm exec playwright test <file-name> --project=chromium  # one spec file, e.g. swipe or centre-search
 pnpm exec playwright test --project=chromium --ui         # watch tests run step by step
 pnpm exec playwright test --project=chromium --workers=2  # fewer tests at once, if the backend is slow
 pnpm exec playwright show-report                          # open the HTML report of the last run
@@ -190,7 +190,7 @@ A full run takes about 2–3 minutes. The two-person tests are the slow ones (30
 
 **Database note**
 
-The tests that use the real backend create a new plan (named "saturday lunch") on every run. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them.
+The tests that use the real backend write real records on every run: plans named "saturday lunch" and "e2e centre search", and hawker applications named "Playwright Test Stall". The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
 
 ---
 
@@ -227,7 +227,6 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 - The colour palette and design tokens in `client/src/assets/main.css`.
 - Shared component styles: buttons, cards, chips, form inputs.
 - All SVG illustrations: the food-friend avatars and icons in `components/HawkerArt.vue`, the animated kopitiam scene in `components/HawkerScene.vue`, and the background patterns in `client/src/assets/`.
-- The CSS keyframe animations in `HawkerScene.vue`.
 
 ### Code
 
@@ -235,9 +234,12 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 
 ### Tests
 
-- The Vitest unit tests in `server/tests/` were generated with AI from our own function signatures, then checked and extended by us.
-- `client/e2e/swipe.spec.js` and `client/e2e/validation.spec.js` were drafted with AI (Claude), following the style of our own `makan-plan.spec.js`. We then ran them, fixed the failures (timeouts under parallel load, the renamed "Skip!" button, the lobby's new error card) and added our own cases and test ids.
+- The Vitest unit tests in `server/tests/` were written by us first, then cross-checked with AI.
 - `client/e2e/makan-plan.spec.js` and `leaflet-map.spec.js` are ours, with selectors found using Playwright's codegen recorder.
+
+### Documentation
+
+- This README was written with AI help (Claude), then checked against the code and edited by us.
 
 ### Written by us
 
@@ -252,7 +254,6 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 - **Members can't change their diet or budget after joining.** They would need to rejoin or start a new plan.
 - **NEA's data has closure dates but not opening hours**, so a plan at 4am produces a shortlist of centres that are closed. We warn on the create page rather than blocking it.
 - **The host is whoever joins first.** This matches the usual flow — you create a plan, add your own details, then share the code — but it isn't enforced.
-- **Live updates use polling, not websockets.** The lobby and swipe pages refresh every five seconds, so changes appear within that window rather than instantly.
 
 ---
 
