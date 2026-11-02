@@ -152,11 +152,11 @@ function formatTime(time) {
                 <input id="time" v-model="time" type="time" class="form-control cute-input" :class="{ empty: !time }" :min="minTime" />
                 <span v-if="!time" class="picker-hint">🕒 Tap to pick a time</span>
               </div>
-              <p v-if="isOddHour" class="text-danger fw-bold small mb-0 mt-1">
-                NOTE: Most hawker centres are closed at this hour, and public transport may not be running.
-              </p>
             </div>
             </div>
+            <p v-if="isOddHour" class="text-danger fw-bold small mb-2">
+              NOTE: Most hawker centres and public transport are closed at this hour.
+            </p>
 
             <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating">{{ isCreating ? 'Creating...' : "Create Plan →" }}</button>
           </form>
