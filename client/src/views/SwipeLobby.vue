@@ -41,6 +41,9 @@ const winner = computed(() => {
 async function loadPlan() {
   try {
     const response = await axios.get(`${API_URL}/plans/${code}`)
+    if (left) {
+      return    //they left while this was loading, so don't redirect them back
+    }
     plan.value = response.data
 
     let isMember = false
@@ -183,12 +186,19 @@ function onPointerUp() {
   }
 }
 
+let left = false      //true once the person has left this page
+
 onMounted(async () => {
     await loadPlan()
-
+    if (left) {
+      return
+    }
     //only fetch cards if swiping status
     if (plan.value && plan.value.status === "swiping" && !finished.value) {
       await loadCards()
+      if (left) {     //they left while the cards were loading, so don't start the timer
+        return
+      }
     }
     isLoading.value = false
 
@@ -202,6 +212,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  left = true
   clearInterval(refreshTimer)
 })
 </script>
