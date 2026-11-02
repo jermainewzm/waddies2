@@ -24,6 +24,17 @@ async function createHawkerRequest(req, res) {
             })
         }
 
+        const occupiedUnit = await Stall.findOne({
+            serialNo: serialNo.trim(),
+            unit_no: unit_no.trim()
+        })
+
+        if (occupiedUnit) {
+            return res.status(409).json({
+                message: "This unit is already occupied in the selected hawker centre."
+            })
+        }
+
         // prevent duplicate pending requests for same stall/unit
         const existingRequest =
         await HawkerRequest.findOne({
