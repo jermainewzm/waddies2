@@ -158,7 +158,10 @@ function formatTime(time) {
               NOTE: Most hawker centres and public transport are closed at this hour.
             </p>
 
-            <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating">{{ isCreating ? 'Creating...' : "Create Plan →" }}</button>
+            <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating">
+              <span v-if="isCreating" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              {{ isCreating ? 'Creating...' : "Create Plan →" }}
+            </button>
           </form>
 
         <p v-if="errorMessage" class="error-message text-danger mt-3">{{ errorMessage }}</p>

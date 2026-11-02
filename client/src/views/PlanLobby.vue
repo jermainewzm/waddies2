@@ -402,7 +402,10 @@ onUnmounted(() => {
           </div>
 
           <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-          <button type="submit" class="btn red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">{{ isJoining ? "Joining..." : "I'm in!" }}</button>
+          <button type="submit" class="btn red w-100" v-bind:disabled="isJoining || selectedLat === null || selectedLng === null || name.trim() === '' ||budget === ''">
+            <span v-if="isJoining" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            {{ isJoining ? "Joining..." : "I'm in!" }}
+          </button>
         </form>
 
         <!--arrived after swiping started -->
