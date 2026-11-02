@@ -263,15 +263,15 @@ exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, co
 
     const pickedIds = []
     for (const centre of pickedCentres) {
-        pickedIds.push(String(centre._id))
+        pickedIds.push(String(centre.serialNo))
     }
 
     // 1. put both lists together, without duplicates
     const allCentres = []
     const seenIds = []
     for (const centre of [...pickedCentres, ...rankedCentres]) {
-        if (!seenIds.includes(String(centre._id))) {
-            seenIds.push(String(centre._id))
+        if (!seenIds.includes(String(centre.serialNo))) {
+            seenIds.push(String(centre.serialNo))
             allCentres.push(centre)
         }
     }
@@ -298,7 +298,7 @@ exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, co
         }
         const dishes = await exports.getValidDishes(centre, plan.date)
         // nearby centres must suit everyone, but centre that is manually added is always kept
-        if (!pickedIds.includes(String(centre._id)) && !exports.canEveryoneEat(plan.members, dishes)) {
+        if (!pickedIds.includes(String(centre.serialNo)) && !exports.canEveryoneEat(plan.members, dishes)) {
             continue
         }
 
@@ -335,27 +335,37 @@ exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, co
         })
     }
 
-    // 4. picked centres goes first, then the nearby ones. 
-    // Each group is sorted best (lowest score) first
-    const pickedScored = []
-    const otherScored = []
-    for (const item of scored) {
-        if (pickedIds.includes(String(item.centre._id))) {
-            pickedScored.push(item)
-        } else {
-            otherScored.push(item)
-        }
+    // 4. the group's picks go first, then the backend's own best nearby centres.
+    // A pick that is also one of the best nearby centres is shown once (as a pick)
+    // and does NOT make the backend add the next best centre in its place.
+    const rankedSerials = []
+    for (const centre of rankedCentres) {
+        rankedSerials.push(String(centre.serialNo))
     }
 
-    pickedScored.sort((a,b) => a.score - b.score)
-    otherScored.sort((a,b) => a.score - b.score)
-
-    // Every manually selected "pick" first, then the best nearby centres after
-    const total = pickedScored.length + count
+    const pickedScored = []
+    const nearbyScored = []
+    for (const item of scored) {
+        const serialNo = String(item.centre.serialNo)
+        if (pickedIds.includes(serialNo)) {
+            pickedScored.push(item)
+        }
+        if (rankedSerials.includes(serialNo)) {   // a centre can be in both lists
+            nearbyScored.push(item)
+        }
+    }
+    pickedScored.sort((a, b) => a.score - b.score)
+    nearbyScored.sort((a, b) => a.score - b.score)
 
     const best = []
-    for (const item of [...pickedScored, ...otherScored].slice(0, total)) {
+    for (const item of pickedScored) {
         best.push(item.centre)
+    }
+    // the backend's top `count`, skipping the ones that are already picks
+    for (const item of nearbyScored.slice(0, count)) {
+        if (!pickedIds.includes(String(item.centre.serialNo))) {
+            best.push(item.centre)
+        }
     }
     return best
 }

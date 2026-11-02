@@ -14,7 +14,7 @@ Group hawker centre decisions, settled. One code for the whole group, everyone's
 - **Hawker Dashboard** — stall owners set their status, rest days, menu and shout-outs.
 - **Hawker & admin accounts** — new hawkers apply for a stall, admins approve.
 
----
+--- 
 
 ## Tech stack
 
