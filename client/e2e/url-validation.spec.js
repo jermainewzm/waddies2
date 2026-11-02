@@ -4,7 +4,7 @@ import { createPlanViaApi, joinViaApi, actAsMember } from "./helpers.js"
 
 test.describe("URLs typed by hand", () => {
   test("a stale member id does not cause a redirect loop", async ({ page, request }) => {
-    test.setTimeout(10000)
+    test.setTimeout(30000)   //starting swiping ranks every centre so we set a timeout for the test to run
     const code = await createPlanViaApi(request)
     const host = await joinViaApi(request, code, "Host")
     await joinViaApi(request, code, "Friend")
@@ -34,7 +34,7 @@ test.describe("URLs typed by hand", () => {
   })
 
   test("leaving the swipe page does not pull you back", async ({ page, request }) => {
-    test.setTimeout(10000)
+    test.setTimeout(30000)   
     const code = await createPlanViaApi(request)
     const host = await joinViaApi(request, code, "Host")
     await joinViaApi(request, code, "Friend")
