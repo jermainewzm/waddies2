@@ -26,7 +26,7 @@ Vue 3 + Vite · Express 5 · MongoDB Atlas (Mongoose) · Leaflet · OneMap API (
 
 ### Prerequisites
 
-- Node.js 22.18.0 or later within the 22.x series, or 24.12.0 or later.
+- Node.js 22 (22.18.0+) or Node.js 24 (24.12.0+)
 - pnpm 12.8.1
 - A MongoDB Atlas cluster
 - A OneMap account
@@ -54,7 +54,7 @@ ONEMAP_PASSWORD=your_onemap_password
 PORT=8000
 ```
 
-The client needs no `.env`. The Vite development server proxies `/api` to `localhost:8000` (see `vite.config.js`), and in production Vercel rewrites `/api` to the server service on the same domain.
+The client needs no `.env`. In development, Vite forwards any `/api` request to the backend on `localhost:8000` (see `vite.config.js`). In production, Vercel sends `/api` to the server on the same domain.
 
 ### Seeding
 
@@ -142,7 +142,7 @@ cd server
 pnpm dev
 ```
 
-Wait for `API running on http://localhost:8000`. Without it, the plan tests fail with `ECONNREFUSED` in the Vite log.
+Wait for `API running on http://localhost:8000`. Without it, the plan tests fail, and the terminal running Vite shows `ECONNREFUSED` (it couldn't reach the backend).
 
 **3. Run the tests** from `client/`:
 
@@ -150,7 +150,7 @@ Wait for `API running on http://localhost:8000`. Without it, the plan tests fail
 pnpm exec playwright test --project=chromium
 ```
 
-We run Chromium only because the app is graded in Google Chrome. Run without `--project=chromium` only if you have also installed Firefox and WebKit (`pnpm exec playwright install`).
+We run Chromium only because the project briefing says the app is graded in Google Chrome. It is the only browser set up in `playwright.config.js`, so `--project=chromium` is optional for now (`pnpm exec playwright test` runs the same tests).
 
 Other useful commands:
 
@@ -165,12 +165,19 @@ A full run takes about 2–3 minutes. The two-person tests are the slow ones (30
 
 **What the E2E tests cover**
 
-| Spec | User journey | Backend |
+The last column says where each test gets its data:
+
+- **Real**: the test talks to the actual Express server and MongoDB, so it only passes if the frontend, backend and database all work together. These tests need the backend running.
+- **Mocked**: the test swaps the API for fixed fake responses (with `page.route`), so it only checks how the page displays data. It doesn't need the backend.
+- **None**: the test never calls the API (e.g. the 404 page).
+
+| Spec | User journey | Server |
 |---|---|---|
 | `makan-plan.spec.js` | Host creates a plan and gets a 6-digit code, joins with a map pin; a friend joins with a postal code; the host's lobby picks up the friend; the host starts swiping and both people land on the swipe page | Real |
 | `leaflet-map.spec.js` | Host creates a plan and joins by clicking the Leaflet map | Real |
 | `swipe.spec.js` | Both people say yes to every card: both see the same winner ("2 of 2"), the waiting screen shows "1 of 2 finished", "Take me there!" opens the journey page and "See live seats" opens the winning centre. Both skip every card: both see "No match this time" and no "Take me there!" button | Real |
 | `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
+| `url-validation.spec.js` | Typing URLs by hand: a saved member ID that's no longer in the plan doesn't cause a redirect loop; a fake plan code says the plan wasn't found; the journey page explains why there's no route yet; leaving the swipe page doesn't pull you back | Real |
 | `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px | Mocked |
 | `centre-search.spec.js` | Opening Centre Search with no code, a fake code or a broken link shows an error; searching by name, dish and max price; a member adds a centre and a friend sees it without reloading; the phone Add bar; members are sent to swiping when the host starts; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real |
 | `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres; no sideways scrolling on an iPhone-sized screen | Real |
@@ -182,7 +189,7 @@ A full run takes about 2–3 minutes. The two-person tests are the slow ones (30
 **How the tests are built**
 
 - **Two people, two browser contexts.** The plan and swipe tests open two separate browser contexts, so the host and the friend each have their own `localStorage`, like two different phones.
-- **Real backend vs mocks.** The full journeys (create → join → swipe → result) use the real API, because the point is to check that the frontend, Express and MongoDB work together. Tests that only check how a page reacts to data (`centres.spec.js`) replace the API with `page.route`, so they are fast and don't depend on the database.
+- **Real backend vs mocks.** The full journeys (create → join → swipe → result) use the real server, because the point is to check that everything works together. Pages that only display data (`centres.spec.js`) are mocked, so they're fast and don't depend on what's in the database.
 - **Stable selectors.** Tests find elements the way a user does (`getByRole` with the button, link or heading text). Where text changes from run to run, they use `data-testid` (`plan-code`, `swipe-counter`, `winner-name`).
 - **Repeatable without hardcoding.** The number of swipe cards depends on the plan, so the swipe tests read "Centre 1 of N" and loop N times instead of clicking a fixed number of times.
 - **Negative checks.** Tests also assert what must *not* happen, for example staying on the join page after a bad code, and no "Take me there!" button when there is no match.
