@@ -122,7 +122,12 @@ pnpm test
 
 The tests run once and exit after completion.
 
-Unit tests (`server/tests/`) cover the pure logic: the group midpoint, distance, the diet and budget rules, centre closures, candidate selection, and the results tally with its travel-distance tie-break.
+Unit tests (`server/tests/`) cover:
+
+- **Shortlist and results:** the group midpoint, distance, the diet and budget rules, centre closures, candidate selection, and the results tally with its travel-distance tie-break.
+- **Centre Search:** which stalls are open on the plan's date and why the others are closed, and which members have nothing to eat.
+- **Hawkers:** hawker ID format, hawker login, and updating stall status and rest days.
+- **Shout-outs:** working out "today" in Singapore time.
 
 ### Frontend end-to-end tests
 
@@ -178,7 +183,7 @@ The last column says where each test gets its data:
 | `swipe.spec.js` | Both people say yes to every card: both see the same winner ("2 of 2"), the waiting screen shows "1 of 2 finished", "Take me there!" opens the journey page and "See live seats" opens the winning centre. Both skip every card: both see "No match this time" and no "Take me there!" button | Real |
 | `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
 | `url-validation.spec.js` | Typing URLs by hand: a saved member ID that's no longer in the plan doesn't cause a redirect loop; a fake plan code says the plan wasn't found; the journey page explains why there's no route yet; leaving the swipe page doesn't pull you back | Real |
-| `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px | Mocked |
+| `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px, the list sorted by name and split into pages | Mocked |
 | `centre-search.spec.js` | Opening Centre Search with no code, a fake code or a broken link shows an error; searching by name, dish and max price; a member adds a centre and a friend sees it without reloading; the phone Add bar; members are sent to swiping when the host starts; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real |
 | `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres; no sideways scrolling on an iPhone-sized screen | Real |
 | `hawker-login.spec.js` | A valid hawker logs in; a wrong stall name is refused; both fields are required; the hawker ID is not case-sensitive | Real |
