@@ -62,7 +62,10 @@ exports.getCentreList = async (req, res) => {
     try {
         const centres = await Centre.findAllCentresSorted()   //A to Z
 
-        const list = centres.map(centre => ({
+        //only centres with cooked-food stalls (NEA also lists market-only centres, which have no food to eat)
+        const foodCentres = centres.filter(centre => centre.foodStalls > 0)
+
+        const list = foodCentres.map(centre => ({
             serialNo: String(centre.serialNo),
             name: centre.name,
             lat: centre.lat,
