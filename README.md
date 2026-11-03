@@ -208,7 +208,8 @@ The tests that use the real backend write real records on every run: plans named
 3. **Distance** — the 15 nearest centres to the midpoint become candidates.
 4. **Diet and budget** — a centre is kept only if every member has at least one dish they can eat within their budget.
 5. **Ranking** — candidates are scored as distance, plus a price penalty, plus a crowd penalty if the plan starts within two hours. Lowest score first.
-6. **Picks** — centres the group added through Centre Search are kept regardless, and appear before the suggestions.
+6. **Picks** — centres the group added through Centre Search come first, 
+the backend then substiates by adding another top 5 centres.
 
 The group then swipes, and the centre with the most yeses wins. Ties are broken by the shortest total travel distance for the whole group.
 
