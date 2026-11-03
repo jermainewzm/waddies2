@@ -31,11 +31,17 @@ const errorHandler = require("./middleware/errors-middleware")
 // reuse that connection while the instance stays warm
 let dbConnection = null
 
-function connectDB() {
+async function connectDB() {
   if (!dbConnection) {
-    dbConnection = mongoose.connect(process.env.DB)
+    // give up after 5s instead of hanging
+    dbConnection = mongoose.connect(process.env.DB, { serverSelectionTimeoutMS: 5000 })
   }
-  return dbConnection
+  try {
+    await dbConnection
+  } catch (error) {
+    dbConnection = null   //forget the failed attempt so the next request tries again
+    throw error
+  }
 }
 
 // every route needs the database, so wait for it before handling anything

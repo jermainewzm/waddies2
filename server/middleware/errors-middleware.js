@@ -1,8 +1,12 @@
 /* though next is not used here, it must be
    listed in the function because
    express only treats the function as an errorhandler 
-when it has exactly 4 parameters */
+   when it has exactly 4 parameters.
 
+   When any part of the server calls next(error), 
+   any remaining route is skipped and this function below is ran.
+
+*/
 
 function errorHandler(err,req,res,next) {
     console.error(err)

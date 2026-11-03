@@ -93,9 +93,15 @@ test("two people who both say yes to every centre see the same winner", async ({
   await expect(hostPage.getByText("2 of 2", { exact: true })).toBeVisible()
 
   // 9. both are sent to the same centre
-  const hostWinner = hostPage.getByTestId("winner-name")
-  const friendWinner = await friendPage.getByTestId("winner-name").textContent()
-  await expect(hostWinner).toHaveText(friendWinner)
+  const hostWinner = await hostPage
+    .getByTestId("winner-name")
+    .textContent()
+
+  const friendWinner = await friendPage
+    .getByTestId("winner-name")
+    .textContent()
+
+  expect(friendWinner).toBe(hostWinner)
 
   await hostPage.getByRole("button", { name: /take me there/i }).click()
 
