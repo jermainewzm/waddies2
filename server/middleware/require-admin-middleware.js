@@ -25,9 +25,10 @@ async function requireAdmin(req, res, next) {
         next()
 
     } catch (error) {
+        console.error(error)
+
         return res.status(500).json({
-            message: "Failed to verify admin access.",
-            error: error.message
+            message: "Something went wrong. Please try again."
         })
     }
 }

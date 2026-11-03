@@ -2,11 +2,12 @@
 import { ref } from 'vue'
 import { DIET_OPTIONS } from '../utils/constants'
 
-const props = defineProps({
-    dishes: {
-        type: Array,
-        required: true
-    }
+defineOptions({
+    name: "DishList"
+})
+
+defineProps({
+    dishes: Array
 })
 
 const emit = defineEmits([

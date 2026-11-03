@@ -25,9 +25,10 @@ async function requireApprovedHawker(req, res, next) {
         next()
 
     } catch (error) {
-        res.status(500).json({
-            message: "Failed to verify hawker access.",
-            error: error.message
+        console.error(error)
+
+        return res.status(500).json({
+            message: "Something went wrong. Please try again."
         })
     }
 }

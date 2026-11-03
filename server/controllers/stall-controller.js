@@ -23,9 +23,9 @@ async function getMyStall(req, res) {
 
     } catch (error) {
         console.error(error)
-        res.status(500).json({
-            message: "Something went wrong. Please try again.",
-            error: error.message
+
+        return res.status(500).json({
+            message: "Something went wrong. Please try again."
         })
     }
 }
@@ -70,9 +70,9 @@ async function updateMyStallStatus(req, res) {
 
     } catch (error) {
         console.error(error)
-        res.status(500).json({
-            message: "Failed to update stall status",
-            error: error.message
+
+        return res.status(500).json({
+            message: "Something went wrong. Please try again."
         })
     }
 }
@@ -127,9 +127,9 @@ async function updateMyStallRestDays(req, res) {
 
     } catch (error) {
         console.error(error)
-        res.status(500).json({
-            message: "Failed to update rest days",
-            error: error.message
+
+        return res.status(500).json({
+            message: "Something went wrong. Please try again."
         })
     }
 }
