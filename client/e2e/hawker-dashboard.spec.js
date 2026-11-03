@@ -48,7 +48,7 @@ test.describe('Hawker Dashboard', () => {
 
     await expect(
       page.getByText(/unable to load your stall/i)
-    ).not.toBeVisible()
+    ).toBeHidden()
 
   })
 

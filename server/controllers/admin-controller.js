@@ -26,11 +26,13 @@ async function verifyAdmin(req, res) {
         })
 
     } catch (error) {
-        return res.status(500).json({
-            message: "Failed to verify admin.",
-            error: error.message
-        })
-    }
+    
+    console.error(error)
+
+    return res.status(500).json({
+        message: "Something went wrong. Please try again."
+    })
+}
 }
 
 module.exports = {

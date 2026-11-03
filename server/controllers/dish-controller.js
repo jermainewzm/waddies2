@@ -1,8 +1,13 @@
 const Dish= require("../models/dish-model")
 const mongoose = require("mongoose")
 
-function hasMaxTwoDecimalPlaces(price){
-    return Number.isInteger(price * 100)
+function hasMaxTwoDecimalPlaces(price) {
+    const parts = String(price).split(".")
+    return !parts[1] || parts[1].length <= 2
+}
+
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 async function getMyStallDishes(req, res) {
@@ -70,7 +75,7 @@ async function addDish(req, res) {
         const existingDish = await Dish.findOne({
             stall_id: stall._id,
             name: {
-                $regex: `^${name.trim()}$`,
+                $regex: `^${escapeRegex(name.trim())}$`,
                 $options: "i"
             }
         })

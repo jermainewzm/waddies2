@@ -93,10 +93,15 @@ test("two people who both say yes to every centre see the same winner", async ({
   await expect(hostPage.getByText("2 of 2", { exact: true })).toBeVisible()
 
   // 9. both are sent to the same centre
-  const hostWinner = await hostPage.getByTestId("winner-name").textContent()
-  await expect(friendPage.getByTestId("winner-name")).toHaveText(hostWinner)
-  const friendWinner = await friendPage.getByTestId("winner-name").textContent()
-  expect(hostWinner).toBe(friendWinner)
+  const hostWinner = await hostPage
+    .getByTestId("winner-name")
+    .textContent()
+
+  const friendWinner = await friendPage
+    .getByTestId("winner-name")
+    .textContent()
+
+  expect(friendWinner).toBe(hostWinner)
 
   await hostPage.getByRole("button", { name: /take me there/i }).click()
 
@@ -210,7 +215,7 @@ test("two people who skip every centre will see no match", async ({ browser }) =
   await expect(friendPage.getByRole("heading", { name: /no match this time/i })).toBeVisible({ timeout: 10000 })
 
   // 9. there's no winner to go to, so no "Take me there!" button
-  await expect(hostPage.getByRole("button", { name: /take me there/i })).not.toBeVisible()
+  await expect(hostPage.getByRole("button", { name: /take me there/i })).toBeHidden()
 
   await hostContext.close()
   await friendContext.close()

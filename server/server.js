@@ -49,9 +49,13 @@ server.use(async (req, res, next) => {
   try {
     await connectDB()
     next()
-  } catch (error) {
-    console.error("MongoDB connection failed:", error.message)
-    next(error)
+  } 
+  
+  catch (error) {
+    console.error(error)
+    return res.status(500).json({
+        message: "Something went wrong. Please try again."
+    })
   }
 })
 

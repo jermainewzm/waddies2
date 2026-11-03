@@ -52,7 +52,7 @@ test("two people can create a plan, join it and start swiping", async ({ browser
 
   // 6. only the host can start, and both land on the swipe page
   await hostPage.getByRole("button", { name: /start swiping/i }).click()
-  await expect(friendPage.getByRole("button", { name: /start swiping/i })).not.toBeVisible()
+  await expect(friendPage.getByRole("button", { name: /start swiping/i })).toBeHidden()
 
   // check that both host and friend go to the swipe page for this plan.  
   await expect(hostPage).toHaveURL(`/plan/${code}/swipe`, {
