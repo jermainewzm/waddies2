@@ -90,9 +90,9 @@ async function loadPlan() {
           router.push(`/plan/${code}/swipe`)
           return
         }
-        // else if plan is already finished, redirect to journey page
+        // else if plan is already finished, redirect to the results page
         if (plan.value.status === "done" && myId.value) {
-          router.push(`/plan/${code}/journey`)
+          router.push(`/plan/${code}/swipe`)
           return
         }
         isLoading.value = false
