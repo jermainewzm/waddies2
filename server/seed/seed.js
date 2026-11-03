@@ -26,10 +26,13 @@ async function seed() {
         //2. then we import the centres from NEA
         const records = await fetchAllCentres()
         
-        for (const record of records) {
+        //food centres only: skip NEA's market-only centres (0 cooked-food stalls, e.g. Ayer Rajah Market)
+        const foodRecords = records.filter(record => Number(record.no_of_food_stalls) > 0)
+
+        for (const record of foodRecords) {
             await centreModel.addCentre(formatCentre(record))
         }
-         console.log(`Imported ${records.length} centres from NEA`)
+         console.log(`Imported ${foodRecords.length} food centres from NEA (skipped ${records.length - foodRecords.length} market-only)`)
          
          // ── 3. Seed demo admins
         await Admin.deleteMany({})

@@ -100,8 +100,9 @@ describe("getCentreList", () => {
 
   test("lists every centre with is_open for that date (closed for NEA cleaning = false)", async () => {
     vi.spyOn(Centre, "findAllCentresSorted").mockResolvedValue([
-      { serialNo: 72, name: "Maxwell Food Centre", lat: 1.28, lng: 103.84, closures: [] },
-      { serialNo: "5", name: "Amoy Street Food Centre", lat: 1.27, lng: 103.84, closures: closedOn(FUTURE_FRIDAY) }
+      { serialNo: 72, name: "Maxwell Food Centre", lat: 1.28, lng: 103.84, foodStalls: 100, closures: [] },
+      { serialNo: "5", name: "Amoy Street Food Centre", lat: 1.27, lng: 103.84, foodStalls: 120, closures: closedOn(FUTURE_FRIDAY) },
+      { serialNo: "99", name: "Market-only Centre", lat: 1.29, lng: 103.85, foodStalls: 0, closures: [] }   //no food stalls: left out
     ])
     const res = fakeRes()
     await getCentreList({ query: { date: FUTURE_FRIDAY } }, res)

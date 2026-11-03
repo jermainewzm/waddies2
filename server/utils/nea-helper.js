@@ -277,6 +277,7 @@ async function loadCentres(forceRefresh = false) {
     centreCache = records
       .map(normalizeCentre)
       .filter((centre) => centre.id && centre.name)
+      .filter((centre) => centre.foodStalls > 0) // food centres only: skip market-only centres
       .sort((a, b) => a.name.localeCompare(b.name))
 
     cacheLoadedAt = Date.now()
