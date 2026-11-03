@@ -3,7 +3,8 @@ import {
   computed,
   onMounted,
   onUnmounted,
-  ref
+  ref,
+  watch
 } from "vue"
 
 import {
@@ -17,6 +18,9 @@ const errorMessage = ref("")
 const searchText = ref("")
 const openOnly = ref(false)
 
+const currentPage = ref(1)
+const pageSize = 20
+
 let refreshTimer = null
 
 const filteredCentres = computed(() => {
@@ -25,8 +29,8 @@ const filteredCentres = computed(() => {
       .trim()
       .toLowerCase()
 
-  return centres.value.filter(
-    (centre) => {
+  return centres.value
+    .filter((centre) => {
       const matchesSearch =
         !query ||
         centre.name
@@ -44,9 +48,76 @@ const filteredCentres = computed(() => {
         matchesSearch &&
         matchesOpen
       )
-    }
+    })
+    .sort((a, b) =>
+      a.name.localeCompare(
+        b.name,
+        "en",
+        {
+          sensitivity: "base"
+        }
+      )
+    )
+})
+
+const totalPages = computed(() =>
+  Math.max(
+    1,
+    Math.ceil(
+      filteredCentres.value.length /
+      pageSize
+    )
+  )
+)
+
+const paginatedCentres = computed(() => {
+  const start =
+    (currentPage.value - 1) *
+    pageSize
+
+  return filteredCentres.value.slice(
+    start,
+    start + pageSize
   )
 })
+
+watch(
+  [
+    searchText,
+    openOnly
+  ],
+  () => {
+    currentPage.value = 1
+  }
+)
+
+function goToPage(page) {
+  if (
+    page < 1 ||
+    page > totalPages.value
+  ) {
+    return
+  }
+
+  currentPage.value = page
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  })
+}
+
+function previousPage() {
+  goToPage(
+    currentPage.value - 1
+  )
+}
+
+function nextPage() {
+  goToPage(
+    currentPage.value + 1
+  )
+}
 
 async function loadCentres(
   showLoader = true
@@ -248,7 +319,7 @@ onUnmounted(() => {
         class="row g-4"
       >
         <div
-          v-for="centre in filteredCentres"
+          v-for="centre in paginatedCentres"
           :key="centre.id"
           class="col-12 col-md-6 col-xl-4"
         >
@@ -357,6 +428,85 @@ onUnmounted(() => {
             </article>
           </RouterLink>
         </div>
+      </div>
+
+      <div
+        v-if="
+          filteredCentres.length > 0 &&
+          totalPages > 1
+        "
+        class="d-flex flex-column align-items-center gap-2 mt-4"
+      >
+        <nav aria-label="Hawker centre pages">
+          <ul
+            class="pagination justify-content-center flex-wrap mb-0"
+          >
+            <li
+              class="page-item"
+              :class="{
+                disabled:
+                  currentPage === 1
+              }"
+            >
+              <button
+                type="button"
+                class="page-link"
+                :disabled="
+                  currentPage === 1
+                "
+                @click="previousPage"
+              >
+                Previous
+              </button>
+            </li>
+
+            <li
+              v-for="page in totalPages"
+              :key="page"
+              class="page-item"
+              :class="{
+                active:
+                  currentPage === page
+              }"
+            >
+              <button
+                type="button"
+                class="page-link"
+                @click="
+                  goToPage(page)
+                "
+              >
+                {{ page }}
+              </button>
+            </li>
+
+            <li
+              class="page-item"
+              :class="{
+                disabled:
+                  currentPage ===
+                  totalPages
+              }"
+            >
+              <button
+                type="button"
+                class="page-link"
+                :disabled="
+                  currentPage ===
+                  totalPages
+                "
+                @click="nextPage"
+              >
+                Next
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <small class="text-muted">
+          Page {{ currentPage }}
+          of {{ totalPages }}
+        </small>
       </div>
     </template>
   </div>

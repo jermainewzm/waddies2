@@ -61,6 +61,52 @@ const centreList = {
   ]
 }
 
+const paginationCentreList = {
+  date: "2026-10-07",
+
+  count: 21,
+
+  centres: Array.from(
+    {
+      length: 21
+    },
+    (_, index) => {
+      const number =
+        21 - index
+
+      const paddedNumber =
+        String(number).padStart(
+          2,
+          "0"
+        )
+
+      return {
+        id: `pagination-${number}`,
+
+        name:
+          `Test Centre ${paddedNumber}`,
+
+        address:
+          `${number} Test Street, Singapore`,
+
+        foodStalls: 10,
+        marketStalls: 0,
+        photoUrl: null,
+
+        isOpen: true,
+        currentClosure: null,
+
+        crowd: {
+          level: null,
+          label:
+            "No recent reports",
+          count: 0
+        }
+      }
+    }
+  )
+}
+
 const centreDetail = {
   ...centreList.centres[0],
 
@@ -71,13 +117,17 @@ const centreDetail = {
 
   stalls: [],
 
-    shoutouts: [
+  shoutouts: [
     {
       _id: "shoutout-test-1",
-      stall_id: "671000000000000000000101",
-      stall_name: "Jurong Chicken Rice",
-      stall_unit_no: "#02-15",
-      message: "Fresh roast chicken available today!"
+      stall_id:
+        "671000000000000000000101",
+      stall_name:
+        "Jurong Chicken Rice",
+      stall_unit_no:
+        "#02-15",
+      message:
+        "Fresh roast chicken available today!"
     }
   ]
 }
@@ -293,7 +343,9 @@ test(
         "centre-card"
       )
 
-    await expect(cards).toHaveCount(
+    await expect(
+      cards
+    ).toHaveCount(
       2
     )
 
@@ -307,8 +359,13 @@ test(
         .nth(1)
         .boundingBox()
 
-    expect(first).not.toBeNull()
-    expect(second).not.toBeNull()
+    expect(
+      first
+    ).not.toBeNull()
+
+    expect(
+      second
+    ).not.toBeNull()
 
     expect(
       second.y
@@ -342,5 +399,90 @@ test(
         "#02-15"
       )
     ).toBeVisible()
+  }
+)
+
+test(
+  "centre list is sorted and paginated",
+  async ({ page }) => {
+    await page.unroute(
+      "**/api/centres**"
+    )
+
+    await page.route(
+      "**/api/centres**",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+
+          contentType:
+            "application/json",
+
+          body:
+            JSON.stringify(
+              paginationCentreList
+            )
+        })
+      }
+    )
+
+    await page.goto(
+      "/centres"
+    )
+
+    const cards =
+      page.getByTestId(
+        "centre-card"
+      )
+
+    await expect(
+      cards
+    ).toHaveCount(
+      20
+    )
+
+    await expect(
+      page.getByText(
+        "Test Centre 01"
+      )
+    ).toBeVisible()
+
+    await expect(
+      page.getByText(
+        "Test Centre 21"
+      )
+    ).toHaveCount(
+      0
+    )
+
+    await page
+      .getByRole(
+        "button",
+        {
+          name: "2",
+          exact: true
+        }
+      )
+      .click()
+
+    await expect(
+      cards
+    ).toHaveCount(
+      1
+    )
+
+    await expect(
+      page.getByText(
+        "Test Centre 21"
+      )
+    ).toBeVisible()
+
+    await expect(
+      page.getByText(
+        "Test Centre 01"
+      )
+    ).toHaveCount(
+      0
+    )
   }
 )
