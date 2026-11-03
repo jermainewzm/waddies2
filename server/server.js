@@ -53,7 +53,9 @@ server.use(async (req, res, next) => {
   
   catch (error) {
     console.error(error)
+    //plan pages only read "error"; hawker and admin pages (getErrorMessage) read "message" first, so send both
     return res.status(500).json({
+        error: "Something went wrong. Please try again.",
         message: "Something went wrong. Please try again."
     })
   }
