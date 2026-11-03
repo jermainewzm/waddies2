@@ -94,6 +94,7 @@ test("two people who both say yes to every centre see the same winner", async ({
 
   // 9. both are sent to the same centre
   const hostWinner = await hostPage.getByTestId("winner-name").textContent()
+  await expect(friendPage.getByTestId("winner-name")).toHaveText(hostWinner)
   const friendWinner = await friendPage.getByTestId("winner-name").textContent()
   expect(hostWinner).toBe(friendWinner)
 
