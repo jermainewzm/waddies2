@@ -290,13 +290,17 @@ exports.pickBestCentres = async function (plan, pickedCentres, rankedCentres, co
     }
 
     // 3. score every centre
+    // every centre must be open on the plan's date
+    const openCentres = allCentres.filter(centre => exports.isCentreOpen(centre, plan.date))
+    // look up every centre's dishes at the same time instead of one by one (same order as openCentres)
+    const dishesPerCentre = await Promise.all(
+        openCentres.map(centre => exports.getValidDishes(centre, plan.date))
+    )
+
     const scored = []
-    for (const centre of allCentres) {
-        // every centre must be open on the plan's date
-        if (!exports.isCentreOpen(centre, plan.date)) {
-            continue
-        }
-        const dishes = await exports.getValidDishes(centre, plan.date)
+    for (let i = 0; i < openCentres.length; i++) {
+        const centre = openCentres[i]
+        const dishes = dishesPerCentre[i]
         // nearby centres must suit everyone, but centre that is manually added is always kept
         if (!pickedIds.includes(String(centre.serialNo)) && !exports.canEveryoneEat(plan.members, dishes)) {
             continue
