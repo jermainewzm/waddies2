@@ -67,7 +67,7 @@ const planSchema = new mongoose.Schema({
 
     swipes : [
       {memberId: {type: mongoose.Schema.Types.ObjectId, required: true},
-       centreId: {type: String, required: true}, // (Centre Search): the centre's serialNo 
+       centreId: {type: String, required: true}, //Centre Search: the centre's serialNo 
        liked: {type: Boolean, required: true}
     }
     ],
@@ -103,7 +103,7 @@ exports.updatePlanStatus = function(code,status) {
     {$set: {status: status}},
     { returnDocument: "after" })}
 
-//adds one centre to the shortlist (Centre Search)
+//adds one centre to the shortlist --> Centre Search
 exports.addToShortlist = function(code, item) {
   return Plan.findOneAndUpdate(
     {code: code},

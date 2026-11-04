@@ -1,8 +1,8 @@
 <script setup>
-// NEW: animated kopitiam scene for the landing page (HomeView.vue)
+// animated kopitiam scene for the landing page (HomeView.vue)
 // display only: no props, no data, no API calls
 //
-// DECLARATION: the cartoon artwork (the SVG shapes / paths below) was drawn with help from AI (Claude).
+// DECLARATION: the cartoon artwork (the SVG shapes / paths below) was drawn with help from AI
 // The animations are our own CSS @keyframes (see <style> at the bottom).
 </script>
 
@@ -183,7 +183,7 @@
             <text x="868" y="469" text-anchor="middle" font-family="Gochi Hand, cursive" font-size="25" fill="#1D1A1A">Can lah! Shiok!</text>
             </g>
 
-            <!-- NEW: mynah flying across the top every 10 seconds (starts off-screen on the left) -->
+            <!-- mynah flying across the top every 10 seconds (starts off-screen on the left) -->
             <g class="a-fly">
                 <use href="#sym-mynah" x="-130" y="150" width="100" height="60"/>
             </g>
@@ -197,7 +197,7 @@
 <!-- SVG = shapes drawn with code, so it stays sharp at any screen size (viewBox scales it) -->
 <!-- <symbol> + <use> = draw a character once, reuse it many times (like a component, but in SVG) -->
 <!-- every moving part has a class like "a-wok"; the CSS @keyframes below moves it in a loop -->
-<!-- NEW: a-fly = the mynah that flies across every 10 seconds -->
+<!-- a-fly = the mynah that flies across every 10 seconds -->
 
 
 <style scoped>
@@ -267,7 +267,7 @@
 .a-peck { animation: peck 4s ease-in-out infinite; transform-box: fill-box; transform-origin: 30% 90%; }
 @keyframes peck { 0%, 70%, 100% { transform: rotate(0); } 76% { transform: rotate(22deg); } 82% { transform: rotate(0); } 88% { transform: rotate(22deg); } }
 
-/* NEW: mynah flies left to right across the scene, then waits off-screen.
+/*  mynah flies left to right across the scene, then waits off-screen.
    The whole loop is 10s: flying takes the first 30% (3s), the other 7s it is hidden off the right edge */
 .a-fly {
     animation: fly 10s linear infinite;

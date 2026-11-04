@@ -49,7 +49,7 @@ function getClosedReason(stall, date) {
 }
 
 //GET /api/centre-search/centres?date=2026-10-30
-//every centre (A-Z) with its location and if it's open that day
+//every food centre (A-Z) with its location and if it's open that day (market-only centres are left out)
 //the page works out distances, the 5 suggested and hides closed ones
 exports.getCentreList = async (req, res) => {
     const date = String(req.query.date || getSingaporeToday()).trim()

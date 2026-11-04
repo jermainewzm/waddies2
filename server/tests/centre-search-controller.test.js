@@ -1,8 +1,3 @@
-// Unit tests for the Centre Search controller (server/controllers/centre-search-controller.js)
-//   getClosedReason: why a stall isn't open on a plan's date
-//   getCentreList:   the dropdown list of centres + whether each is open that day
-//   getCentreMenu:   one centre's open stalls, closed stalls (with reasons) and who can't eat there
-// The database is never touched: model functions are replaced with vi.spyOn (same style as the hawker and stall tests).
 import { describe, test, expect, vi, beforeEach } from "vitest"
 
 const Plan = require("../models/plan-model")

@@ -251,7 +251,7 @@ const addBarText = computed(() => {
     return "Can't add"
 })
 
-//ie. "Wei Jie (🌙 Halal, $5 budget)"
+//Describe the member e.g. "Wei Jie (🌙 Halal, $5 budget)"
 function describeMember(member) {
     const option = DIET_OPTIONS.find(item => item.value === member.diet)
     const dietText = member.diet === 'any' ? 'no diet' : (option ? option.label : member.diet)   //unknown diet: show it as it is instead of crashing
@@ -273,10 +273,9 @@ async function loadPlan() {
         const response = await axios.get(`${API_URL}/plans/${planCode}`)
         plan.value = response.data
 
-        //host started swiping (or it's done): members go to the swipe page (same as PlanLobby)
-        //swiping started (or done): members go to the swipe page, everyone else to the plan page (it shows "Too late!")
+        //swiping started/finished: members go to the swipe page, everyone else to the plan page -> it shows "Too late!"
         if (plan.value.status !== 'joining') {
-            router.replace(me.value ? `/plan/${planCode}/swipe` : `/plan/${planCode}`)   //replace, so Back doesn't land here again
+            router.replace(me.value ? `/plan/${planCode}/swipe` : `/plan/${planCode}`)   //replace not push, so "back" doesn't land here again
             return
         }
 
@@ -287,7 +286,7 @@ async function loadPlan() {
             filtersSet = true
         }
     } catch (error) {
-        //only show the error page if the plan never loaded (keeps the page if a refresh fails)
+        //only show the error page if the plan never loaded --> keeps the page if a refresh fails
         if (!plan.value) {
             planLoadError.value = (error.response && error.response.data && error.response.data.error) || "We couldn't load this plan. Check the link, or try again in a moment."
         }
@@ -428,7 +427,7 @@ onUnmounted(() => {
             <RouterLink to="/plan/new">Start a plan</RouterLink>
         </div>
 
-        <!-- plan couldn't load (fake code, broken link, server down): the message + the team's Not Found page (same as JourneyView) -->
+        <!-- plan couldn't load e.g. fake code, broken link, server down: the message + the team's Not Found page-->
         <div v-else-if="planChecked && planLoadError">
             <div class="text-center pt-4">
                 <div class="alert alert-danger d-inline-block px-4 py-3 mb-0">
@@ -438,7 +437,7 @@ onUnmounted(() => {
             <NotFoundView />
         </div>
 
-        <!-- the actual page -->
+        <!-- actual page -->
         <template v-else-if="plan">
 
             <div class="top-row">
@@ -446,7 +445,7 @@ onUnmounted(() => {
                 <h1 class="outline find-title">Find a centre</h1>
             </div>
 
-            <!-- group picks (always visible at the top) -->
+            <!-- group picks (visible at the top) -->
             <div class="picks-bar" :class="{ warn: picksLeft <= 2 }">
                 <span class="picks-label">📝 Group picks</span>
                 <strong class="picks-count">{{ pickedSerials.length }}/{{ MAX_PICKS }}</strong>
@@ -467,7 +466,7 @@ onUnmounted(() => {
 
             <div class="layout">
 
-                <!-- left: choose a centre + filters (stays in place on laptops) -->
+                <!-- left: choose a centre + filters -- stays in place on laptops -->
                 <section class="search-box">
                     <!-- type part of a name, matching centres show underneath to tap -->
                     <label for="centre-query" class="visually-hidden">Type a centre name</label>
@@ -545,7 +544,7 @@ onUnmounted(() => {
                     <p v-if="priceError" class="text-danger small fw-bold mb-0" role="alert">{{ priceError }}</p>
 
 
-                    <!-- diet: radio buttons styled as chips (same as DishForm.vue) -->
+                    <!-- diet: radio button (chips) -->
                     <div class="chip-row">
                         <b>Diet:</b>
                         <span v-for="option in DIET_OPTIONS" :key="option.value" class="chip-wrap">
@@ -590,7 +589,7 @@ onUnmounted(() => {
                                 </template>
                             </div>
 
-                            <!-- add button for laptops (phones use the bar at the bottom) -->
+                            <!-- add button for laptops -- phones use the bar at the bottom -->
                             <button
                                 type="button"
                                 class="btn green add-big"
@@ -616,7 +615,7 @@ onUnmounted(() => {
                 </section>
             </div>
 
-            <!-- add bar stuck to the bottom of the screen (phones + tablets) -->
+            <!-- add bar stuck to the bottom of the screen for phones + tablets (below 992px) -->
             <div v-if="menu" class="add-bar">
                 <span class="add-bar-name" :class="{ bad: !menuLoading && menu.cannotEat.length > 0 }">
                     {{ menuLoading ? 'Loading the menu…' : (menu.cannotEat.length > 0 ? 'Not everyone can eat here' : menu.centre.name) }}
@@ -1016,7 +1015,7 @@ main {
     }
 }
 
-/* the add-bar warning wraps instead of being cut off with "…" (the bar only shows below 992px) */
+/* the add-bar warning wraps instead of being cut off with "…" -- the bar only shows below 992px */
 .add-bar-name {
     white-space: normal;
     overflow: visible;

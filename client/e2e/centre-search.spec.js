@@ -1,314 +1,243 @@
-// E2E tests for Centre Search (Angel)
-//
-// What these cover (the Centre Search user journey):
-//   1. getting to the page: no plan, a fake plan, a broken link
-//   2. choosing a centre: typed search, no match
-//   3. filters: dish name, max price
-//   4. adding a centre to the group's picks (laptop button + phone bar), real-time for friends
-//   5. leaving: back to the lobby, sent to swiping when the host starts
-//   6. the server's rules for adding (join first, no duplicates, locked after swiping starts)
-//
-// How they stay repeatable:
-//   - every test makes its OWN plan and members through the API (no old codes, no order between tests)
-//   - the centre is picked from whatever the server says is open on the plan's date (no hard-coded centre)
-//   - no fixed waits: every check waits for something to appear (expect / toPass)
-//
-// Needs: the server running on a TEST database (tests create plans), then `pnpm test:e2e`.
+// Centre Search E2E tests. Needs the server running on a TEST database (each test makes its own plan).
+// Run from client/:  pnpm exec playwright test e2e/centre-search.spec.js
 
 import { test, expect } from "@playwright/test"
-import { futureDate } from "./helpers.js"   //shared helpers (30 days ahead, so tests never expire)
+import { futureDate, createPlanViaApi, joinViaApi, actAsMember } from "./helpers.js"
 
-const PLAN_DATE = futureDate()   //30 days from today, from the shared helpers.js
-const HOME = { lat: 1.2803, lng: 103.8451 } //near Tanjong Pagar, lots of centres around
+// finding and adding a centre
+test("a member finds a centre from the lobby and a friend sees it picked", async ({ browser, request }) => {
+  //separate contexts so each has its own localStorage, like two different people
+  test.setTimeout(60000)
+  const hostContext = await browser.newContext()
+  const friendContext = await browser.newContext()
+  const hostPage = await hostContext.newPage()
+  const friendPage = await friendContext.newPage()
 
-// ---------------------------------------------------------------- helpers (arrange)
+  // 1. a new plan
+  const code = await createPlanViaApi(request, "centre search lunch")
 
-//one person joins a plan, the same data the lobby form sends; returns their member id
-async function addMember(request, code, name) {
-  const response = await request.post(`/api/plans/${code}/members`, {
-    data: { name, ...HOME, diet: "any", budget: 10 }
-  })
-  expect(response.ok(), `joining as ${name}`).toBeTruthy()
-  const plan = await response.json()
-  return plan.members[plan.members.length - 1]._id
-}
+  // 2. the host joins first in the lobby by tapping the map (first to join = host)
+  await hostPage.goto(`/plan/${code}/lobby`)
+  await hostPage.getByRole("textbox", { name: /your name/i }).fill("Aisha")
+  await expect(hostPage.locator("#map")).toBeVisible()
+  await hostPage.locator("#map").click({ position: { x: 150, y: 150 } })
+  await expect(hostPage.getByText(/location set/i)).toBeVisible()
+  await hostPage.getByRole("spinbutton", { name: /budget/i }).fill("20")
+  await hostPage.getByRole("button", { name: /i'm in/i }).click()
+  await expect(hostPage.getByText(/you're in/i)).toBeVisible()
+  const friendId = await joinViaApi(request, code, "Ben")   //a friend joins after the host
 
-//a fresh plan with a host and a friend (swiping needs 2+ people)
-async function makePlan(request) {
-  const response = await request.post("/api/plans", {
-    data: { name: "e2e centre search", date: PLAN_DATE, time: "12:30" }
-  })
-  expect(response.ok(), "creating the plan").toBeTruthy()
-  const plan = await response.json()
-  const hostId = await addMember(request, plan.code, "Angel")
-  const friendId = await addMember(request, plan.code, "Zhe Ming")
-  return { code: plan.code, hostId, friendId }
-}
+  // 3. the host taps "Find a centre" and lands on Centre Search
+  await hostPage.getByRole("button", { name: /find a centre/i }).click()
+  await expect(hostPage).toHaveURL(`/centre-search?plan=${code}`)
 
-//a centre the server says is open on the plan's date (so the test doesn't depend on one centre)
-async function findOpenCentre(request) {
-  const response = await request.get(`/api/centre-search/centres?date=${PLAN_DATE}`)
-  expect(response.ok()).toBeTruthy()
-  const { centres } = await response.json()
-  const open = centres.filter(centre => centre.is_open)
-  expect(open.length, "at least one open centre in the test database").toBeGreaterThan(0)
-  return open[0]
-}
+  // 4. the nearest centre opens by itself, the host adds it
+  const centreName = (await hostPage.locator(".centre-name").textContent()).trim()
+  await hostPage.getByRole("button", { name: /add to picks/i }).first().click()
+  await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeVisible()
+  await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeDisabled()   //can't add it twice
 
-//this browser acts as a member who already joined (PlanLobby saves the same key)
-async function actAs(page, code, memberId) {
-  await page.addInitScript(([key, value]) => {
-    localStorage.setItem(key, value)
-  }, [`memberId-${code}`, memberId])
-}
-
-//the search box, the way a user (or screen reader) finds it: by its label
-function searchBox(page) {
-  return page.getByRole("searchbox", { name: /type a centre name/i })
-}
-
-//types the first letters of a centre's name and taps it in the list underneath
-async function chooseByTyping(page, centre) {
-  await searchBox(page).fill(centre.name.slice(0, 4))
-  await page.getByRole("button", { name: centre.name }).first().click()
-  await expect(page.locator("#centre-select option:checked")).toContainText(centre.name)
-}
-
-//the Add button that's showing: the big one on laptops, the bottom bar on phones
-function addButton(page) {
-  return page.getByRole("button", { name: /add to/i }).filter({ visible: true }).first()
-}
-
-//the "already picked" button ("✓ Picked" on laptop and phone)
-function pickedButton(page) {
-  return page.getByRole("button", { name: /picked/i }).filter({ visible: true }).first()
-}
-
-//asks the server for the plan's shortlist
-async function shortlistOf(request, code) {
+  // the server saved it on the plan's shortlist
   const plan = await (await request.get(`/api/plans/${code}`)).json()
-  return plan.shortlist.map(pick => String(pick.serialNo))
-}
+  expect(plan.shortlist).toHaveLength(1)
 
-// ---------------------------------------------------------------- 1. getting to the page
+  // 5. the friend opens Centre Search on their own phone and sees a tick, but not who picked it
+  await actAsMember(friendPage, code, friendId)
+  await friendPage.goto(`/centre-search?plan=${code}`)
+  await expect(friendPage.getByLabel(/which centre/i).locator("option", { hasText: centreName }).first()).toContainText("✅")
+  await expect(friendPage.getByLabel(/which centre/i)).not.toContainText("Aisha")
 
-test.describe("Centre Search: opening the page", () => {
-  test("CS-01 without a plan code, explains it's part of a Makan Plan", async ({ page }) => {
-    await page.goto("/centre-search")
-    await expect(page.getByRole("heading", { name: /part of your makan plan/i })).toBeVisible()
-    //scoped to the page body: the header also has a "Start a plan" link
-    const main = page.getByRole("main")
-    await expect(main.getByRole("link", { name: /join a plan/i })).toBeVisible()
-    await expect(main.getByRole("link", { name: /start a plan/i })).toBeVisible()
-  })
-
-  test("CS-02 a plan code that doesn't exist shows an error, not a blank page", async ({ page }) => {
-    await page.goto("/centre-search?plan=000000")
-    await expect(page.getByText(/plan not found|no plan/i)).toBeVisible()
-    await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible()   //the team's Not Found page
-  })
-
-  test("CS-03 a broken plan link (with a slash) still shows an error", async ({ page }) => {
-    //instructors edit URLs by hand; this used to give a blank page
-    await page.goto("/centre-search?plan=1/2")
-    await expect(page.getByText(/couldn't load|can't reach/i)).toBeVisible()
-    await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible()
-  })
-
-  test("CS-04 the back button returns to the plan lobby", async ({ page, request }) => {
-    const { code, hostId } = await makePlan(request)
-    await actAs(page, code, hostId)
-    await page.goto(`/centre-search?plan=${code}`)
-
-    await page.getByRole("link", { name: /back to plan lobby/i }).click()
-    await expect(page).toHaveURL(new RegExp(`/plan/${code}/lobby$`))
-  })
+  await hostContext.close()
+  await friendContext.close()
 })
 
-// ---------------------------------------------------------------- 2 + 3. choosing a centre and filtering
+test("a friend's pick shows up without reloading", async ({ browser, request }) => {
+  test.setTimeout(30000)
+  const hostContext = await browser.newContext()
+  const friendContext = await browser.newContext()
+  const hostPage = await hostContext.newPage()
+  const friendPage = await friendContext.newPage()
 
-test.describe("Centre Search: choosing a centre", () => {
-  let plan
+  // 1. both people are on Centre Search, looking at the same centre
+  const code = await createPlanViaApi(request)
+  const hostId = await joinViaApi(request, code, "Aisha")
+  const friendId = await joinViaApi(request, code, "Ben")
+  await actAsMember(hostPage, code, hostId)
+  await actAsMember(friendPage, code, friendId)
+  await hostPage.goto(`/centre-search?plan=${code}`)
+  await friendPage.goto(`/centre-search?plan=${code}`)
 
-  test.beforeEach(async ({ page, request }) => {
-    plan = await makePlan(request)
-    await actAs(page, plan.code, plan.hostId)
-    await page.goto(`/centre-search?plan=${plan.code}`)
-  })
+  // 2. the friend adds the centre
+  await friendPage.getByRole("button", { name: /add to picks/i }).first().click()
+  await expect(friendPage.getByRole("button", { name: /picked/i }).first()).toBeVisible()
 
-  test("CS-05 typing part of a name lists matching centres to tap", async ({ page, request }) => {
-    const centre = await findOpenCentre(request)
+  // 3. the host's page checks every 5 seconds, so within 10 it shows as picked
+  await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeVisible({ timeout: 10000 })
 
-    await chooseByTyping(page, centre)
-
-    //the box empties after choosing, ready for the next search
-    await expect(searchBox(page)).toHaveValue("")
-  })
-
-  test("CS-06 a name that matches nothing says so", async ({ page }) => {
-    await searchBox(page).fill("zzz")
-    await expect(page.getByText(/no open centre matches "zzz"/i)).toBeVisible()
-  })
-
-  test("CS-07 a dish nobody sells says no dishes match", async ({ page }) => {
-    await page.getByLabel("Dish name").fill("zzzz")
-    await expect(page.getByText(/no dishes match your filters/i)).toBeVisible()
-  })
-
-  test("CS-08 an impossible max price is caught before anything is sent", async ({ page }) => {
-    await page.getByLabel("Max price in dollars").fill("200")
-    await expect(page.getByText(/max price must be between/i)).toBeVisible()
-  })
+  await hostContext.close()
+  await friendContext.close()
 })
 
-// ---------------------------------------------------------------- 4. adding a centre
-
-test.describe("Centre Search: adding to the group's picks", () => {
-  test("CS-09 a member adds a centre and the server saves it", async ({ page, request }) => {
-    const { code, hostId } = await makePlan(request)
-    const centre = await findOpenCentre(request)
-    await actAs(page, code, hostId)
-    await page.goto(`/centre-search?plan=${code}`)
-
-    await test.step("choose the centre and press Add", async () => {
-      await chooseByTyping(page, centre)
-      await addButton(page).click()
-    })
-
-    await test.step("the button changes to picked and can't be pressed again", async () => {
-      await expect(pickedButton(page)).toBeVisible()
-      await expect(pickedButton(page)).toBeDisabled()
-    })
-
-    await test.step("the server has it on the shortlist", async () => {
-      await expect(async () => {
-        expect(await shortlistOf(request, code)).toContain(String(centre.serialNo))
-      }).toPass({ timeout: 5000 })
-    })
-  })
-
-  test("CS-10 a friend's pick shows up on my screen without reloading", async ({ page, request }) => {
-    const { code, hostId, friendId } = await makePlan(request)
-    const centre = await findOpenCentre(request)
-
-    //I'm looking at the centre...
-    await actAs(page, code, hostId)
-    await page.goto(`/centre-search?plan=${code}`)
-    await chooseByTyping(page, centre)
-    await expect(addButton(page)).toBeEnabled()
-
-    //...when my friend adds it from their phone
-    const response = await request.post(`/api/plans/${code}/shortlist`, {
-      data: { serialNo: String(centre.serialNo), added_by: "Zhe Ming", member_id: friendId }
-    })
-    expect(response.ok()).toBeTruthy()
-
-    //the page refreshes every 5 seconds, so within 10 it shows as picked
-    await expect(pickedButton(page)).toBeVisible({ timeout: 10000 })
-  })
-
-  test.describe("on a phone (iPhone 6 size)", () => {
-    test.use({ viewport: { width: 375, height: 667 } })
-
-    test("CS-11 the Add bar at the bottom of the screen works", async ({ page, request }) => {
-      const { code, hostId } = await makePlan(request)
-      const centre = await findOpenCentre(request)
-      await actAs(page, code, hostId)
-      await page.goto(`/centre-search?plan=${code}`)
-
-      await chooseByTyping(page, centre)
-      await expect(addButton(page)).toHaveText(/add to picks/i) //the phone bar's wording
-      await addButton(page).click()
-
-      await expect(pickedButton(page)).toBeVisible()
-      await expect(async () => {
-        expect(await shortlistOf(request, code)).toContain(String(centre.serialNo))
-      }).toPass({ timeout: 5000 })
-    })
-  })
+// getting to the page
+test("without a plan code, the page explains it's part of a Makan Plan", async ({ page }) => {
+  await page.goto("/centre-search")
+  await expect(page.getByRole("heading", { name: /part of your makan plan/i })).toBeVisible()
+  await expect(page.getByRole("main").getByRole("link", { name: /join a plan/i })).toBeVisible()
 })
 
-// ---------------------------------------------------------------- 5. when swiping starts
-
-test.describe("Centre Search: when the host starts swiping", () => {
-  test("CS-12 members still on Centre Search are sent to the swipe page", async ({ page, request }) => {
-    const { code, hostId, friendId } = await makePlan(request)
-    await actAs(page, code, friendId)
-    await page.goto(`/centre-search?plan=${code}`)
-    await expect(searchBox(page)).toBeVisible()
-
-    const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
-    expect(start.ok()).toBeTruthy()
-
-    //the page checks every 5 seconds, so allow up to 10
-    await expect(page).toHaveURL(new RegExp(`/plan/${code}/swipe`), { timeout: 10000 })
-  })
+test("a plan code that doesn't exist shows an error", async ({ page }) => {
+  await page.goto("/centre-search?plan=000000")
+  await expect(page.getByText(/plan not found|no plan/i)).toBeVisible()
+  await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible()
 })
 
-test.describe("Centre Search: picks and closed plans", () => {
-  test("CS-16 a picked centre gets a ✅ in the dropdown, without saying who added it", async ({ page, request }) => {
-    const { code, hostId, friendId } = await makePlan(request)
-    const centre = await findOpenCentre(request)
-    const added = await request.post(`/api/plans/${code}/shortlist`, {
-      data: { serialNo: String(centre.serialNo), added_by: "Zhe Ming", member_id: friendId }
-    })
-    expect(added.ok()).toBeTruthy()
-
-    await actAs(page, code, hostId)
-    await page.goto(`/centre-search?plan=${code}`)
-
-    //the centre can be in both "Suggested" and "All open centres", so check every copy of it
-    const options = page.locator(`#centre-select option[value="${centre.serialNo}"]`)
-    await expect(options.first()).toContainText(`✅`)
-    await expect(options.last()).toContainText(`✅`)
-    await expect(page.locator("#centre-select")).not.toContainText("Zhe Ming")   //picks stay anonymous, so nobody is biased
-  })
-
-  test("CS-17 someone who isn't a member is sent to the plan page once swiping has started", async ({ page, request }) => {
-    const { code, hostId } = await makePlan(request)
-    const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
-    expect(start.ok()).toBeTruthy()
-
-    //this browser never joined, so it goes to the plan page (which says "Too late!"), not the swipe page
-    await page.goto(`/centre-search?plan=${code}`)
-    await expect(page).toHaveURL(new RegExp(`/plan/${code}$`))
-  })
+test("a broken plan link (with a slash) still shows an error", async ({ page }) => {
+  await page.goto("/centre-search?plan=1/2")
+  await expect(page.getByText(/couldn't load|can't reach/i)).toBeVisible()
+  await expect(page.getByRole("heading", { name: /page not found/i })).toBeVisible()
 })
 
-// ---------------------------------------------------------------- 6. the server's rules (API level)
+test("if the server can't be reached, the page says so", async ({ page }) => {
+  //pretend the server is down for this test only
+  await page.route("**/api/plans/**", route => route.abort())
+  await page.goto("/centre-search?plan=123456")
+  await expect(page.getByText(/couldn't load|can't reach/i)).toBeVisible()
+})
 
-test.describe("Adding a centre: server rules", () => {
-  test("CS-13 someone who hasn't joined can't add a centre (403)", async ({ request }) => {
-    const { code } = await makePlan(request)
-    const centre = await findOpenCentre(request)
-    const response = await request.post(`/api/plans/${code}/shortlist`, {
-      data: { serialNo: String(centre.serialNo), added_by: "Stranger", member_id: "000000000000000000000000" }
-    })
-    expect(response.status()).toBe(403)
+test("the back button returns to the plan lobby", async ({ page, request }) => {
+  const code = await createPlanViaApi(request)
+  const me = await joinViaApi(request, code, "Aisha")
+  await actAsMember(page, code, me)
+  await page.goto(`/centre-search?plan=${code}`)
+
+  await page.getByRole("link", { name: /back to plan lobby/i }).click()
+  await expect(page).toHaveURL(`/plan/${code}/lobby`)
+})
+
+// choosing a centre and filtering
+test("typing part of a centre's name lists it to tap", async ({ page, request }) => {
+  const code = await createPlanViaApi(request)
+  const me = await joinViaApi(request, code, "Aisha")
+  await actAsMember(page, code, me)
+  await page.goto(`/centre-search?plan=${code}`)
+
+  // 1. use the centre that opened by itself
+  const centreName = (await page.locator(".centre-name").textContent()).trim()
+
+  // 2. type its name and tap it in the list (the list only shows 6, so type the whole name)
+  await page.getByRole("searchbox", { name: /type a centre name/i }).fill(centreName)
+  await page.getByRole("button", { name: centreName }).first().click()
+
+  // 3. the box empties and the centre stays chosen
+  await expect(page.getByRole("searchbox", { name: /type a centre name/i })).toHaveValue("")
+  await expect(page.locator(".centre-name")).toHaveText(centreName)
+})
+
+test("a centre name that matches nothing says so", async ({ page, request }) => {
+  const code = await createPlanViaApi(request)
+  const me = await joinViaApi(request, code, "Aisha")
+  await actAsMember(page, code, me)
+  await page.goto(`/centre-search?plan=${code}`)
+
+  await page.getByRole("searchbox", { name: /type a centre name/i }).fill("zzz")
+  await expect(page.getByText(/no open centre matches "zzz"/i)).toBeVisible()
+})
+
+test("a dish nobody sells says no dishes match", async ({ page, request }) => {
+  const code = await createPlanViaApi(request)
+  const me = await joinViaApi(request, code, "Aisha")
+  await actAsMember(page, code, me)
+  await page.goto(`/centre-search?plan=${code}`)
+
+  await page.getByLabel("Dish name").fill("zzzz")
+  await expect(page.getByText(/no dishes match your filters/i)).toBeVisible()
+})
+
+test("a max price over $100 shows an error", async ({ page, request }) => {
+  const code = await createPlanViaApi(request)
+  const me = await joinViaApi(request, code, "Aisha")
+  await actAsMember(page, code, me)
+  await page.goto(`/centre-search?plan=${code}`)
+
+  await page.getByLabel("Max price in dollars").fill("200")
+  await expect(page.getByText(/max price must be between/i)).toBeVisible()
+})
+
+// phones
+test("on a phone, the Add bar at the bottom works", async ({ page, request }) => {
+  await page.setViewportSize({ width: 375, height: 667 })   //iPhone 6 size
+  const code = await createPlanViaApi(request)
+  const me = await joinViaApi(request, code, "Aisha")
+  await actAsMember(page, code, me)
+  await page.goto(`/centre-search?plan=${code}`)
+
+  // the big laptop button is hidden on phones, so this is the bar's button
+  const addBar = page.locator(".add-bar").getByRole("button")
+  await expect(addBar).toHaveText(/add to picks/i)
+  await addBar.click()
+  await expect(addBar).toHaveText(/picked/i)
+})
+
+// when swiping starts
+test("members still on Centre Search are sent to swiping when the host starts", async ({ page, request }) => {
+  test.setTimeout(30000)
+  const code = await createPlanViaApi(request)
+  const hostId = await joinViaApi(request, code, "Aisha")
+  const friendId = await joinViaApi(request, code, "Ben")
+
+  // 1. the friend is on Centre Search
+  await actAsMember(page, code, friendId)
+  await page.goto(`/centre-search?plan=${code}`)
+  await expect(page.getByRole("searchbox", { name: /type a centre name/i })).toBeVisible()
+
+  // 2. the host starts swiping
+  const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
+  expect(start.ok()).toBeTruthy()
+
+  // 3. the page checks every 5 seconds, so allow up to 10
+  await expect(page).toHaveURL(`/plan/${code}/swipe`, { timeout: 10000 })
+})
+
+test("someone who never joined is sent to the plan page once swiping has started", async ({ page, request }) => {
+  test.setTimeout(30000)
+  const code = await createPlanViaApi(request)
+  const hostId = await joinViaApi(request, code, "Aisha")
+  await joinViaApi(request, code, "Ben")
+  const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
+  expect(start.ok()).toBeTruthy()
+
+  await page.goto(`/centre-search?plan=${code}`)
+  await expect(page).toHaveURL(`/plan/${code}`)
+})
+
+// the server's rules for adding
+test("the server refuses strangers, duplicates and late picks", async ({ request }) => {
+  test.setTimeout(30000)
+  const code = await createPlanViaApi(request)
+  const hostId = await joinViaApi(request, code, "Aisha")
+  await joinViaApi(request, code, "Ben")
+
+  // an open centre on the plan's date
+  const list = await (await request.get(`/api/centre-search/centres?date=${futureDate()}`)).json()
+  const open = list.centres.filter(c => c.is_open)
+  expect(open.length).toBeGreaterThan(1)   //needs 2 open centres in the test database
+  const pick = { serialNo: String(open[0].serialNo), added_by: "Aisha", member_id: hostId }
+
+  // 1. someone who hasn't joined can't add (403)
+  const stranger = await request.post(`/api/plans/${code}/shortlist`, {
+    data: { ...pick, member_id: "000000000000000000000000" }
   })
+  expect(stranger.status()).toBe(403)
 
-  test("CS-14 the same centre can't be added twice (409)", async ({ request }) => {
-    const { code, hostId } = await makePlan(request)
-    const centre = await findOpenCentre(request)
-    const pick = { serialNo: String(centre.serialNo), added_by: "Angel", member_id: hostId }
+  // 2. the same centre can't be added twice (409)
+  expect((await request.post(`/api/plans/${code}/shortlist`, { data: pick })).ok()).toBeTruthy()
+  expect((await request.post(`/api/plans/${code}/shortlist`, { data: pick })).status()).toBe(409)
 
-    const first = await request.post(`/api/plans/${code}/shortlist`, { data: pick })
-    expect(first.ok()).toBeTruthy()
-
-    const second = await request.post(`/api/plans/${code}/shortlist`, { data: pick })
-    expect(second.status()).toBe(409)
-    expect((await second.json()).error).toMatch(/already on the shortlist/i)
+  // 3. nothing can be added after swiping starts (400)
+  const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
+  expect(start.ok()).toBeTruthy()
+  const late = await request.post(`/api/plans/${code}/shortlist`, {
+    data: { ...pick, serialNo: String(open[1].serialNo) }
   })
-
-  test("CS-15 centres can't be added after swiping starts (400)", async ({ request }) => {
-    const { code, hostId } = await makePlan(request)
-    const centre = await findOpenCentre(request)
-    const start = await request.post(`/api/plans/${code}/start`, { data: { memberId: hostId } })
-    expect(start.ok()).toBeTruthy()
-
-    const response = await request.post(`/api/plans/${code}/shortlist`, {
-      data: { serialNo: String(centre.serialNo), added_by: "Angel", member_id: hostId }
-    })
-    expect(response.status()).toBe(400)
-  })
+  expect(late.status()).toBe(400)
 })

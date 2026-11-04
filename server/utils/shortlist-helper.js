@@ -252,7 +252,7 @@ exports.rankCentres = async function (plan,centres) {
 //chooses the best few centres for the whole group
 // pickedCentres = centres members picked in Centre Search (up to 10)
 // rankedCentres = nearby centres from rankCentres (everyone can eat there)
-// LOWER score = better. Score is in "km" so everything can be added together:
+// LOWER score = better. Score in "km" so everything can be added together:
 //   distance from the group's midpoint
 // + price  (0 = very cheap for everyone, up to PRICE_WEIGHT_KM = right at everyone's budget)
 // + crowd  (only if the plan starts within 2 hours, same as rankCentres)

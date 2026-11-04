@@ -6,7 +6,7 @@ const { getFinishedIds, getResults } = require("../utils/swipe-helper") //for Sw
 const { summariseCrowd } = require("./centres-controller") //for Swiping Card
 const CrowdReport = require("../models/crowd-report-model") //for Swiping Card
 const Stall = require("../models/stall-model") //for swipe cards
-const MAX_SHORTLIST = 5 //how many nearby centres are added after the picks
+const MAX_SHORTLIST = 5 //up to 5 nearby centres are added after the picks (fewer if some are already picks)
 const MAX_PICKS = 10 //each Makan Plan can pick up to 10 centres in Centre Search
 const MIN_BUDGET = 5 //realistic hawker meal, most centres have something halal/veg under $5
 const MAX_BUDGET = 100
@@ -201,8 +201,8 @@ exports.startSwiping = async (req,res) => {
             return res.status(400).json({error: "Not enough people to start swiping!\nWait for at least one friend to join."})
         }
 
-        //picks (up to 10) + nearby centres are scored together and
-        //every pick becomes a swipe card, then the best 5 nearby centres
+        //picks (up to 10) + nearby centres are scored together:
+        //every pick becomes a swipe card, then up to 5 of the best nearby centres
 
         //centres members picked in Centre Search
         const pickedBySerial = await getCentresBySerial(getShortlistSerials(plan))
@@ -217,7 +217,7 @@ exports.startSwiping = async (req,res) => {
         const allCentres = await Centre.findAllCentres()
         const centresRanked = await rankCentres(plan, allCentres)
 
-        //picks first, then the best 5 nearby centres
+        //picks first, then up to 5 of the best nearby centres
         const bestCentres = await pickBestCentres(plan, pickedCentres, centresRanked, MAX_SHORTLIST)
 
         const shortlist = []
@@ -451,7 +451,7 @@ exports.submitSwipes = async (req, res) => {
         if (finishedIds.length === freshPlan.members.length) {
             const centresBySerial = await getCentresBySerial(getShortlistSerials(freshPlan)) //look up the shortlisted centres
             const results = getResults(freshPlan, centresBySerial)   //most likes first
-            // no winner if nobody liked anything (winnerId is now a serialNo)
+            // no winner if nobody liked anything (winnerId is a serialNo)
             const winnerId = results.length > 0 && results[0].likes > 0 ? results[0].centreId : null
             await Plan.finishPlan(code, winnerId)
         }
