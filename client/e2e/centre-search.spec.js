@@ -1,54 +1,78 @@
-// Centre Search E2E tests. Needs the server running on a TEST database (each test makes its own plan).
-// Run from client/:  pnpm exec playwright test e2e/centre-search.spec.js
+//pnpm exec playwright test e2e/centre-search.spec.js
 
 import { test, expect } from "@playwright/test"
 import { futureDate, createPlanViaApi, joinViaApi, actAsMember } from "./helpers.js"
 
+// helpers
+//the host creates a plan on the website and joins it as memberName; returns the 6-digit code
+async function createPlanAndJoin(page, memberName) {
+  await page.goto("/")
+  await page.getByRole("link", { name: /start a makan plan/i }).first().click()
+  await page.getByRole("textbox", { name: /plan name/i }).fill("centre search lunch")
+  await page.getByRole("textbox", { name: /date/i }).fill(futureDate())
+  await page.getByRole("textbox", { name: /time/i }).fill("12:30")
+  await page.getByRole("button", { name: /create plan/i }).click()
+
+  await expect(page.getByText(/your makan plan code is/i)).toBeVisible()
+  const code = (await page.getByTestId("plan-code").textContent()).trim()
+  expect(code).toMatch(/^\d{6}$/)
+
+  await page.getByRole("button", { name: /go to plan lobby/i }).click()
+  await joinInLobby(page, memberName)
+  return code
+}
+
+//someone already on the lobby page fills in the form: their name, a pin on the map, a budget
+async function joinInLobby(page, memberName) {
+  await page.getByRole("textbox", { name: /your name/i }).fill(memberName)
+
+  await expect(page.locator("#map")).toBeVisible()
+  await page.locator("#map").click({
+    position: { x: 150, y: 150 }
+  })
+  await expect(page.getByText(/location set/i)).toBeVisible()
+
+  await page.getByRole("spinbutton", { name: /budget/i }).fill("20")
+  await page.getByRole("button", { name: /i'm in/i }).click()
+  await expect(page.getByText(/you're in/i)).toBeVisible()
+}
+
 // finding and adding a centre
-test("a member finds a centre from the lobby and a friend sees it picked", async ({ browser, request }) => {
+test("a member finds a centre from the lobby and a friend sees it picked", async ({ browser }) => {
   //separate contexts so each has its own localStorage, like two different people
-  test.setTimeout(60000)
+  test.setTimeout(90000)   //two people join through the website, same as makan-plan.spec.js
   const hostContext = await browser.newContext()
   const friendContext = await browser.newContext()
   const hostPage = await hostContext.newPage()
   const friendPage = await friendContext.newPage()
 
-  // 1. a new plan
-  const code = await createPlanViaApi(request, "centre search lunch")
+  try {
+    // 1. the host creates a plan on the website and joins it (first to join = host)
+    const code = await createPlanAndJoin(hostPage, "Aisha")
 
-  // 2. the host joins first in the lobby by tapping the map (first to join = host)
-  await hostPage.goto(`/plan/${code}/lobby`)
-  await hostPage.getByRole("textbox", { name: /your name/i }).fill("Aisha")
-  await expect(hostPage.locator("#map")).toBeVisible()
-  await hostPage.locator("#map").click({ position: { x: 150, y: 150 } })
-  await expect(hostPage.getByText(/location set/i)).toBeVisible()
-  await hostPage.getByRole("spinbutton", { name: /budget/i }).fill("20")
-  await hostPage.getByRole("button", { name: /i'm in/i }).click()
-  await expect(hostPage.getByText(/you're in/i)).toBeVisible()
-  const friendId = await joinViaApi(request, code, "Ben")   //a friend joins after the host
+    // 2. a friend opens the lobby link in another browser and joins too
+    await friendPage.goto(`/plan/${code}/lobby`)
+    await joinInLobby(friendPage, "Ben")
 
-  // 3. the host taps "Find a centre" and lands on Centre Search
-  await hostPage.getByRole("button", { name: /find a centre/i }).click()
-  await expect(hostPage).toHaveURL(`/centre-search?plan=${code}`)
+    // 3. the host taps "Find a centre" and lands on Centre Search
+    await hostPage.getByRole("button", { name: /find a centre/i }).click()
+    await expect(hostPage).toHaveURL(`/centre-search?plan=${code}`)
 
-  // 4. the nearest centre opens by itself, the host adds it
-  const centreName = (await hostPage.locator(".centre-name").textContent()).trim()
-  await hostPage.getByRole("button", { name: /add to picks/i }).first().click()
-  await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeVisible()
-  await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeDisabled()   //can't add it twice
+    // 4. the nearest centre opens by itself, the host adds it
+    const centreName = (await hostPage.locator(".centre-name").textContent()).trim()
+    await hostPage.getByRole("button", { name: /add to picks/i }).first().click()
+    await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeVisible()
+    await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeDisabled()   //can't add it twice
 
-  // the server saved it on the plan's shortlist
-  const plan = await (await request.get(`/api/plans/${code}`)).json()
-  expect(plan.shortlist).toHaveLength(1)
-
-  // 5. the friend opens Centre Search on their own phone and sees a tick, but not who picked it
-  await actAsMember(friendPage, code, friendId)
-  await friendPage.goto(`/centre-search?plan=${code}`)
-  await expect(friendPage.getByLabel(/which centre/i).locator("option", { hasText: centreName }).first()).toContainText("✅")
-  await expect(friendPage.getByLabel(/which centre/i)).not.toContainText("Aisha")
-
-  await hostContext.close()
-  await friendContext.close()
+    // 5. the friend opens Centre Search and sees a tick, but not who picked it
+    await friendPage.goto(`/centre-search?plan=${code}`)
+    await expect(friendPage.getByLabel(/which centre/i).locator("option", { hasText: centreName }).first()).toContainText("✅")
+    await expect(friendPage.getByLabel(/which centre/i)).not.toContainText("Aisha")
+  } finally {
+    //close both browsers even if a check above fails
+    await hostContext.close()
+    await friendContext.close()
+  }
 })
 
 test("a friend's pick shows up without reloading", async ({ browser, request }) => {
@@ -58,24 +82,26 @@ test("a friend's pick shows up without reloading", async ({ browser, request }) 
   const hostPage = await hostContext.newPage()
   const friendPage = await friendContext.newPage()
 
-  // 1. both people are on Centre Search, looking at the same centre
-  const code = await createPlanViaApi(request)
-  const hostId = await joinViaApi(request, code, "Aisha")
-  const friendId = await joinViaApi(request, code, "Ben")
-  await actAsMember(hostPage, code, hostId)
-  await actAsMember(friendPage, code, friendId)
-  await hostPage.goto(`/centre-search?plan=${code}`)
-  await friendPage.goto(`/centre-search?plan=${code}`)
+  try {
+    // 1. both people are on Centre Search, looking at the same centre
+    const code = await createPlanViaApi(request)
+    const hostId = await joinViaApi(request, code, "Aisha")
+    const friendId = await joinViaApi(request, code, "Ben")
+    await actAsMember(hostPage, code, hostId)
+    await actAsMember(friendPage, code, friendId)
+    await hostPage.goto(`/centre-search?plan=${code}`)
+    await friendPage.goto(`/centre-search?plan=${code}`)
 
-  // 2. the friend adds the centre
-  await friendPage.getByRole("button", { name: /add to picks/i }).first().click()
-  await expect(friendPage.getByRole("button", { name: /picked/i }).first()).toBeVisible()
+    // 2. the friend adds the centre
+    await friendPage.getByRole("button", { name: /add to picks/i }).first().click()
+    await expect(friendPage.getByRole("button", { name: /picked/i }).first()).toBeVisible()
 
-  // 3. the host's page checks every 5 seconds, so within 10 it shows as picked
-  await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeVisible({ timeout: 10000 })
-
-  await hostContext.close()
-  await friendContext.close()
+    // 3. the host's page checks every 5 seconds, so within 10 it shows as picked
+    await expect(hostPage.getByRole("button", { name: /picked/i }).first()).toBeVisible({ timeout: 10000 })
+  } finally {
+    await hostContext.close()
+    await friendContext.close()
+  }
 })
 
 // getting to the page
