@@ -175,7 +175,7 @@ pnpm exec playwright test --project=chromium --workers=2  # fewer tests at once,
 pnpm exec playwright show-report                          # open the HTML report of the last run
 ```
 
-A full run takes about 1 minute. The two-person tests are the slowest, because building the shortlist and loading the swipe cards both query the database.
+A full run takes about 2 minutes. The two-person tests are the slowest, because building the shortlist and loading the swipe cards both query the database.
 
 **What the E2E tests cover**
 

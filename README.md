@@ -175,7 +175,7 @@ pnpm exec playwright test --project=chromium --workers=2  # fewer tests at once,
 pnpm exec playwright show-report                          # open the HTML report of the last run
 ```
 
-A full run takes about 1 minute. The two-person tests are the slowest, because building the shortlist and loading the swipe cards both query the database.
+A full run takes about 2 minutes. The two-person tests are the slowest, because building the shortlist and loading the swipe cards both query the database.
 
 **What the E2E tests cover**
 
@@ -193,7 +193,7 @@ The last column says where each test gets its data:
 | `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
 | `url-validation.spec.js` | Typing URLs by hand: a saved member ID that's no longer in the plan doesn't cause a redirect loop; a fake plan code says the plan wasn't found; the journey page explains why there's no route yet; leaving the swipe page doesn't pull you back | Real |
 | `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px, the list sorted by name and split into pages | Mocked |
-| `centre-search.spec.js` | A member opens Centre Search from the lobby, adds the nearest centre, and a friend on another phone sees it ✅ without showing who picked it; a friend's pick shows up without reloading; no code, a fake code, a broken link or the server being down shows an error; the back button returns to the lobby; searching by name, dish and max price; the phone Add bar; members are sent to swiping when the host starts and non-members to the plan page; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real, mocked for the server-down test |
+| `centre-search.spec.js` | The host creates a plan on the website, both people join through the lobby, the host opens Centre Search from the lobby and adds the nearest centre, and the friend sees it ✅ without being told who picked it; a friend's pick shows up without reloading; no code, a fake code, a broken link or the server being down shows an error; the back button returns to the lobby; searching by name, dish and max price; the phone Add bar; members are sent to swiping when the host starts and non-members to the plan page; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real, mocked for the server-down test |
 | `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres | Real |
 | `hawker-login.spec.js` | A valid hawker logs in; a wrong stall name is refused; both fields are required; the hawker ID is not case-sensitive | Real |
 | `hawker-dashboard.spec.js` | A logged-in hawker sees the dashboard, their stall's details, and can update the stall status | Real |
