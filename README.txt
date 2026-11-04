@@ -287,7 +287,8 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 | Feature | Owner |
 |---|---|
 | Makan Plan, shortlist logic, routing | Zhe Ming & Shawn |
-| Swipe to Match, hawker & admin accounts | Alecia |
+| Swipe to Match | Shawn |
+| Hawker & admin accounts | Alecia |
 | Live Centre Status | Yash |
 | Hawker Dashboard | Dikshaa |
 | Centre Search | Angel |
