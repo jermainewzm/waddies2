@@ -3,6 +3,10 @@ const Stall = require("../models/stall-model")
 const Centre = require("../models/centre-model")
 const mongoose = require("mongoose")
 
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
 async function createHawkerRequest(req, res) {
     try {
         const {
@@ -14,9 +18,9 @@ async function createHawkerRequest(req, res) {
 
         // required fields
         if (
-            !serialNo ||
-            !stall_name ||
-            !unit_no
+            !serialNo || serialNo.trim() === "" ||
+            !stall_name || stall_name.trim() === "" ||
+            !unit_no || unit_no.trim() === ""
         ) {
             return res.status(400).json({
                 message:
@@ -258,7 +262,7 @@ async function verifyExistingHawker(req, res) {
         const stall = await Stall.findOne({
             owner_id: owner_id.trim().toUpperCase(),
             name: {
-                $regex: `^${stall_name.trim()}$`,
+                $regex: `^${escapeRegex(stall_name.trim())}$`,
                 $options: "i"
             }
         })

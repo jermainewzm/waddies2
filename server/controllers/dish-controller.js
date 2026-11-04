@@ -40,7 +40,7 @@ async function addDish(req, res) {
             price,
             tags,
             is_available
-        } = req.body
+        } = req.body || {}
 
         const stall = req.stall
 
@@ -137,12 +137,27 @@ async function updateDish(req, res) {
             price,
             tags,
             is_available
-        } = req.body
+        } = req.body || {}
 
         if (name !== undefined) {
             if (name.trim() === "") {
                 return res.status(400).json({
                     message: "Dish name cannot be empty."
+                })
+            }
+
+            const duplicateDish = await Dish.findOne({
+                stall_id: stall._id,
+                _id: { $ne: dish._id },
+                name: {
+                    $regex: `^${escapeRegex(name.trim())}$`,
+                    $options: "i"
+                }
+            })
+
+            if (duplicateDish) {
+                return res.status(409).json({
+                    message: "You already have a dish with that name."
                 })
             }
 
