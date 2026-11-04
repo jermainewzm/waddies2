@@ -32,7 +32,7 @@ async function getMyStall(req, res) {
 
 async function updateMyStallStatus(req, res) {
     try {
-        const { status } = req.body
+        const { status } = req.body || {}
 
         const allowedStatuses = [
             "open",
@@ -79,7 +79,7 @@ async function updateMyStallStatus(req, res) {
 
 async function updateMyStallRestDays(req, res) {
     try {
-        const { rest_days } = req.body
+        const { rest_days } = req.body || {}
 
         const allowedDays = [
             "Monday",
