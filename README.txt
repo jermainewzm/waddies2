@@ -14,7 +14,7 @@ Group hawker centre decisions, settled. One code for the whole group, everyone's
 - **Hawker Dashboard** — stall owners set their status, rest days, menu and shout-outs.
 - **Hawker & admin accounts** — new hawkers apply for a stall, admins approve.
 
---- 
+---
 
 ## Tech stack
 
@@ -70,7 +70,7 @@ node seed/seed-test-shoutouts.js
 
 Order matters: the stall seed needs the centres, and the shout-out seed needs the stalls.
 
-The hawker centres are real, imported from NEA's dataset. The stalls, dishes and shout-outs are fictional examples, since real stall menus and prices aren't publicly available. Real hawkers can add their own through the Hawker Dashboard.
+The hawker centres are real, imported from NEA's dataset (food centres only: market-only centres with no cooked-food stalls are skipped). The stalls, dishes and shout-outs are fictional examples, since real stall menus and prices aren't publicly available. Real hawkers can add their own through the Hawker Dashboard.
 
 ### Running
 
@@ -125,9 +125,18 @@ The tests run once and exit after completion.
 Unit tests (`server/tests/`) cover:
 
 - **Shortlist and results:** the group midpoint, distance, the diet and budget rules, centre closures, candidate selection, and the results tally with its travel-distance tie-break.
-- **Centre Search:** which stalls are open on the plan's date and why the others are closed, and which members have nothing to eat.
+- **Centre Search:** which stalls are open on the plan's date and why the others are closed, which members have nothing to eat, that only food centres are listed, and every rule for adding a centre to the group's picks (members only, open on the plan's date, no duplicates, max 10, not after swiping starts).
 - **Hawkers:** hawker ID format, hawker login, and updating stall status and rest days.
 - **Shout-outs:** working out "today" in Singapore time.
+
+### Frontend component tests
+
+```bash
+cd client
+pnpm test:unit
+```
+
+`client/src/components/__tests__/CentreMenu.spec.js` checks the Centre Search menu on its own: cheapest price per stall, opening and closing stalls, closed-stall reasons, and the empty-state messages.
 
 ### Frontend end-to-end tests
 
@@ -184,8 +193,8 @@ The last column says where each test gets its data:
 | `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
 | `url-validation.spec.js` | Typing URLs by hand: a saved member ID that's no longer in the plan doesn't cause a redirect loop; a fake plan code says the plan wasn't found; the journey page explains why there's no route yet; leaving the swipe page doesn't pull you back | Real |
 | `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px, the list sorted by name and split into pages | Mocked |
-| `centre-search.spec.js` | Opening Centre Search with no code, a fake code or a broken link shows an error; searching by name, dish and max price; a member adds a centre and a friend sees it without reloading; the phone Add bar; members are sent to swiping when the host starts; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real |
-| `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres; no sideways scrolling on an iPhone-sized screen | Real |
+| `centre-search.spec.js` | A member opens Centre Search from the lobby, adds the nearest centre, and a friend on another phone sees it ✅ without showing who picked it; a friend's pick shows up without reloading; no code, a fake code, a broken link or the server being down shows an error; the back button returns to the lobby; searching by name, dish and max price; the phone Add bar; members are sent to swiping when the host starts and non-members to the plan page; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real, mocked for the server-down test |
+| `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres | Real |
 | `hawker-login.spec.js` | A valid hawker logs in; a wrong stall name is refused; both fields are required; the hawker ID is not case-sensitive | Real |
 | `hawker-dashboard.spec.js` | A logged-in hawker sees the dashboard, their stall's details, and can update the stall status | Real |
 | `hawker-application.spec.js` | A new hawker opens the application page; required fields are checked; an application is submitted | Real |
@@ -193,16 +202,16 @@ The last column says where each test gets its data:
 
 **How the tests are built**
 
-- **Two people, two browser contexts.** The plan and swipe tests open two separate browser contexts, so the host and the friend each have their own `localStorage`, like two different phones.
-- **Real backend vs mocks.** The full journeys (create → join → swipe → result) use the real server, because the point is to check that everything works together. Pages that only display data (`centres.spec.js`) are mocked, so they're fast and don't depend on what's in the database.
-- **Stable selectors.** Tests find elements the way a user does (`getByRole` with the button, link or heading text). Where text changes from run to run, they use `data-testid` (`plan-code`, `swipe-counter`, `winner-name`).
+- **Two people, two browser contexts.** The plan, swipe and Centre Search tests open two separate browser contexts, so the host and the friend each have their own `localStorage`, like two different phones.
+- **Real backend vs mocks.** The full journeys (create → join → swipe → result) use the real server, because the point is to check that everything works together. Pages that only display data (`centres.spec.js`) are mocked, so they're fast and don't depend on what's in the database. `centre-search.spec.js` also uses `page.route` once, to make the API fail on purpose and check the "server can't be reached" message.
+- **Stable selectors.** Tests find elements the way a user does (`getByRole` with the button, link or heading text). Where text changes from run to run, they use `data-testid` (`plan-code`, `swipe-counter`, `winner-name`). Centre Search's tests read the chosen centre's name from its `.centre-name` heading, since it depends on which centre is nearest.
 - **Repeatable without hardcoding.** The number of swipe cards depends on the plan, so the swipe tests read "Centre 1 of N" and loop N times instead of clicking a fixed number of times.
 - **Negative checks.** Tests also assert what must *not* happen, for example staying on the join page after a bad code, and no "Take me there!" button when there is no match.
-- **Waiting for polling.** The lobby and swipe pages refresh every 5 seconds, so checks that depend on another person's action use longer timeouts (10–30 seconds), and the two-person tests raise the test limit with `test.setTimeout`.
+- **Waiting for polling.** The lobby, swipe and Centre Search pages refresh every 5 seconds, so checks that depend on another person's action use longer timeouts (10–30 seconds), and the two-person tests raise the test limit with `test.setTimeout`.
 
 **Database note**
 
-The tests that use the real backend write real records on every run: plans named "saturday lunch" and "e2e centre search", and hawker applications named "Playwright Test Stall". The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
+The tests that use the real backend write real records on every run: plans named "saturday lunch", "centre search lunch" and "e2e lunch", and hawker applications named "Playwright Test Stall". The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
 
 ---
 
@@ -213,7 +222,7 @@ The tests that use the real backend write real records on every run: plans named
 3. **Distance** — the 15 nearest centres to the midpoint become candidates.
 4. **Diet and budget** — a centre is kept only if every member has at least one dish they can eat within their budget.
 5. **Ranking** — candidates are scored as distance, plus a price penalty, plus a crowd penalty if the plan starts within two hours. Lowest score first.
-6. **Picks** — centres the group added through Centre Search are kept regardless, and appear before the suggestions.
+6. **Picks** — centres the group added through Centre Search (up to 10) always become swipe cards and come first, followed by up to 5 of the best nearby centres. A pick that is also one of those 5 isn't replaced, so there can be fewer.
 
 The group then swipes, and the centre with the most yeses wins. Ties are broken by the shortest total travel distance for the whole group.
 
@@ -243,6 +252,10 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 ### Code
 
 - `decodePolyline()` in `client/src/views/JourneyView.vue`, which turns OneMap's encoded route geometry into map coordinates, was written with AI.
+
+- **Boilerplate code generation (starter code and code snippets):** AI was used across the project to generate starter code and snippets, which we then adapted, extended and tested ourselves. 
+- **Explaining coding errors and debugging hints:** while building HawkerHop, we asked AI for hints on problems, then wrote and tested the code ourselves e.g.:
+  - **Ignoring out-of-date menu responses** (`loadMenu()` in `client/src/views/CentreSearch.vue`). If you choose centre A and then quickly choose B, A's menu can arrive after B's. The page remembers which centre each request was for and ignores any answer for a centre you've already moved away from, so A's menu never shows under B's name.
 
 ### Tests
 
