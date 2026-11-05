@@ -158,6 +158,8 @@ pnpm dev
 
 Wait for `API running on http://localhost:8000`. Without it, the plan tests fail, and the terminal running Vite shows `ECONNREFUSED` (it couldn't reach the backend).
 
+Some tests also need OneMap credentials (`ONEMAP_EMAIL` and `ONEMAP_PASSWORD`) in `server/.env`, see [Environment variables](#environment-variables). Joining with a postal code and loading journey routes both go through OneMap, so without them the Makan Plan, Swipe and most Centre Search tests fail at "Location set".
+
 **3. Run the tests** from `client/`:
 
 ```bash
