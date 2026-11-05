@@ -161,7 +161,7 @@ function statusPill() {
         <div class="intro">
           <h2 class="section-title outline" style="color: var(--sun)">Hawkers, one tap only</h2>
           <p class="section-lead left">Sold out early? Taking a rest day? Tell everyone planning a makan session before they make the trip.</p>
-          <RouterLink class="btn big yellow" to="/hawker/dashboard">For hawkers →</RouterLink>
+          <RouterLink class="btn big yellow" to="/hawker/dashboard">For Hawkers →</RouterLink>
         </div>
 
         <div class="card stall-demo">

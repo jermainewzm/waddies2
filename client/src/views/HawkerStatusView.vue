@@ -62,6 +62,7 @@ onMounted(checkStatus)
 <template>
   <main class="bg-tiles">
     <div class="container py-5">
+      <RouterLink to="/hawker" class="btn sm mb-4">← For Hawkers</RouterLink>
 
       <div class="page-header hh-header text-center mb-5">
         <svg width="70" height="77" aria-hidden="true"><use href="#av-tissue"/></svg>

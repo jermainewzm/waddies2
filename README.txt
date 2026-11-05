@@ -45,16 +45,30 @@ pnpm install
 
 ### Environment variables
 
-Create `server/.env` (see `server/.env.example`):
+The app needs a MongoDB database and a OneMap account. Both are free.
+
+1. **MongoDB Atlas** (https://www.mongodb.com/atlas)
+   - Create a free cluster.
+   - Under Database Access, add a database user with a password.
+   - Under Network Access, add your IP address (or `0.0.0.0/0`).
+   - Click Connect → Drivers and copy the connection string. Add the database name `hawkerhop` before the `?`, e.g.
+     `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/hawkerhop?retryWrites=true&w=majority`
+
+2. **OneMap** (https://www.onemap.gov.sg/apidocs/register)
+   - Register for an API account (choose "Research / Student Projects"), then set a password. The server only needs that email and password: it logs in and renews the access token by itself, so no token goes in `.env`.
+
+3. **Create `server/.env`** (copy `server/.env.example`). These four are the only variables the app uses:
 
 ```env
-DB=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/hawkerhop
-ONEMAP_EMAIL=your_onemap_email
-ONEMAP_PASSWORD=your_onemap_password
+DB=<your connection string from step 1>
+ONEMAP_EMAIL=<your OneMap email>
+ONEMAP_PASSWORD=<your OneMap password>
 PORT=8000
 ```
 
 The client needs no `.env`. In development, Vite forwards any `/api` request to the backend on `localhost:8000` (see `vite.config.js`). In production, Vercel sends `/api` to the server on the same domain.
+
+Without OneMap, you can still join a plan by dropping a pin on the map, but looking up a postal code and the journey page's directions won't work, and the Makan Plan, Swipe and most Centre Search tests will fail.
 
 ### Seeding
 
@@ -105,7 +119,7 @@ Frontend: http://localhost:5173
 - ID: `HAWKER_001`
 - Stall name: `Sunrise Chicken Rice` (Adam Road Food Centre, created by `seed-test-stalls.js`)
 
-Hawker login uses the hawker ID and the exact stall name.
+Hawker login uses the hawker ID and the stall name (spelled in full; neither is case-sensitive).
 
 ---
 
@@ -158,6 +172,8 @@ pnpm dev
 
 Wait for `API running on http://localhost:8000`. Without it, the plan tests fail, and the terminal running Vite shows `ECONNREFUSED` (it couldn't reach the backend).
 
+Some tests also need OneMap credentials (`ONEMAP_EMAIL` and `ONEMAP_PASSWORD`) in `server/.env`, see [Environment variables](#environment-variables). Joining with a postal code and loading journey routes both go through OneMap, so without them the Makan Plan, Swipe and most Centre Search tests fail at "Location set".
+
 **3. Run the tests** from `client/`:
 
 ```bash
@@ -193,7 +209,7 @@ The last column says where each test gets its data:
 | `validation.spec.js` | 404 page and its "Back to home" link; a code that isn't 6 digits; a code that doesn't exist; a lobby for a missing plan shows an error and an "Enter another code" link; a budget under $5 shows an error | Real for the last three, none for the first two |
 | `url-validation.spec.js` | Typing URLs by hand: a saved member ID that's no longer in the plan doesn't cause a redirect loop; a fake plan code says the plan wasn't found; the journey page explains why there's no route yet; leaving the swipe page doesn't pull you back | Real |
 | `centres.spec.js` | Centre list, closed centres, crowd reports, shout-outs, cards stacking at 375px, the list sorted by name and split into pages | Mocked |
-| `centre-search.spec.js` | The host creates a plan on the website, both people join through the lobby, the host opens Centre Search from the lobby and adds the nearest centre, and the friend sees it ✅ without being told who picked it; a friend's pick shows up without reloading; no code, a fake code, a broken link or the server being down shows an error; the back button returns to the lobby; searching by name, dish and max price; the phone Add bar; members are sent to swiping when the host starts and non-members to the plan page; the server refuses non-members (403), duplicates (409) and adds after swiping starts (400) | Real, mocked for the server-down test |
+| `centre-search.spec.js` | One person creates a plan, joins with a postal code and adds a centre to the picks; with two people, the host adds the nearest centre and the friend sees it ✅ without being told who picked it; a friend's pick shows up on the host's page without reloading; no code, a fake code, a broken link or the server being down shows an error; the back button returns to the lobby; searching by centre name, dish and max price | Real, mocked for the server-down test |
 | `landing.spec.js` | "Start a Makan Plan" and "Join with a code" open the right pages; the live centre status links to all centres | Real |
 | `hawker-login.spec.js` | A valid hawker logs in; a wrong stall name is refused; both fields are required; the hawker ID is not case-sensitive | Real |
 | `hawker-dashboard.spec.js` | A logged-in hawker sees the dashboard, their stall's details, and can update the stall status | Real |
@@ -211,7 +227,7 @@ The last column says where each test gets its data:
 
 **Database note**
 
-The tests that use the real backend write real records on every run: plans named "saturday lunch", "centre search lunch" and "e2e lunch", and hawker applications named "Playwright Test Stall". The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
+The tests that use the real backend write real records on every run: plans named "saturday lunch", "centre search lunch" and "e2e lunch", hawker applications named "Playwright Test Stall", and an approved application named "Playwright Approval Stall" plus a number, which also adds a new stall and hawker ID. The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
 
 ---
 
@@ -291,4 +307,4 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 | Hawker & admin accounts | Alecia |
 | Live Centre Status | Yash |
 | Hawker Dashboard | Dikshaa |
-| Centre Search | Angel |
+| Centre Search | Angeline |

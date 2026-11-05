@@ -34,7 +34,7 @@ async function seed() {
         }
          console.log(`Imported ${foodRecords.length} food centres from NEA (skipped ${records.length - foodRecords.length} market-only)`)
          
-         // ── 3. Seed demo admins
+         // ── 3. Seed the demo admin
         await Admin.deleteMany({})
 
         await Admin.insertMany([
@@ -44,7 +44,7 @@ async function seed() {
             }
         ])
 
-        console.log("Created demo admins")
+        console.log("Created demo admin")
 
          // ── 4. Stalls for pilot centres: added later ──
          console.log('\n✅ Seed complete!')
