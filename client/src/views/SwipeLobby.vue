@@ -523,6 +523,17 @@ main {
   transform: rotate(13deg);    /* the slant */
 }
 
+/* phones: the card reaches the screen edge, so keep the stamp inside it,
+   on the photo (not above the card, where it would cover "Centre 1 of 5") */
+@media (max-width: 576px) {
+  .recommend-stamp {
+    top: 12px;
+    right: 8px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+  }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
