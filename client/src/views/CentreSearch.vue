@@ -711,11 +711,11 @@ main {
     color: var(--ink);
 }
 
-/* plan name, date, code: scrolls sideways on phones */
+/* plan name, date, code: wraps onto a second line on phones, so the code chip isn't cut off */
 .plan-strip {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    overflow-x: auto;
     padding: 2px 2px 8px;
     margin-bottom: 8px;
 }

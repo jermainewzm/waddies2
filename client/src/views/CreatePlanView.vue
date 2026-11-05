@@ -86,7 +86,8 @@ async function createPlan() {
     } else {
       errorMessage.value = "Can't reach the server."
     }
-      isCreating.value = false
+  } finally {
+    isCreating.value = false
   }
 }
 
@@ -158,7 +159,7 @@ function formatTime(time) {
               NOTE: Most hawker centres and public transport are closed at this hour.
             </p>
 
-            <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating">
+            <button type="submit" class="btn w-100 red" v-bind:disabled="isCreating || !!code">
               <span v-if="isCreating" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
               {{ isCreating ? 'Creating...' : "Create Plan →" }}
             </button>
