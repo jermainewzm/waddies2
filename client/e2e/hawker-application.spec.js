@@ -50,7 +50,7 @@ test.describe('Hawker Application', () => {
       .fill(uniqueUnit)
 
     await page
-      .getByLabel(/message for admin|shoutout for customers/i)
+      .getByLabel(/message for admin/i)
       .fill('Playwright test application')
 
     await page
