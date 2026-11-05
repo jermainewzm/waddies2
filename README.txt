@@ -290,7 +290,9 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 
 ## Known limitations
 
-- **Hawker and admin login is identification, not authentication.** An ID is stored in localStorage and sent as a header; there are no passwords or tokens. A production version would need proper authentication.
+- **Hawker and admin access uses prototype-level identification, not full authentication.** HawkerHop's hawker onboarding and admin approval flow is a simplified prototype, not a recreation of Singapore's official hawker tenancy process. The "admin" represents an internal HawkerHop team role that approves which stalls may manage content in the app.
+
+  Because this is only a prototype-level onboarding flow, hawker and admin access uses ID-based gating rather than full authentication: an ID is stored in localStorage and sent as a header, with no passwords or tokens. A production version would require stronger authentication, such as secure accounts, authenticated sessions or tokens, or integration with official identity systems.
 - **Member locations are validated against a bounding box**, so a pin in the Straits or just across the Causeway is accepted. OneMap then can't route from it, and the journey page offers Google Maps as a fallback.
 - **Members can't change their diet or budget after joining.** They would need to rejoin or start a new plan.
 - **NEA's data has closure dates but not opening hours**, so a plan at 4am produces a shortlist of centres that are closed. We warn on the create page rather than blocking it.
