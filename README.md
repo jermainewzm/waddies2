@@ -119,7 +119,7 @@ Frontend: http://localhost:5173
 - ID: `HAWKER_001`
 - Stall name: `Sunrise Chicken Rice` (Adam Road Food Centre, created by `seed-test-stalls.js`)
 
-Hawker login uses the hawker ID and the exact stall name.
+Hawker login uses the hawker ID and the stall name (spelled in full; neither is case-sensitive).
 
 ---
 
