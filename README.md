@@ -147,10 +147,10 @@ Unit tests (`server/tests/`) cover:
 
 ```bash
 cd client
-pnpm test:unit
+pnpm test:unit --run
 ```
 
-`client/src/components/__tests__/CentreMenu.spec.js` checks the Centre Search menu on its own: cheapest price per stall, opening and closing stalls, closed-stall reasons, and the empty-state messages.
+`client/src/components/__tests__/CentreMenu.spec.js` checks the Centre Search menu on its own: cheapest price per stall, opening and closing stalls, closed-stall reasons, and the empty-state messages. Without `--run`, Vitest keeps watching for changes; press `q` to quit.
 
 ### Frontend end-to-end tests
 
