@@ -295,6 +295,8 @@ MongoDB Atlas network access is set to allow all IPs, because Vercel's serverles
 - **Members can't change their diet or budget after joining.** They would need to rejoin or start a new plan.
 - **NEA's data has closure dates but not opening hours**, so a plan at 4am produces a shortlist of centres that are closed. We warn on the create page rather than blocking it.
 - **The host is whoever joins first.** This matches the usual flow — you create a plan, add your own details, then share the code — but it isn't enforced.
+- **Hawker and admin access uses prototype-level identification, not full authentication** HawkerHop’s hawker onboarding and admin approval flow is a simplified prototype, not a recreation of Singapore’s official hawker tenancy process. The “admin” represents an internal HawkerHop team role that approves which stalls may manage content in the app.
+  Because this is only a prototype-level onboarding flow, hawker and admin access uses ID-based gating rather than full authentication. A production version would require stronger authentication, such as secure accounts, authenticated sessions or tokens, or integration with official identity systems.
 
 ---
 
