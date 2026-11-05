@@ -45,16 +45,30 @@ pnpm install
 
 ### Environment variables
 
-Create `server/.env` (see `server/.env.example`):
+The app needs a MongoDB database and a OneMap account. Both are free.
+
+1. **MongoDB Atlas** (https://www.mongodb.com/atlas)
+   - Create a free cluster.
+   - Under Database Access, add a database user with a password.
+   - Under Network Access, add your IP address (or `0.0.0.0/0`).
+   - Click Connect → Drivers and copy the connection string. Add the database name `hawkerhop` before the `?`, e.g.
+     `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/hawkerhop?retryWrites=true&w=majority`
+
+2. **OneMap** (https://www.onemap.gov.sg/apidocs/register)
+   - Register for an API account (choose "Research / Student Projects"), then set a password. The server only needs that email and password: it logs in and renews the access token by itself, so no token goes in `.env`.
+
+3. **Create `server/.env`** (copy `server/.env.example`). These four are the only variables the app uses:
 
 ```env
-DB=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/hawkerhop
-ONEMAP_EMAIL=your_onemap_email
-ONEMAP_PASSWORD=your_onemap_password
+DB=<your connection string from step 1>
+ONEMAP_EMAIL=<your OneMap email>
+ONEMAP_PASSWORD=<your OneMap password>
 PORT=8000
 ```
 
 The client needs no `.env`. In development, Vite forwards any `/api` request to the backend on `localhost:8000` (see `vite.config.js`). In production, Vercel sends `/api` to the server on the same domain.
+
+Without OneMap, you can still join a plan by dropping a pin on the map, but looking up a postal code and the journey page's directions won't work, and the Makan Plan, Swipe and most Centre Search tests will fail.
 
 ### Seeding
 
@@ -213,7 +227,7 @@ The last column says where each test gets its data:
 
 **Database note**
 
-The tests that use the real backend write real records on every run: plans named "saturday lunch", "centre search lunch" and "e2e lunch", and hawker applications named "Playwright Test Stall". The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
+The tests that use the real backend write real records on every run: plans named "saturday lunch", "centre search lunch" and "e2e lunch", hawker applications named "Playwright Test Stall", and an approved application named "Playwright Approval Stall" plus a number, which also adds a new stall and hawker ID. The hawker dashboard test also changes `HAWKER_001`'s stall status. To keep demo data clean, point `DB` in `server/.env` at a separate test database before running them, or delete these records afterwards.
 
 ---
 
