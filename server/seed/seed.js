@@ -41,10 +41,6 @@ async function seed() {
             {
                 admin_id: "admin_001",
                 name: "Admin 1"
-            },
-            {
-                admin_id: "admin_002",
-                name: "Admin 2"
             }
         ])
 
